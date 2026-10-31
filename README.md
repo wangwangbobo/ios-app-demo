@@ -6,11 +6,11 @@ A native SwiftUI travel companion for iOS 18+: five tabs, a floating assistant o
 
 ## Screens
 
-- **Trip**: today at a glance — weather, booked palace slot, sunset — plus four expandable day plans with their stops
-- **Plan**: hand-drawn citywalk map, editable pins you can drag, "Make a note" in the top right, Similar routes and Ask Pico in the bottom bar
+- **Trip**: today at a glance — weather, booked palace slot, sunset — a three-question travel style check that names your trip persona, plus four expandable day plans with their stops
+- **Plan**: hand-drawn citywalk map, editable pins you can drag, "Make a note" in the top right, Add place + Similar routes in the bottom bar; Pico keeps the same floating orb here as on every other tab
 - **Community**: a masonry feed of member notes with search, channel filters and saves; publish your own local event
 - **Translate**: live conversation, offline phrases, camera translation (a preset menu and street sign run the full scan flow)
-- **Me**: attraction bookings first, with progress, one-tap booking and passes; flights and hotel fold away as optional external sync
+- **Me**: journey reports first — every finished trip archived with new places, route rarity, a rarest-find award and a personal title — then attraction bookings with progress and passes; flights and hotel fold away as optional external sync
 - Global: assistant sheet, place details, note poster, post composer, reorder mode, large-text mode
 
 ## Run

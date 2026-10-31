@@ -1301,3 +1301,69 @@ img{max-width:100%;display:block}
 .ext-row b{display:block;font-size:9.5px;font-weight:700;color:var(--ink2)}
 .ext-row small{display:block;font-size:7.6px;color:var(--ink3);margin-top:1px}
 .ext-foot{font-size:7.4px;line-height:1.55;color:var(--ink3);padding:2px 0 9px}
+
+/* ---------- travel style quiz ---------- */
+.quiz-card{padding:12px 13px 11px;display:flex;flex-direction:column;gap:10px}
+.quiz-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.quiz-badge{display:inline-flex;align-items:center;gap:4px;font:700 7px var(--mono);letter-spacing:.08em;text-transform:uppercase;background:var(--lime);border:1px solid var(--ink);border-radius:999px;padding:4px 7px}
+.quiz-badge svg{width:9px;height:9px}
+.quiz-hintline{font:600 7px var(--mono);color:var(--ink3)}
+.quiz-q{display:flex;flex-direction:column;gap:5px}
+.quiz-label{font-size:9.5px;font-weight:800;letter-spacing:-.1px}
+.quiz-opts{display:flex;flex-wrap:wrap;gap:4px}
+.qchip{border:1px solid rgba(25,23,16,.35);background:var(--paper);border-radius:999px;padding:5px 8px;font-size:8px;font-weight:700;color:var(--ink2);transition:.15s;font-family:inherit}
+.qchip.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.qchip:active{transform:scale(.96)}
+.quiz-result{display:flex;align-items:center;gap:8px;background:var(--paper-warm);border:1px dashed rgba(25,23,16,.4);border-radius:12px;padding:8px}
+.qr-ico{width:28px;height:28px;border-radius:50%;background:var(--lime);border:1px solid var(--ink);display:grid;place-items:center;flex:none}
+.qr-ico svg{width:13px;height:13px}
+.quiz-result small{display:block;font:700 6.5px var(--mono);letter-spacing:.1em;color:var(--ink3)}
+.quiz-result b{display:block;font-size:11.5px;font-weight:900;letter-spacing:-.2px}
+.quiz-result em{display:block;font-style:normal;font:600 7.5px var(--mono);color:var(--ink2);margin-top:1px}
+.qr-go{margin-left:auto;flex:none;display:inline-flex;align-items:center;gap:3px;height:25px;padding:0 8px;border-radius:999px;background:var(--ink);color:var(--paper);font-size:7.5px;font-weight:700;border:0}
+.qr-go svg{width:8px;height:8px}
+.quiz-empty{display:flex;align-items:center;gap:5px;font-size:7.5px;color:var(--ink3);line-height:1.5}
+.quiz-empty svg{width:9px;height:9px;flex:none}
+
+/* ---------- journey archive ---------- */
+.jr-card{border:1.1px solid var(--ink);border-radius:16px;background:var(--paper);box-shadow:0 2px 0 rgba(25,23,16,.1);overflow:hidden}
+.jr-now{display:flex;align-items:center;gap:8px;padding:10px 11px;background:rgba(221,235,134,.26);border-bottom:1px solid var(--line-soft)}
+.jr-pulse{width:7px;height:7px;border-radius:50%;background:var(--coral);box-shadow:0 0 0 3px rgba(238,91,52,.18);flex:none}
+.jr-now b{display:block;font-size:10.5px;font-weight:900;letter-spacing:-.1px}
+.jr-now small{display:block;font-size:7.5px;color:var(--ink2);margin-top:1px;line-height:1.4}
+.jr-row{display:flex;align-items:center;gap:9px;width:100%;padding:10px 11px;border:0;border-bottom:1px solid var(--line-soft);background:transparent;text-align:left;font-family:inherit}
+.jr-row:active{background:var(--paper-warm)}
+.jr-year{font:700 7px var(--mono);color:var(--ink3);letter-spacing:.05em;flex:none;width:48px}
+.jr-row b{display:block;font-size:10px;font-weight:800;line-height:1.35}
+.jr-row small{display:block;font:600 7.5px var(--mono);color:var(--ink3);margin-top:2px}
+.jr-arrow{width:23px;height:23px;border-radius:50%;border:1px solid var(--ink);display:grid;place-items:center;flex:none;background:var(--paper)}
+.jr-arrow svg{width:9px;height:9px}
+.jr-foot{display:flex;align-items:flex-start;gap:5px;padding:9px 11px;font-size:7.5px;color:var(--ink3);line-height:1.45}
+.jr-foot svg{width:9px;height:9px;flex:none;margin-top:1px}
+
+/* ---------- trip report ---------- */
+.report-hero{position:relative;background:var(--rc,var(--mint));border:1.1px solid var(--ink);border-radius:16px;padding:13px 14px 12px;overflow:hidden;margin-bottom:9px}
+.report-hero:after{content:"";position:absolute;right:-30px;top:-30px;width:110px;height:110px;border-radius:50%;background:rgba(255,252,242,.32)}
+.rh-badge{display:inline-flex;align-items:center;gap:4px;font:700 6.5px var(--mono);letter-spacing:.1em;background:var(--ink);color:var(--paper);border-radius:999px;padding:4px 7px;position:relative;z-index:1}
+.rh-badge svg{width:8px;height:8px}
+.rh-title{font-size:24px;font-weight:900;letter-spacing:-.7px;line-height:1.1;margin:9px 0 6px;position:relative;z-index:1;max-width:88%}
+.report-hero p{font-size:9.5px;line-height:1.55;margin:0 0 8px;color:var(--ink2);position:relative;z-index:1;max-width:94%}
+.report-hero .row{position:relative;z-index:1}
+.report-stats{display:flex;gap:6px;margin:9px 0}
+.report-stats .rs{flex:1;background:var(--paper);border:1.1px solid var(--ink);border-radius:12px;padding:8px 9px;box-shadow:0 2px 0 rgba(25,23,16,.1)}
+.rs b{display:block;font-size:19px;font-weight:900;letter-spacing:-.6px}
+.rs span{display:block;font:600 7px var(--mono);color:var(--ink3);line-height:1.35;margin-top:2px}
+.report-rarity{border:1.1px solid var(--ink);border-radius:14px;padding:10px 11px;background:var(--paper-warm)}
+.rr-head b{display:block;font-size:11px;font-weight:900}
+.rr-head small{display:block;font-size:7.5px;color:var(--ink3);margin:2px 0 8px;line-height:1.4}
+.rr-row{display:flex;align-items:center;gap:7px;padding:3.5px 0}
+.rr-name{flex:1;font-size:8px;font-weight:600;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rr-bar{width:64px;height:5px;border-radius:999px;background:rgba(25,23,16,.1);overflow:hidden;flex:none}
+.rr-bar i{display:block;height:100%;border-radius:999px;background:var(--coral)}
+.rr-row b{width:30px;text-align:right;font:700 7.5px var(--mono);color:var(--ink2);flex:none}
+.report-award{display:flex;align-items:center;gap:8px;margin-top:9px;background:var(--ink);color:var(--paper);border-radius:14px;padding:10px 11px}
+.ra-ico{width:28px;height:28px;border-radius:50%;background:var(--lime);color:var(--ink);display:grid;place-items:center;flex:none}
+.ra-ico svg{width:13px;height:13px}
+.report-award b{display:block;font-size:9.5px;font-weight:800;line-height:1.35}
+.report-award small{display:block;font-size:7.5px;opacity:.65;line-height:1.4;margin-top:1px}
+.report-foot{font:600 7px var(--mono);color:var(--ink3);margin-top:9px;line-height:1.5;text-align:center}

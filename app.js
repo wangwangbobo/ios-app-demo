@@ -154,6 +154,59 @@ const TRIP_PLANS = [
   }
 ];
 
+/* travel-style check on the trip page */
+const QUIZ = [
+  { key: 'days', label: 'How many days do you like?', options: ['2–3 days', '4–5 days', '6+ days'] },
+  { key: 'style', label: 'Your kind of holiday', options: ['Slow culture', 'Food first', 'Outdoors', 'Night owl'] },
+  { key: 'theme', label: 'A theme, or none?', options: ['Imperial history', 'Hutongs & coffee', 'Art & design', 'No theme'] }
+];
+
+function quizPersona() {
+  const q = S.quiz;
+  if (!q.days || !q.style || !q.theme) return null;
+  const titles = {
+    'Slow culture': { title: 'The Slow Culture Wanderer', icon: 'compass' },
+    'Food first': { title: 'The Table-First Wanderer', icon: 'fork' },
+    'Outdoors': { title: 'The Open-Air Rambler', icon: 'walk' },
+    'Night owl': { title: 'The After-Dark Flâneur', icon: 'star' }
+  };
+  const base = titles[q.style] || titles['Slow culture'];
+  const fit = q.theme === 'Imperial history' || q.theme === 'Hutongs & coffee' ? 'Central Axis' : 'Imperial Gardens';
+  return { ...base, meta: `${q.days} · ${q.theme}`, fit };
+}
+
+/* archived trip reports — the fun end-of-journey wrap-up */
+const JOURNEYS = [
+  {
+    id: 'chengdu', city: 'Chengdu', dates: 'Mar 2026', color: 'mint',
+    title: 'The Bamboo Teahouse Wanderer',
+    blurb: 'Five days of teahouses, chilli oil and one very long bamboo walk. You never once took a taxi before noon.',
+    places: 14, newPlaces: 11, km: 38.4, rare: 'Wangjianglou bamboo grove', rarePct: 3.2, rank: 12,
+    stamps: ['Tea house', 'Chilli', 'Bamboo'],
+    rarities: [
+      { name: 'Wangjianglou bamboo grove', pct: 3.2 },
+      { name: "Yu's Bakery back lane", pct: 7.8 },
+      { name: "People's Park teahouse", pct: 28 },
+      { name: 'Wenshu Monastery', pct: 54 },
+      { name: 'Kuanzhai Alley', pct: 81 }
+    ]
+  },
+  {
+    id: 'shanghai', city: 'Shanghai', dates: 'Nov 2025', color: 'pink',
+    title: 'The Lane Flâneur',
+    blurb: 'Four days of art deco lanes, midnight noodles and a ferry you took three times for the view.',
+    places: 12, newPlaces: 9, km: 41.2, rare: 'Zhangyuan lane houses', rarePct: 6.8, rank: 18,
+    stamps: ['Lanes', 'Art deco', 'Night ferry'],
+    rarities: [
+      { name: 'Zhangyuan lane houses', pct: 6.8 },
+      { name: 'Yangjing snack street', pct: 11 },
+      { name: 'West Bund galleries', pct: 34 },
+      { name: 'Wukang Road', pct: 62 },
+      { name: 'The Bund', pct: 94 }
+    ]
+  }
+];
+
 
 const PHRASES = [
   { zh: '请问最近的地铁站怎么走？', en: 'Where is the nearest subway station?', scenario: 'route' },
@@ -215,6 +268,7 @@ const S = {
   routeName: 'Central Axis · Draft',
   aiVisible: true,
   expandedPlan: 0,
+  quiz: { days: null, style: null, theme: null },
   applied: false,
   forumChannel: null,
   forumFilter: 'all',
@@ -484,13 +538,46 @@ function tripView() {
     </article>
 
     <div class="section-title">
-      <div class="st-left"><span class="idx">02</span><h2>Your days</h2></div>
+      <div class="st-left"><span class="idx">02</span><h2>Travel style check</h2></div>
+      <span class="meta">${quizAnswered()} / 3 answered</span>
+    </div>
+    ${quizCard()}
+
+    <div class="section-title">
+      <div class="st-left"><span class="idx">03</span><h2>Your days</h2></div>
       <button class="link" data-act="assistant" data-ctx="Trip · Adjust the plan">Ask Pico ${icon('arrowur', 8)}</button>
     </div>
 
     <div class="trip-plans">
       ${TRIP_PLANS.map((p, i) => tripPlanCard(p, i)).join('')}
     </div>`;
+}
+
+function quizAnswered() {
+  return QUIZ.filter((q) => S.quiz[q.key]).length;
+}
+
+function quizCard() {
+  const persona = quizPersona();
+  return `<article class="card quiz-card">
+    <div class="quiz-top">
+      <span class="quiz-badge">${icon('sparkle', 10)} Trip match</span>
+      <span class="quiz-hintline">${persona ? 'Saved to your profile' : 'Answer all three for your title'}</span>
+    </div>
+    ${QUIZ.map((q) => `<div class="quiz-q">
+      <div class="quiz-label">${esc(q.label)}</div>
+      <div class="quiz-opts">
+        ${q.options.map((o) => `<button class="qchip ${S.quiz[q.key] === o ? 'on' : ''}" data-act="quiz" data-key="${q.key}" data-val="${esc(o)}" aria-pressed="${S.quiz[q.key] === o}">${esc(o)}</button>`).join('')}
+      </div>
+    </div>`).join('')}
+    ${persona
+      ? `<div class="quiz-result">
+          <span class="qr-ico">${icon(persona.icon, 14)}</span>
+          <span class="grow"><small>YOUR TRAVEL TITLE</small><b>${esc(persona.title)}</b><em>${esc(persona.meta)}</em></span>
+          <button class="qr-go" data-act="tab" data-tab="plan">${icon('map', 9)}${esc(persona.fit)}</button>
+        </div>`
+      : `<div class="quiz-empty">${icon('info', 9)} Pick one per question — it only changes your suggestion, never the plan.</div>`}
+  </article>`;
 }
 
 function tripPlanCard(p, index) {
@@ -614,7 +701,6 @@ function planView() {
       <div class="panel-actions">
         <button class="pa dashed" data-act="assistant" data-ctx="Plan · Add a place">${icon('plus', 10)}Add place</button>
         <button class="pa lime" data-act="similar">${icon('layers', 10)}Similar routes</button>
-        <button class="pa coral" data-act="assistant" data-ctx="Plan · ${esc(S.routeName)}"><span class="sp">${sparkleIcon(9)}</span>Ask Pico</button>
       </div>
     </div>
   </div>`;
@@ -1338,7 +1424,22 @@ function meView() {
       </div>
     </div>
 
-    <div class="section-title"><div class="st-left"><span class="idx">01</span><h2>Attraction bookings</h2></div><span class="meta">${bookedCount} / ${attractionTotal} booked</span></div>
+    <div class="section-title"><div class="st-left"><span class="idx">01</span><h2>Journey reports</h2></div><span class="meta">${JOURNEYS.length} archived</span></div>
+    <div class="jr-card">
+      <div class="jr-now">
+        <span class="jr-pulse"></span>
+        <span class="grow"><b>Beijing · in progress</b><small>Wrap-up unlocks 10/19 — new places, rarity and your title</small></span>
+        <span class="tag soft">Day 1</span>
+      </div>
+      ${JOURNEYS.map((j) => `<button class="jr-row" data-act="report" data-id="${j.id}">
+        <span class="jr-year">${esc(j.dates)}</span>
+        <span class="grow"><b>${esc(j.city)} · ${esc(j.title)}</b><small>${j.newPlaces} new places · rarest find ${j.rarePct}%</small></span>
+        <span class="jr-arrow">${icon('arrowur', 10)}</span>
+      </button>`).join('')}
+      <div class="jr-foot">${icon('info', 9)} Each finished trip is archived automatically, on your device.</div>
+    </div>
+
+    <div class="section-title"><div class="st-left"><span class="idx">02</span><h2>Attraction bookings</h2></div><span class="meta">${bookedCount} / ${attractionTotal} booked</span></div>
     <div class="resv-card">
       <div class="resv-head">
         <div class="grow">
@@ -1360,7 +1461,7 @@ function meView() {
       <div class="resv-tip">${icon('info', 10)}<span>The Forbidden City closes on Mondays; it is open Wednesday 10/15. Your booking receipts stay here.</span></div>
     </div>
 
-    <div class="section-title"><div class="st-left"><span class="idx">02</span><h2>Travel services</h2></div></div>
+    <div class="section-title"><div class="st-left"><span class="idx">03</span><h2>Travel services</h2></div></div>
     <div class="service-grid">
       <button class="service" data-act="assistant" data-ctx="Me · Offline pack">
         <span class="ico" style="background:var(--mint-soft)">${icon('download', 12)}</span>
@@ -1380,7 +1481,7 @@ function meView() {
       </button>
     </div>
 
-    <div class="section-title"><div class="st-left"><span class="idx">03</span><h2>Booked elsewhere</h2></div><span class="meta">Optional</span></div>
+    <div class="section-title"><div class="st-left"><span class="idx">04</span><h2>Booked elsewhere</h2></div><span class="meta">Optional</span></div>
     <div class="ext-card">
       <button class="ext-head" data-act="toggle-bookings" aria-expanded="${S.showBookings}">
         <span class="ico">${icon('layers', 13)}</span>
@@ -1395,7 +1496,7 @@ function meView() {
       </div>` : ''}
     </div>
 
-    <div class="section-title"><div class="st-left"><span class="idx">04</span><h2>Preferences</h2></div></div>
+    <div class="section-title"><div class="st-left"><span class="idx">05</span><h2>Preferences</h2></div></div>
     <div class="card" style="padding:2px 13px">
       <div class="setting-row">
         <span class="ico">${icon('bell', 12)}</span>
@@ -1414,7 +1515,7 @@ function meView() {
       </div>
     </div>
 
-    <div class="section-title"><div class="st-left"><span class="idx">05</span><h2>About</h2></div></div>
+    <div class="section-title"><div class="st-left"><span class="idx">06</span><h2>About</h2></div></div>
     <div class="card" style="padding:2px 13px">
       <div class="setting-row" data-act="toast" data-text="Privacy policy · all voice is processed on device" data-icon="lock" role="button" tabindex="0">
         <span class="ico">${icon('lock', 12)}</span>
@@ -1446,7 +1547,8 @@ const sheetBuilders = {
   place: placeSheet,
   compose: composeSheet,
   phrase: phraseSheet,
-  post: postSheet
+  post: postSheet,
+  report: reportSheet
 };
 
 function openSheet(name, data = null) {
@@ -1553,6 +1655,44 @@ function postSheet() {
       </div>
       <button class="post-action dark" style="width:100%;margin-top:7px" data-act="assistant" data-ctx="Community · ${esc(p.title)}">${icon('sparkle', 10)}Ask Pico if it is worth it</button>
       <div class="post-detail-foot">Posted in the RoamChina Community · content from members</div>
+    </div>
+  </div>`;
+}
+
+/* ---------- journey report ---------- */
+function reportSheet() {
+  const j = JOURNEYS.find((x) => x.id === S.sheetData) || JOURNEYS[0];
+  return `<div class="sheet tall">
+    ${sheetHead(`${j.city} trip report`, 'JOURNEY ARCHIVE · ' + j.dates.toUpperCase())}
+    <div class="sheet-body">
+      <div class="report-hero" style="--rc:var(--${j.color})">
+        <div class="rh-badge">${icon('check', 8)} TRIP COMPLETE</div>
+        <div class="rh-title">${esc(j.title)}</div>
+        <p>${esc(j.blurb)}</p>
+        <div class="row" style="flex-wrap:wrap;gap:4px">${j.stamps.map((t) => tag(t, 'lime')).join('')}</div>
+      </div>
+      <div class="report-stats">
+        <div class="rs"><b>${j.newPlaces}</b><span>new places<br>unlocked</span></div>
+        <div class="rs"><b>${j.km}</b><span>km<br>walked</span></div>
+        <div class="rs"><b>Top ${j.rank}%</b><span>${esc(j.city)}<br>explorers</span></div>
+      </div>
+      <div class="report-rarity">
+        <div class="rr-head"><b>How rare was your route?</b><small>Share of RoamChina travelers who unlocked each place</small></div>
+        ${j.rarities.map((r) => `<div class="rr-row">
+          <span class="rr-name">${esc(r.name)}</span>
+          <span class="rr-bar"><i style="width:${Math.max(4, r.pct)}%"></i></span>
+          <b>${r.pct}%</b>
+        </div>`).join('')}
+      </div>
+      <div class="report-award">
+        <span class="ra-ico">${icon('star', 12)}</span>
+        <span class="grow"><b>${esc(j.rare)}</b><small>Only ${j.rarePct}% of travelers found this — your rarest unlock.</small></span>
+      </div>
+      <div class="report-foot">${j.places} places visited in total · archived when the trip ended · kept on your device</div>
+    </div>
+    <div class="sheet-cta">
+      <button class="ghost" data-act="toast" data-text="Report saved to your archive" data-icon="download">Save</button>
+      <button class="primary" data-act="toast" data-text="Report link copied · ${esc(j.title)}" data-icon="share">Share report</button>
     </div>
   </div>`;
 }
@@ -2177,6 +2317,13 @@ document.addEventListener('click', (e) => {
     }
     case 'post':
       openSheet('post', el.dataset.id);
+      break;
+    case 'quiz':
+      S.quiz[el.dataset.key] = el.dataset.val;
+      render();
+      break;
+    case 'report':
+      openSheet('report', el.dataset.id);
       break;
     case 'save-post': {
       const id = el.dataset.id;

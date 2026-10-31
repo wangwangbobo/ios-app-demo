@@ -66,9 +66,7 @@ struct RootView: View {
     private var bottomControls: some View {
         HStack(alignment: .center, spacing: 8) {
             FloatingTabBar()
-            if model.tab != .plan {
-                AssistantOrb()
-            }
+            AssistantOrb()
         }
         .padding(.horizontal, 14)
         .padding(.bottom, 2)

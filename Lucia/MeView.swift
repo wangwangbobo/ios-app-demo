@@ -6,10 +6,67 @@ enum LegalKind: String, Identifiable {
     var title: String { self == .privacy ? "Privacy policy" : "Terms of service" }
 }
 
+struct JourneyRarity: Identifiable {
+    let name: String
+    let pct: Double
+    var id: String { name }
+}
+
+struct JourneyReport: Identifiable {
+    let id: String
+    let city: String
+    let dates: String
+    let color: Color
+    let title: String
+    let blurb: String
+    let places: Int
+    let newPlaces: Int
+    let km: Double
+    let rare: String
+    let rarePct: Double
+    let rank: Int
+    let stamps: [String]
+    let rarities: [JourneyRarity]
+
+    static let all: [JourneyReport] = [
+        JourneyReport(
+            id: "chengdu", city: "Chengdu", dates: "Mar 2026", color: Palette.mint,
+            title: "The Bamboo Teahouse Wanderer",
+            blurb: "Five days of teahouses, chilli oil and one very long bamboo walk. You never once took a taxi before noon.",
+            places: 14, newPlaces: 11, km: 38.4,
+            rare: "Wangjianglou bamboo grove", rarePct: 3.2, rank: 12,
+            stamps: ["Tea house", "Chilli", "Bamboo"],
+            rarities: [
+                JourneyRarity(name: "Wangjianglou bamboo grove", pct: 3.2),
+                JourneyRarity(name: "Yu's Bakery back lane", pct: 7.8),
+                JourneyRarity(name: "People's Park teahouse", pct: 28),
+                JourneyRarity(name: "Wenshu Monastery", pct: 54),
+                JourneyRarity(name: "Kuanzhai Alley", pct: 81)
+            ]
+        ),
+        JourneyReport(
+            id: "shanghai", city: "Shanghai", dates: "Nov 2025", color: Palette.pink,
+            title: "The Lane Flâneur",
+            blurb: "Four days of art deco lanes, midnight noodles and a ferry you took three times for the view.",
+            places: 12, newPlaces: 9, km: 41.2,
+            rare: "Zhangyuan lane houses", rarePct: 6.8, rank: 18,
+            stamps: ["Lanes", "Art deco", "Night ferry"],
+            rarities: [
+                JourneyRarity(name: "Zhangyuan lane houses", pct: 6.8),
+                JourneyRarity(name: "Yangjing snack street", pct: 11),
+                JourneyRarity(name: "West Bund galleries", pct: 34),
+                JourneyRarity(name: "Wukang Road", pct: 62),
+                JourneyRarity(name: "The Bund", pct: 94)
+            ]
+        )
+    ]
+}
+
 struct MeView: View {
     @EnvironmentObject private var model: AppModel
     @State private var legal: LegalKind? = nil
     @State private var externalOpen = false
+    @State private var report: JourneyReport? = nil
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
@@ -17,6 +74,7 @@ struct MeView: View {
                 header
                 statsCard
                 tripCard
+                journeysSection
                 reservationsSection
                 servicesSection
                 externalSection
@@ -34,6 +92,21 @@ struct MeView: View {
                 .presentationCornerRadius(28)
                 .presentationBackground(Palette.bg)
         }
+        .sheet(item: $report) { journey in
+            JourneyReportSheet(journey: journey)
+                .environmentObject(model)
+                .presentationDetents([.large])
+                .presentationDragIndicator(.hidden)
+                .presentationCornerRadius(30)
+                .presentationBackground(Palette.bg)
+        }
+        #if DEBUG
+        .onAppear {
+            if ProcessInfo.processInfo.arguments.contains("-report"), report == nil {
+                report = JourneyReport.all.first
+            }
+        }
+        #endif
     }
 
     // MARK: Header
@@ -205,13 +278,110 @@ struct MeView: View {
         .shadow(color: Palette.ink.opacity(0.16), radius: 0, x: 0, y: 4)
     }
 
+    // MARK: Journey reports
+
+    private var journeysSection: some View {
+        VStack(alignment: .leading, spacing: 9) {
+            SectionHeading(
+                title: "Journey reports",
+                index: "01",
+                trailing: "\(JourneyReport.all.count) archived"
+            )
+
+            VStack(spacing: 0) {
+                HStack(spacing: 8) {
+                    Circle()
+                        .fill(Palette.coral)
+                        .frame(width: 7, height: 7)
+                        .overlay(Circle().stroke(Palette.coral.opacity(0.25), lineWidth: 3))
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Beijing · in progress")
+                            .font(.system(size: 11, weight: .black))
+                            .foregroundStyle(Palette.ink)
+                        Text("Wrap-up unlocks 10/19 — new places, rarity and your title")
+                            .font(.system(size: 8.5, weight: .medium))
+                            .foregroundStyle(Palette.ink2)
+                            .lineLimit(2)
+                    }
+                    Spacer(minLength: 4)
+                    TagView(text: "Day 1", style: .soft)
+                }
+                .padding(.horizontal, 11)
+                .padding(.vertical, 10)
+                .background(Palette.lime.opacity(0.26))
+
+                SoftDivider()
+
+                ForEach(Array(JourneyReport.all.enumerated()), id: \.element.id) { index, journey in
+                    journeyRow(journey)
+                    if index != JourneyReport.all.count - 1 {
+                        SoftDivider()
+                    }
+                }
+
+                HStack(alignment: .top, spacing: 5) {
+                    Image(systemName: "info.circle")
+                        .font(.system(size: 9, weight: .bold))
+                        .padding(.top, 1)
+                    Text("Each finished trip is archived automatically, on your device.")
+                        .font(.system(size: 8.5, weight: .medium))
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 0)
+                }
+                .foregroundStyle(Palette.ink3)
+                .padding(.horizontal, 11)
+                .padding(.vertical, 9)
+            }
+            .background(RoundedRectangle(cornerRadius: 21, style: .continuous).fill(Palette.paper))
+            .overlay(RoundedRectangle(cornerRadius: 21, style: .continuous).strokeBorder(Palette.ink, lineWidth: 1.2))
+            .clipShape(RoundedRectangle(cornerRadius: 21, style: .continuous))
+            .compositingGroup()
+            .shadow(color: Palette.ink.opacity(0.1), radius: 0, x: 0, y: 2.5)
+        }
+    }
+
+    private func journeyRow(_ journey: JourneyReport) -> some View {
+        Button {
+            Haptics.tap()
+            report = journey
+        } label: {
+            HStack(spacing: 9) {
+                Text(journey.dates.uppercased())
+                    .font(.system(size: 7.5, weight: .bold, design: .monospaced))
+                    .foregroundStyle(Palette.ink3)
+                    .frame(width: 50, alignment: .leading)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("\(journey.city) · \(journey.title)")
+                        .font(.system(size: 11.5, weight: .bold))
+                        .foregroundStyle(Palette.ink)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
+                    Text("\(journey.newPlaces) new places · rarest find \(journey.rarePct, specifier: "%.1f")%")
+                        .font(.system(size: 8, weight: .semibold, design: .monospaced))
+                        .foregroundStyle(Palette.ink3)
+                }
+                Spacer(minLength: 4)
+                Image(systemName: "arrow.up.right")
+                    .font(.system(size: 9, weight: .black))
+                    .foregroundStyle(Palette.ink)
+                    .frame(width: 24, height: 24)
+                    .background(Circle().fill(Palette.paper))
+                    .overlay(Circle().strokeBorder(Palette.ink, lineWidth: 1))
+            }
+            .padding(.horizontal, 11)
+            .padding(.vertical, 10)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
     // MARK: Attraction reservations
 
     private var reservationsSection: some View {
         VStack(alignment: .leading, spacing: 9) {
             SectionHeading(
                 title: "Attraction bookings",
-                index: "01",
+                index: "02",
                 trailing: "\(model.bookedAttractionCount)/\(model.attractions.count) booked"
             )
 
@@ -352,7 +522,7 @@ struct MeView: View {
 
     private var servicesSection: some View {
         VStack(alignment: .leading, spacing: 9) {
-            SectionHeading(title: "Trip services", index: "02")
+            SectionHeading(title: "Trip services", index: "03")
             VStack(spacing: 0) {
                 serviceRow(icon: "waveform", tint: Palette.lime, title: "Offline phrase pack", detail: "Beijing · 86 phrases · 4.2 MB") {
                     model.translateMode = .offline
@@ -413,7 +583,7 @@ struct MeView: View {
 
     private var externalSection: some View {
         VStack(alignment: .leading, spacing: 9) {
-            SectionHeading(title: "External info", index: "03", trailing: "Optional")
+            SectionHeading(title: "External info", index: "04", trailing: "Optional")
 
             VStack(spacing: 0) {
                 Button {
@@ -494,7 +664,7 @@ struct MeView: View {
 
     private var settingsSection: some View {
         VStack(alignment: .leading, spacing: 9) {
-            SectionHeading(title: "Notifications & preferences", index: "04")
+            SectionHeading(title: "Notifications & preferences", index: "05")
             VStack(spacing: 0) {
                 HStack(spacing: 10) {
                     IconBadge(icon: "bell", tint: Palette.ink, background: Palette.accentSoft, size: 37)
@@ -581,5 +751,258 @@ struct MeView: View {
         .frame(maxWidth: .infinity)
         .padding(.top, 10)
         .padding(.bottom, 4)
+    }
+}
+
+// MARK: - Journey report sheet
+
+struct JourneyReportSheet: View {
+    var journey: JourneyReport
+    @EnvironmentObject private var model: AppModel
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        ScrollView(.vertical, showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 13) {
+                header
+                hero
+                stats
+                rarityCard
+                award
+                Text("\(journey.places) places visited in total · archived when the trip ended · kept on your device")
+                    .font(.system(size: 8, weight: .semibold, design: .monospaced))
+                    .foregroundStyle(Palette.ink3)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 2)
+                actions
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 18)
+            .padding(.bottom, 24)
+        }
+        .background(Palette.bg.ignoresSafeArea())
+    }
+
+    private var header: some View {
+        HStack(alignment: .top, spacing: 10) {
+            VStack(alignment: .leading, spacing: 4) {
+                Eyebrow(text: "Journey archive · \(journey.dates)")
+                Text("\(journey.city) trip report")
+                    .font(.system(size: 27, weight: .black))
+                    .tracking(-0.5)
+                    .foregroundStyle(Palette.ink)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.72)
+            }
+            Spacer(minLength: 4)
+            Button {
+                dismiss()
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 11, weight: .black))
+                    .foregroundStyle(Palette.ink)
+                    .frame(width: 33, height: 33)
+                    .background(Circle().fill(Palette.paper))
+                    .overlay(Circle().strokeBorder(Palette.ink, lineWidth: 1.1))
+            }
+            .buttonStyle(PressableButtonStyle())
+        }
+    }
+
+    private var hero: some View {
+        ZStack(alignment: .topTrailing) {
+            Circle()
+                .fill(Palette.paper.opacity(0.32))
+                .frame(width: 120, height: 120)
+                .offset(x: 34, y: -38)
+
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(spacing: 4) {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 7, weight: .black))
+                    Text("TRIP COMPLETE")
+                        .font(.system(size: 7, weight: .bold, design: .monospaced))
+                        .tracking(1)
+                }
+                .foregroundStyle(Palette.paper)
+                .padding(.horizontal, 8)
+                .frame(height: 20)
+                .background(Capsule().fill(Palette.ink))
+
+                Text(journey.title)
+                    .font(.system(size: 25, weight: .black))
+                    .tracking(-0.6)
+                    .foregroundStyle(Palette.ink)
+                    .lineLimit(3)
+                    .minimumScaleFactor(0.85)
+                    .padding(.top, 10)
+
+                Text(journey.blurb)
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(Palette.ink2)
+                    .lineSpacing(3)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.top, 6)
+
+                HStack(spacing: 4) {
+                    ForEach(journey.stamps, id: \.self) { stamp in
+                        Text(stamp)
+                            .font(.system(size: 8.5, weight: .bold))
+                            .foregroundStyle(Palette.ink)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(Capsule().fill(Palette.limeSoft))
+                            .overlay(Capsule().strokeBorder(Palette.ink.opacity(0.7), lineWidth: 0.8))
+                    }
+                }
+                .padding(.top, 9)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 13)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(journey.color))
+        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(Palette.ink, lineWidth: 1.2))
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .compositingGroup()
+        .shadow(color: Palette.ink.opacity(0.12), radius: 0, x: 0, y: 3)
+    }
+
+    private var stats: some View {
+        HStack(spacing: 6) {
+            reportStat(value: "\(journey.newPlaces)", label: "new places\nunlocked")
+            reportStat(value: String(format: "%.1f", journey.km), label: "km\nwalked")
+            reportStat(value: "Top \(journey.rank)%", label: "\(journey.city)\nexplorers")
+        }
+    }
+
+    private func reportStat(value: String, label: String) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(value)
+                .font(.system(size: 20, weight: .black))
+                .tracking(-0.6)
+                .foregroundStyle(Palette.ink)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+            Text(label)
+                .font(.system(size: 7.5, weight: .semibold, design: .monospaced))
+                .foregroundStyle(Palette.ink3)
+                .lineSpacing(1.5)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 9)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 13, style: .continuous).fill(Palette.paper))
+        .overlay(RoundedRectangle(cornerRadius: 13, style: .continuous).strokeBorder(Palette.ink, lineWidth: 1.1))
+        .compositingGroup()
+        .shadow(color: Palette.ink.opacity(0.1), radius: 0, x: 0, y: 2)
+    }
+
+    private var rarityCard: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text("How rare was your route?")
+                .font(.system(size: 12, weight: .black))
+                .foregroundStyle(Palette.ink)
+            Text("Share of RoamChina travelers who unlocked each place")
+                .font(.system(size: 8.5, weight: .medium))
+                .foregroundStyle(Palette.ink3)
+                .padding(.top, 2)
+
+            VStack(spacing: 0) {
+                ForEach(journey.rarities) { item in
+                    HStack(spacing: 8) {
+                        Text(item.name)
+                            .font(.system(size: 9, weight: .semibold))
+                            .foregroundStyle(Palette.ink)
+                            .lineLimit(1)
+                        Spacer(minLength: 4)
+                        ZStack(alignment: .leading) {
+                            Capsule().fill(Palette.ink.opacity(0.1))
+                            Capsule()
+                                .fill(Palette.coral)
+                                .frame(width: CGFloat(66 * max(0.04, item.pct / 100)))
+                        }
+                        .frame(width: 66, height: 5)
+                        Text("\(item.pct, specifier: "%.1f")%")
+                            .font(.system(size: 8, weight: .bold, design: .monospaced))
+                            .foregroundStyle(Palette.ink2)
+                            .frame(width: 34, alignment: .trailing)
+                    }
+                    .padding(.vertical, 4)
+                }
+            }
+            .padding(.top, 7)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 11)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Palette.paperWarm))
+        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Palette.ink, lineWidth: 1.1))
+    }
+
+    private var award: some View {
+        HStack(spacing: 9) {
+            Image(systemName: "star.fill")
+                .font(.system(size: 12, weight: .black))
+                .foregroundStyle(Palette.ink)
+                .frame(width: 30, height: 30)
+                .background(Circle().fill(Palette.lime))
+            VStack(alignment: .leading, spacing: 2) {
+                Text(journey.rare)
+                    .font(.system(size: 10, weight: .heavy))
+                    .foregroundStyle(Palette.paper)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                Text("Only \(journey.rarePct, specifier: "%.1f")% of travelers found this — your rarest unlock.")
+                    .font(.system(size: 8.5, weight: .medium))
+                    .foregroundStyle(Palette.paper.opacity(0.65))
+                    .lineLimit(2)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 11)
+        .padding(.vertical, 10)
+        .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Palette.ink))
+    }
+
+    private var actions: some View {
+        HStack(spacing: 9) {
+            Button {
+                model.toast("Report saved to your archive", icon: "tray.and.arrow.down.fill")
+            } label: {
+                HStack(spacing: 5) {
+                    Image(systemName: "tray.and.arrow.down")
+                        .font(.system(size: 10, weight: .bold))
+                    Text("Save")
+                        .font(.system(size: 12, weight: .bold))
+                }
+                .foregroundStyle(Palette.ink)
+                .frame(maxWidth: .infinity)
+                .frame(height: 44)
+                .background(Capsule().fill(Palette.paper))
+                .overlay(Capsule().strokeBorder(Palette.ink, lineWidth: 1.2))
+            }
+            .buttonStyle(PressableButtonStyle())
+
+            Button {
+                model.toast("Report link copied · \(journey.title)", icon: "square.and.arrow.up")
+            } label: {
+                HStack(spacing: 5) {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.system(size: 10, weight: .bold))
+                    Text("Share report")
+                        .font(.system(size: 12, weight: .bold))
+                }
+                .foregroundStyle(Palette.ink)
+                .frame(maxWidth: .infinity)
+                .frame(height: 44)
+                .background(Capsule().fill(Palette.lime))
+                .overlay(Capsule().strokeBorder(Palette.ink, lineWidth: 1.2))
+            }
+            .buttonStyle(PressableButtonStyle())
+        }
+        .padding(.top, 2)
     }
 }

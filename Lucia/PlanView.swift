@@ -308,30 +308,6 @@ struct PlanView: View {
                 .buttonStyle(PressableButtonStyle())
                 .accessibilityLabel("View similar routes")
 
-                Button {
-                    Haptics.tap()
-                    model.openAssistant("Plan · \(model.routeName)")
-                } label: {
-                    HStack(spacing: 5) {
-                        Image(systemName: "sparkles")
-                            .font(.system(size: 9, weight: .black))
-                            .foregroundStyle(Palette.ink)
-                            .frame(width: 21, height: 21)
-                            .background(Circle().fill(Palette.lime))
-                            .overlay(Circle().strokeBorder(Palette.ink.opacity(0.8), lineWidth: 0.8))
-                        Text("Ask Pico")
-                            .font(.system(size: 10.5, weight: .black))
-                            .foregroundStyle(Palette.paper)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 42)
-                    .background(Capsule().fill(Palette.coral))
-                    .overlay(Capsule().strokeBorder(Palette.ink, lineWidth: 1.3))
-                    .compositingGroup()
-                    .shadow(color: Palette.ink.opacity(0.2), radius: 0, x: 0, y: 3)
-                }
-                .buttonStyle(PressableButtonStyle(scale: 0.96))
-                .accessibilityLabel("Ask Pico assistant")
             }
             .padding(.horizontal, 12)
         }

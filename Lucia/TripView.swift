@@ -1,20 +1,39 @@
 import SwiftUI
 
+private struct TravelPersona {
+    let title: String
+    let icon: String
+    let meta: String
+    let fit: String
+}
+
 struct TripView: View {
     @EnvironmentObject private var model: AppModel
     @State private var expandedPlan = 0
+    @State private var quizDays: String? = nil
+    @State private var quizStyle: String? = nil
+    @State private var quizTheme: String? = nil
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(alignment: .leading, spacing: 20) {
                 header
                 todaySection
+                quizSection
                 plansSection
             }
             .padding(.horizontal, 20)
             .padding(.top, 10)
             .padding(.bottom, 130)
         }
+        #if DEBUG
+        .onAppear {
+            guard ProcessInfo.processInfo.arguments.contains("-quizdone") else { return }
+            quizDays = quizDays ?? "4–5 days"
+            quizStyle = quizStyle ?? "Food first"
+            quizTheme = quizTheme ?? "Hutongs & coffee"
+        }
+        #endif
     }
 
     // MARK: Header
@@ -201,11 +220,155 @@ struct TripView: View {
             .frame(width: 1, height: 28)
     }
 
+    // MARK: Travel style check
+
+    private var answeredCount: Int {
+        [quizDays, quizStyle, quizTheme].compactMap { $0 }.count
+    }
+
+    private var quizPersona: TravelPersona? {
+        guard let days = quizDays, let style = quizStyle, let theme = quizTheme else { return nil }
+        let map: [String: (String, String)] = [
+            "Slow culture": ("The Slow Culture Wanderer", "safari"),
+            "Food first": ("The Table-First Wanderer", "fork.knife"),
+            "Outdoors": ("The Open-Air Rambler", "figure.walk"),
+            "Night owl": ("The After-Dark Flâneur", "star.fill")
+        ]
+        let base = map[style] ?? ("The Slow Culture Wanderer", "safari")
+        let fit = (theme == "Imperial history" || theme == "Hutongs & coffee") ? "Central Axis" : "Imperial Gardens"
+        return TravelPersona(title: base.0, icon: base.1, meta: "\(days) · \(theme)", fit: fit)
+    }
+
+    private var quizSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            SectionHeading(title: "Travel style check", index: "02", trailing: "\(answeredCount) / 3")
+
+            VStack(alignment: .leading, spacing: 11) {
+                HStack(spacing: 8) {
+                    TagView(text: "Trip match", style: .accent)
+                    Spacer()
+                    Text(quizPersona == nil ? "Answer all three for your title" : "Saved to your profile")
+                        .font(.system(size: 8, weight: .medium, design: .monospaced))
+                        .foregroundStyle(Palette.ink3)
+                }
+
+                quizQuestion("How many days do you like?", options: ["2–3 days", "4–5 days", "6+ days"], selection: $quizDays)
+                quizQuestion("Your kind of holiday", options: ["Slow culture", "Food first", "Outdoors", "Night owl"], selection: $quizStyle)
+                quizQuestion("A theme, or none?", options: ["Imperial history", "Hutongs & coffee", "Art & design", "No theme"], selection: $quizTheme)
+
+                if let persona = quizPersona {
+                    HStack(spacing: 9) {
+                        Image(systemName: persona.icon)
+                            .font(.system(size: 13, weight: .bold))
+                            .foregroundStyle(Palette.ink)
+                            .frame(width: 30, height: 30)
+                            .background(Circle().fill(Palette.lime))
+                            .overlay(Circle().strokeBorder(Palette.ink, lineWidth: 1))
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text("YOUR TRAVEL TITLE")
+                                .font(.system(size: 7, weight: .bold, design: .monospaced))
+                                .tracking(0.8)
+                                .foregroundStyle(Palette.ink3)
+                            Text(persona.title)
+                                .font(.system(size: 13, weight: .black))
+                                .tracking(-0.2)
+                                .foregroundStyle(Palette.ink)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
+                            Text(persona.meta)
+                                .font(.system(size: 8.5, weight: .semibold, design: .monospaced))
+                                .foregroundStyle(Palette.ink2)
+                                .lineLimit(1)
+                        }
+                        Spacer(minLength: 4)
+                        Button {
+                            Haptics.tap()
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                                model.tab = .plan
+                            }
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "map")
+                                    .font(.system(size: 8, weight: .black))
+                                Text(persona.fit)
+                                    .font(.system(size: 9.5, weight: .bold))
+                            }
+                            .foregroundStyle(Palette.paper)
+                            .padding(.horizontal, 10)
+                            .frame(height: 29)
+                            .background(Capsule().fill(Palette.ink))
+                        }
+                        .buttonStyle(PressableButtonStyle(scale: 0.95))
+                    }
+                    .padding(9)
+                    .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Palette.paperWarm))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .strokeBorder(Palette.ink.opacity(0.35), style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
+                    )
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
+                } else {
+                    HStack(spacing: 5) {
+                        Image(systemName: "info.circle")
+                            .font(.system(size: 9, weight: .bold))
+                        Text("Pick one per question — it only changes your suggestion, never the plan.")
+                            .font(.system(size: 9, weight: .medium))
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .foregroundStyle(Palette.ink3)
+                }
+            }
+            .padding(13)
+            .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(Palette.paper))
+            .overlay(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .strokeBorder(Palette.ink, lineWidth: 1.2)
+            )
+            .compositingGroup()
+            .shadow(color: Palette.ink.opacity(0.1), radius: 0, x: 0, y: 2.5)
+        }
+    }
+
+    private func quizQuestion(_ label: String, options: [String], selection: Binding<String?>) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(label)
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(Palette.ink)
+            HStack(spacing: 5) {
+                ForEach(options, id: \.self) { option in
+                    let on = selection.wrappedValue == option
+                    Button {
+                        Haptics.tap()
+                        withAnimation(.easeOut(duration: 0.18)) {
+                            selection.wrappedValue = option
+                        }
+                    } label: {
+                        Text(option)
+                            .font(.system(size: 9.5, weight: .bold))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.68)
+                            .padding(.horizontal, 6)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 28)
+                            .background(Capsule().fill(on ? Palette.ink : Palette.paper))
+                            .foregroundStyle(on ? Palette.paper : Palette.ink2)
+                            .overlay(
+                                Capsule().strokeBorder(on ? Palette.ink : Palette.ink.opacity(0.3), lineWidth: 1)
+                            )
+                    }
+                    .buttonStyle(PressableButtonStyle(scale: 0.96))
+                    .accessibilityLabel("\(label): \(option)")
+                    .accessibilityAddTraits(on ? .isSelected : [])
+                }
+            }
+        }
+    }
+
     // MARK: Plans
 
     private var plansSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            SectionHeading(title: "Your days", index: "02", trailing: "Ask Pico") {
+            SectionHeading(title: "Your days", index: "03", trailing: "Ask Pico") {
                 model.openAssistant("Trip · Adjust the plan")
             }
 
