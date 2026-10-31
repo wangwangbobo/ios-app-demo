@@ -466,6 +466,10 @@ const screens = {
   me: meView
 };
 
+let heroTimer = 0;
+let heroResumeAt = 0;
+const HERO_DELAY = 4500;
+
 function initHeroCarousel() {
   const track = $('#heroTrack');
   if (!track) return;
@@ -486,6 +490,21 @@ function initHeroCarousel() {
     cancelAnimationFrame(raf);
     raf = requestAnimationFrame(() => apply(Math.round(track.scrollLeft / Math.max(1, track.clientWidth))));
   }, { passive: true });
+
+  const hold = () => { heroResumeAt = Date.now() + 9000; };
+  ['pointerdown', 'touchstart', 'wheel'].forEach((evt) => track.addEventListener(evt, hold, { passive: true }));
+
+  const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduceMotion) return;
+  clearInterval(heroTimer);
+  heroTimer = setInterval(() => {
+    if (document.hidden || S.sheet || S.tab !== 'trip') return;
+    if (Date.now() < heroResumeAt) return;
+    const t = $('#heroTrack');
+    if (!t || !t.clientWidth) return;
+    const next = (S.hero + 1) % TRIP_HERO.length;
+    t.scrollTo({ left: t.clientWidth * next, behavior: 'smooth' });
+  }, HERO_DELAY);
 }
 
 function render(resetScroll = false) {
@@ -498,6 +517,7 @@ function render(resetScroll = false) {
   renderDock();
   if (S.sheet) renderSheet();
   if (S.tab === 'plan') initMapDrag();
+  clearInterval(heroTimer);
   if (S.tab === 'trip') initHeroCarousel();
   updateHash();
 }
@@ -2388,6 +2408,7 @@ document.addEventListener('click', (e) => {
     case 'hero-go': {
       const track = $('#heroTrack');
       const i = Number(el.dataset.hero) || 0;
+      heroResumeAt = Date.now() + 9000;
       if (track) track.scrollTo({ left: track.clientWidth * i, behavior: 'smooth' });
       break;
     }

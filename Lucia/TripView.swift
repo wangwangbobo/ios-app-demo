@@ -9,11 +9,15 @@ private struct TravelPersona {
 
 struct TripView: View {
     @EnvironmentObject private var model: AppModel
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var expandedPlan = 0
     @State private var quizDays: String? = nil
     @State private var quizStyle: String? = nil
     @State private var quizTheme: String? = nil
     @State private var heroIndex = 0
+    @State private var heroAutoResumeAt = Date.distantPast
+    @State private var heroAutoAdvancing = false
+    @State private var heroLastAdvance = Date()
 
     private let heroPhotos: [(image: String, name: String, credit: String)] = [
         ("today-hero", "Hall of Supreme Harmony", "Photo N509FZ / CC BY-SA 4.0"),
@@ -53,6 +57,29 @@ struct TripView: View {
             quizTheme = quizTheme ?? "Hutongs & coffee"
         }
         #endif
+        .onChange(of: heroIndex) { _, _ in
+            if heroAutoAdvancing {
+                heroAutoAdvancing = false
+            } else {
+                heroAutoResumeAt = Date().addingTimeInterval(8)
+            }
+        }
+        .task {
+            guard !reduceMotion else { return }
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(1))
+                if Task.isCancelled { return }
+                let now = Date()
+                guard !heroAutoAdvancing,
+                      now >= heroAutoResumeAt,
+                      now.timeIntervalSince(heroLastAdvance) >= 4.5 else { continue }
+                heroLastAdvance = now
+                heroAutoAdvancing = true
+                withAnimation(.easeInOut(duration: 0.5)) {
+                    heroIndex = (heroIndex + 1) % heroPhotos.count
+                }
+            }
+        }
     }
 
     // MARK: Header
