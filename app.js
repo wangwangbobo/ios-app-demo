@@ -541,8 +541,8 @@ function tripView() {
     <article class="card today-card">
       <div class="cityscape">
         <div class="hero-track" id="heroTrack" aria-label="Trip photos">
-          ${TRIP_HERO.map((h, i) => `<figure class="hero-slide">
-            <img class="today-photo" src="${h.src}" alt="${esc(h.name)}, Beijing" ${i ? 'loading="lazy"' : ''} draggable="false">
+          ${TRIP_HERO.map((h) => `<figure class="hero-slide">
+            <img class="today-photo" src="${h.src}" alt="${esc(h.name)}, Beijing" draggable="false">
             <figcaption class="hero-caption">
               <b>${esc(h.name)}</b>
               <span>${esc(h.credit)}</span>
