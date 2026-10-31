@@ -459,9 +459,24 @@ struct AssistantView: View {
 
                 Spacer()
 
-                Text("\(model.quizAnswered) / 3")
-                    .font(.system(size: 8, weight: .semibold, design: .monospaced))
-                    .foregroundStyle(Palette.ink3)
+                HStack(spacing: 3) {
+                    ForEach(0..<3, id: \.self) { index in
+                        Circle()
+                            .fill(index < model.quizAnswered ? Palette.lime : Color.clear)
+                            .frame(width: 6, height: 6)
+                            .overlay(
+                                Circle().strokeBorder(
+                                    index < model.quizAnswered ? Palette.ink : Palette.ink.opacity(0.26),
+                                    lineWidth: 1
+                                )
+                            )
+                    }
+                    Text("\(model.quizAnswered)/3")
+                        .font(.system(size: 8, weight: .semibold, design: .monospaced))
+                        .foregroundStyle(Palette.ink3)
+                        .padding(.leading, 2)
+                }
+                .animation(.easeOut(duration: 0.18), value: model.quizAnswered)
             }
 
             VStack(alignment: .leading, spacing: 3) {
@@ -476,18 +491,21 @@ struct AssistantView: View {
             }
 
             planQuestion(
+                1,
                 "How many days do you like?",
                 options: ["2–3 days", "4–5 days", "6+ days"],
                 current: model.quizDays
             ) { value in model.quizDays = value }
 
             planQuestion(
+                2,
                 "Your kind of holiday",
                 options: ["Slow culture", "Food first", "Outdoors", "Night owl"],
                 current: model.quizStyle
             ) { value in model.quizStyle = value }
 
             planQuestion(
+                3,
                 "A theme, or none?",
                 options: ["Imperial history", "Hutongs & coffee", "Art & design", "No theme"],
                 current: model.quizTheme
@@ -546,15 +564,43 @@ struct AssistantView: View {
     }
 
     private func planQuestion(
+        _ number: Int,
         _ label: String,
         options: [String],
         current: String?,
         select: @escaping (String) -> Void
     ) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(label)
-                .font(.system(size: 10.5, weight: .bold))
-                .foregroundStyle(Palette.ink)
+        let done = current != nil
+        return VStack(alignment: .leading, spacing: 7) {
+            HStack(spacing: 6) {
+                Text("\(number)")
+                    .font(.system(size: 7.5, weight: .bold, design: .monospaced))
+                    .foregroundStyle(done ? Palette.ink : Palette.ink3)
+                    .frame(width: 17, height: 17)
+                    .background(Circle().fill(done ? Palette.lime : Color.clear))
+                    .overlay(
+                        Circle().strokeBorder(
+                            done ? Palette.ink : Palette.ink.opacity(0.24),
+                            lineWidth: 1
+                        )
+                    )
+
+                Text(label)
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(Palette.ink)
+
+                Spacer(minLength: 0)
+
+                if done {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 7, weight: .black))
+                        .foregroundStyle(Palette.ink)
+                        .frame(width: 15, height: 15)
+                        .background(Circle().fill(Palette.lime))
+                        .overlay(Circle().strokeBorder(Palette.ink, lineWidth: 1))
+                        .transition(.scale.combined(with: .opacity))
+                }
+            }
             HStack(spacing: 5) {
                 ForEach(options, id: \.self) { option in
                     let on = current == option
@@ -571,7 +617,7 @@ struct AssistantView: View {
                             .minimumScaleFactor(0.66)
                             .padding(.horizontal, 6)
                             .frame(maxWidth: .infinity)
-                            .frame(height: 28)
+                            .frame(height: 29)
                             .background(Capsule().fill(on ? Palette.ink : Palette.paper))
                             .foregroundStyle(on ? Palette.paper : Palette.ink2)
                             .overlay(
@@ -584,6 +630,17 @@ struct AssistantView: View {
                 }
             }
         }
+        .padding(.horizontal, 9)
+        .padding(.vertical, 9)
+        .background(
+            RoundedRectangle(cornerRadius: 13, style: .continuous)
+                .fill(Palette.paperWarm)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 13, style: .continuous)
+                .strokeBorder(done ? Palette.ink.opacity(0.4) : Palette.ink.opacity(0.13), lineWidth: 1)
+        )
+        .animation(.easeOut(duration: 0.2), value: done)
     }
 
     private var planCard: some View {

@@ -1825,15 +1825,22 @@ function planBuilderHTML() {
   return `<div class="planner-card" id="plannerCard">
     <div class="planner-top">
       <span class="quiz-badge">${icon('sparkle', 10)} Trip match</span>
-      <span class="planner-count">${answered} / 3</span>
+      <span class="planner-prog" aria-label="${answered} of 3 answered">
+        ${QUIZ.map((q) => `<i class="${S.quiz[q.key] ? 'on' : ''}"></i>`).join('')}
+        <b>${answered}/3</b>
+      </span>
     </div>
     <div>
       <div class="planner-title">Build your first Beijing trip</div>
       <p class="planner-sub">Three answers and I'll set the order, the timing and the walking.</p>
     </div>
-    ${QUIZ.map((q) => `<div class="planner-q">
-      <div class="planner-label">${esc(q.label)}</div>
-      <div class="planner-opts">
+    ${QUIZ.map((q, i) => `<div class="planner-q${S.quiz[q.key] ? ' done' : ''}">
+      <div class="pq-head">
+        <span class="pq-num">${i + 1}</span>
+        <span class="planner-label">${esc(q.label)}</span>
+        <span class="pq-check">${icon('check', 8)}</span>
+      </div>
+      <div class="planner-opts" style="--cols:${q.options.length}">
         ${q.options.map((o) => `<button class="qchip ${S.quiz[q.key] === o ? 'on' : ''}" data-act="quiz" data-key="${q.key}" data-val="${esc(o)}" aria-pressed="${S.quiz[q.key] === o}">${esc(o)}</button>`).join('')}
       </div>
     </div>`).join('')}
