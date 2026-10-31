@@ -2,80 +2,79 @@ import SwiftUI
 
 struct TripView: View {
     @EnvironmentObject private var model: AppModel
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var expandedPlan = 0
-    @State private var heroIndex = 0
-    @State private var heroAutoResumeAt = Date.distantPast
-    @State private var heroAutoAdvancing = false
-    @State private var heroLastAdvance = Date()
-
-    private let heroPhotos: [(image: String, name: String, credit: String)] = [
-        ("today-hero", "Hall of Supreme Harmony", "Photo N509FZ / CC BY-SA 4.0"),
-        ("hero-2", "Forbidden City from Jingshan", "Photo EditQ / CC BY-SA 4.0"),
-        ("hero-3", "Houhai after dark", "Photo Morio / CC BY-SA 4.0"),
-        ("hero-4", "Drum Tower, 17:30 stop", "Photo Marek Śliwecki / CC BY-SA 4.0"),
-        ("hero-5", "Corner Tower in moonlight", "Photo Morio / CC BY-SA 4.0")
-    ]
+    @State private var showAddStop = false
+    @State private var showReorder = false
 
     var body: some View {
-        ScrollViewReader { proxy in
-            ScrollView(.vertical, showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 20) {
-                    header
-                    if model.planBuilt {
-                        planBanner
-                    }
-                    todaySection
-                    plansSection
-                    quizSection
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 10)
-                .padding(.bottom, 130)
-            }
-            .onChange(of: model.quizAnswered) { _, count in
-                guard count == 3 else { return }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
-                    withAnimation(.easeInOut(duration: 0.35)) {
-                        proxy.scrollTo("quiz-result", anchor: .center)
-                    }
-                }
-            }
-            .onAppear {
-                #if DEBUG
-                guard ProcessInfo.processInfo.arguments.contains("-tripbottom") else { return }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) {
-                    proxy.scrollTo("quiz-result", anchor: .bottom)
-                }
-                #endif
-            }
-        }
-        .onChange(of: heroIndex) { _, _ in
-            if heroAutoAdvancing {
-                heroAutoAdvancing = false
+        Group {
+            if model.planBuilt && model.tripLive {
+                LiveTripView()
             } else {
-                heroAutoResumeAt = Date().addingTimeInterval(8)
+                editor
             }
         }
-        .task {
-            guard !reduceMotion else { return }
-            while !Task.isCancelled {
-                try? await Task.sleep(for: .seconds(1))
-                if Task.isCancelled { return }
-                let now = Date()
-                guard !heroAutoAdvancing,
-                      now >= heroAutoResumeAt,
-                      now.timeIntervalSince(heroLastAdvance) >= 4.5 else { continue }
-                heroLastAdvance = now
-                heroAutoAdvancing = true
-                withAnimation(.easeInOut(duration: 0.5)) {
-                    heroIndex = (heroIndex + 1) % heroPhotos.count
-                }
-            }
+        .sheet(isPresented: $showAddStop) {
+            AddStopSheet()
+                .environmentObject(model)
+                .presentationDetents([.medium, .large])
+                .presentationCornerRadius(28)
+                .presentationBackground(Palette.bg)
         }
+        .sheet(isPresented: $showReorder) {
+            ReorderSheet()
+                .environmentObject(model)
+                .presentationDetents([.medium, .large])
+                .presentationCornerRadius(28)
+                .presentationBackground(Palette.bg)
+        }
+        .onAppear { model.ensureTripDays() }
     }
 
-    // MARK: Header
+    // MARK: Editor
+
+    private var editor: some View {
+        ScrollViewReader { proxy in
+            ZStack(alignment: .bottom) {
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 18) {
+                        header
+                        if model.planBuilt {
+                            planBanner
+                        }
+                        routeSection
+                            .id("trip-route")
+                        daysSection {
+                            withAnimation(.easeInOut(duration: 0.3)) {
+                                proxy.scrollTo("trip-route", anchor: .top)
+                            }
+                        }
+                        quizSection
+                            .id("trip-quiz")
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 10)
+                    .padding(.bottom, 210)
+                }
+
+                if model.planBuilt {
+                    tripCTA
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 80)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+            }
+            #if DEBUG
+            .onAppear {
+                guard ProcessInfo.processInfo.arguments.contains("-tripbottom") else { return }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.1) {
+                    withAnimation(.easeInOut(duration: 0.4)) {
+                        proxy.scrollTo("trip-quiz", anchor: .bottom)
+                    }
+                }
+            }
+            #endif
+        }
+    }
 
     private var header: some View {
         HStack(alignment: .top) {
@@ -92,7 +91,7 @@ struct TripView: View {
                         .foregroundStyle(Palette.ink)
                         .lineLimit(1)
                         .minimumScaleFactor(0.85)
-                    TagView(text: "\(planDayCount) days · \(planDayCount - 1) nights", style: .accent)
+                    TagView(text: "\(planDayCount) days · \(max(0, planDayCount - 1)) nights", style: .accent)
                 }
                 Text("10/15 – 10/\(14 + planDayCount) · 2 travelers")
                     .font(.system(size: 10.5, weight: .medium, design: .monospaced))
@@ -101,24 +100,15 @@ struct TripView: View {
             Spacer()
             VStack(alignment: .trailing, spacing: 8) {
                 AvatarView(name: "W", size: 36, fill: Palette.lime)
-                Text("Today · Day 1")
+                Text(model.planBuilt ? "Day \(model.tripDay + 1) of \(planDayCount)" : "Today · Day 1")
                     .font(.system(size: 9, weight: .bold, design: .monospaced))
                     .foregroundStyle(Palette.ink2)
             }
         }
     }
 
-    // MARK: Plan data
-
     private var planDayCount: Int {
-        model.planBuilt ? model.planLength : 4
-    }
-
-    private var tripPlanDays: [TripPlanDay] {
-        if planDayCount <= baseTripPlanDays.count {
-            return Array(baseTripPlanDays.prefix(planDayCount))
-        }
-        return baseTripPlanDays + extraTripPlanDays
+        model.planBuilt ? model.tripDayCount : 4
     }
 
     private var planBanner: some View {
@@ -169,210 +159,563 @@ struct TripView: View {
         .buttonStyle(PressableButtonStyle(scale: 0.99))
     }
 
-    // MARK: Today
+    // MARK: Route
 
-    private var todaySection: some View {
+    private var routeSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            SectionHeading(title: "Today at a glance", icon: "sun.max.fill", trailing: "10/15 · Wed")
+            SectionHeading(title: "Your route", icon: "point.topleft.down.to.point.bottomright.curvepath", trailing: "Ask Pico") {
+                model.openAssistant("Trip · Adjust the plan")
+            }
 
-            VStack(spacing: 0) {
-                ZStack(alignment: .topLeading) {
-                    TabView(selection: $heroIndex) {
-                        ForEach(Array(heroPhotos.enumerated()), id: \.offset) { index, photo in
-                            GeometryReader { geo in
-                                Image(photo.image)
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(width: geo.size.width, height: 196)
-                                    .clipped()
-                            }
-                            .tag(index)
+            if model.planBuilt, let day = model.currentTripDay {
+                routeCard(day)
+            } else {
+                emptyRouteCard
+            }
+        }
+    }
+
+    private var emptyRouteCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("No route yet")
+                .font(.system(size: 17, weight: .heavy))
+                .foregroundStyle(Palette.ink)
+            Text("Answer three quick questions and Pico will lay out the days, timing and stops.")
+                .font(.system(size: 10.5, weight: .medium))
+                .foregroundStyle(Palette.ink2)
+                .fixedSize(horizontal: false, vertical: true)
+            LuciaLimeButton(title: "Plan with Pico", icon: "sparkles", wide: true) {
+                model.openAssistant("New trip · Planning with Pico")
+            }
+        }
+        .padding(14)
+        .background(RoundedRectangle(cornerRadius: 20, style: .continuous).fill(Palette.paper))
+        .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).strokeBorder(Palette.ink, lineWidth: 1.3))
+    }
+
+    private func routeCard(_ day: TripDay) -> some View {
+        VStack(spacing: 0) {
+            dayChips
+
+            ZStack(alignment: .topTrailing) {
+                TripRouteMap(
+                    stops: model.currentStops,
+                    editing: model.tripEdit,
+                    selectedID: model.selectedStopID,
+                    liveStop: nil,
+                    onTap: { stop in
+                        Haptics.tap()
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.82)) {
+                            model.selectedStopID = model.selectedStopID == stop.id ? nil : stop.id
                         }
+                    },
+                    onMove: { id, x, y in
+                        model.moveTripStop(id, toX: x, toY: y)
+                    },
+                    onMoveEnd: {
+                        model.didFinishTripStopMove()
                     }
-                    .tabViewStyle(.page(indexDisplayMode: .never))
-                    .frame(height: 196)
-                    .accessibilityLabel("Today's photos")
-                    .accessibilityHint("Swipe left or right for more photos")
+                )
+                .frame(height: 188)
+                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .strokeBorder(Palette.ink, lineWidth: 1.2)
+                )
 
-                    LinearGradient(
-                        colors: [
-                            Palette.ink.opacity(0.24),
-                            .clear,
-                            .clear,
-                            Palette.ink.opacity(0.48)
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                    .frame(height: 196)
-                    .allowsHitTesting(false)
+                mapTools
+                    .padding(8)
+            }
+            .padding(.horizontal, 12)
 
-                    HStack(alignment: .top) {
-                        HStack(spacing: 5) {
-                            Image(systemName: "sun.max.fill")
-                                .font(.system(size: 11))
-                                .foregroundStyle(Palette.accent)
-                            Text("22°")
-                                .font(.system(size: 12, weight: .black))
-                            Text("Clear · 11–22°")
-                                .font(.system(size: 9.5, weight: .medium))
-                                .opacity(0.7)
-                        }
-                        .foregroundStyle(Palette.ink)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 7)
-                        .background(Capsule().fill(Palette.paper))
-                        .overlay(Capsule().strokeBorder(Palette.ink, lineWidth: 1.1))
+            VStack(alignment: .leading, spacing: 10) {
+                head(day)
 
-                        Spacer()
-
-                        TagView(text: "Day 1 of \(planDayCount)", style: .dark)
-                    }
-                    .padding(12)
-                    .allowsHitTesting(false)
-
-                    VStack {
-                        Spacer()
-                        HStack(alignment: .bottom) {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(heroPhotos[heroIndex].name.uppercased())
-                                    .font(.system(size: 8, weight: .heavy, design: .monospaced))
-                                    .tracking(0.5)
-                                    .foregroundStyle(Palette.paper)
-                                Text(heroPhotos[heroIndex].credit.uppercased())
-                                    .font(.system(size: 6.5, weight: .semibold, design: .monospaced))
-                                    .tracking(0.4)
-                                    .foregroundStyle(Palette.paper.opacity(0.74))
-                            }
-                            .shadow(color: Palette.ink.opacity(0.55), radius: 2, y: 1)
-
-                            Spacer()
-
-                            HStack(spacing: 6) {
-                                Text("\(heroIndex + 1) / \(heroPhotos.count)")
-                                    .font(.system(size: 7.5, weight: .bold, design: .monospaced))
-                                    .foregroundStyle(Palette.paper.opacity(0.84))
-                                    .shadow(color: Palette.ink.opacity(0.5), radius: 2, y: 1)
-                                HStack(spacing: 3) {
-                                    ForEach(heroPhotos.indices, id: \.self) { i in
-                                        Capsule()
-                                            .fill(i == heroIndex ? Palette.paper : Palette.paper.opacity(0.45))
-                                            .frame(width: i == heroIndex ? 13 : 5, height: 5)
-                                            .animation(.easeInOut(duration: 0.2), value: heroIndex)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.bottom, 9)
-                    .frame(height: 196, alignment: .bottom)
-                    .allowsHitTesting(false)
+                if showsAIBar {
+                    aiBar
+                        .transition(.opacity.combined(with: .move(edge: .top)))
                 }
-                .frame(height: 196)
-                .clipped()
 
-                HStack(alignment: .center, spacing: 12) {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Central Axis · Palace & hutongs")
-                            .font(.system(size: 17, weight: .heavy))
-                            .foregroundStyle(Palette.ink)
-                        HStack(spacing: 12) {
-                            Label("6 stops", systemImage: "mappin.and.ellipse")
-                            Label("4.2 km", systemImage: "figure.walk")
-                            Label("~5 hr", systemImage: "clock")
-                        }
-                        .font(.system(size: 9.5, weight: .semibold, design: .monospaced))
-                        .foregroundStyle(Palette.ink2)
+                VStack(spacing: 2) {
+                    ForEach(Array(model.currentStops.enumerated()), id: \.element.id) { index, stop in
+                        stopRow(index: index, stop: stop)
                     }
-                    Spacer()
+                }
+
+                Text(day.note)
+                    .font(.system(size: 9.5, weight: .medium))
+                    .foregroundStyle(Palette.ink2)
+                    .lineSpacing(2)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 7)
+                    .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(Palette.limeSoft))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 9, style: .continuous)
+                            .strokeBorder(Palette.ink.opacity(0.24), lineWidth: 1)
+                    )
+
+                HStack(spacing: 6) {
                     Button {
                         Haptics.tap()
+                        showAddStop = true
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "plus")
+                                .font(.system(size: 9.5, weight: .bold))
+                            Text("Add a stop")
+                                .font(.system(size: 10, weight: .semibold))
+                        }
+                        .foregroundStyle(Palette.ink)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 40)
+                        .background(Capsule().fill(Palette.paperWarm))
+                        .overlay(Capsule().strokeBorder(Palette.ink.opacity(0.65), style: StrokeStyle(lineWidth: 1.1, dash: [4, 3])))
+                    }
+                    .buttonStyle(PressableButtonStyle())
+
+                    Button {
+                        Haptics.tap()
+                        model.pendingSimilar = true
                         withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
                             model.tab = .plan
                         }
                     } label: {
-                        Image(systemName: "arrow.up.right")
-                            .font(.system(size: 14, weight: .black))
-                            .foregroundStyle(Palette.ink)
-                            .frame(width: 40, height: 40)
-                            .background(Circle().fill(Palette.lime))
-                            .overlay(Circle().strokeBorder(Palette.ink, lineWidth: 1.3))
-                            .compositingGroup()
-                            .shadow(color: Palette.ink.opacity(0.16), radius: 0, x: 0, y: 2)
+                        HStack(spacing: 4) {
+                            Image(systemName: "square.stack.3d.up.fill")
+                                .font(.system(size: 9.5, weight: .bold))
+                            Text("Similar routes")
+                                .font(.system(size: 10, weight: .bold))
+                        }
+                        .foregroundStyle(Palette.ink)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 40)
+                        .background(Capsule().fill(Palette.lime))
+                        .overlay(Capsule().strokeBorder(Palette.ink, lineWidth: 1.2))
                     }
                     .buttonStyle(PressableButtonStyle())
                 }
-                .padding(.horizontal, 15)
-                .padding(.vertical, 14)
-                .background(Palette.paper)
-
-                Rectangle()
-                    .fill(Palette.ink.opacity(0.9))
-                    .frame(height: 1.1)
-
-                HStack(spacing: 0) {
-                    todayFact(icon: "ticket", title: "Forbidden City", detail: "09:00 · Meridian") {
-                        model.openAssistant("Ticket · Forbidden City 10/15 09:00")
-                    }
-                    factDivider
-                    todayFact(icon: "sun.max", title: "11° – 22°", detail: "11°C day–night") {
-                        model.openAssistant("Weather · Beijing 10/15")
-                    }
-                    factDivider
-                    todayFact(icon: "clock", title: "Sunset 17:18", detail: "Wanchun Pavilion") {
-                        model.openAssistant("Trip · Sunset today 17:18")
-                    }
-                }
-                .background(Palette.paperWarm)
             }
-            .background(Palette.paper)
-            .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 26, style: .continuous)
-                    .strokeBorder(Palette.ink, lineWidth: 1.4)
-            )
-            .compositingGroup()
-            .shadow(color: Palette.ink.opacity(0.15), radius: 0, x: 0, y: 4)
-            .shadow(color: Palette.ink.opacity(0.06), radius: 18, x: 0, y: 12)
+            .padding(.horizontal, 12)
+            .padding(.top, 12)
+            .padding(.bottom, 13)
+        }
+        .background(RoundedRectangle(cornerRadius: 24, style: .continuous).fill(Palette.paper))
+        .overlay(
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .strokeBorder(Palette.ink, lineWidth: 1.4)
+        )
+        .compositingGroup()
+        .shadow(color: Palette.ink.opacity(0.15), radius: 0, x: 0, y: 4)
+        .shadow(color: Palette.ink.opacity(0.06), radius: 20, x: 0, y: 12)
+    }
+
+    private var dayChips: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 5) {
+                ForEach(model.tripDays.indices, id: \.self) { index in
+                    let active = model.tripDay == index
+                    Button {
+                        model.selectTripDay(index)
+                    } label: {
+                        HStack(spacing: 4) {
+                            Text("D\(index + 1)")
+                                .font(.system(size: 10.5, weight: .black, design: .monospaced))
+                            Text(model.tripDays[index].date)
+                                .font(.system(size: 8, weight: .semibold, design: .monospaced))
+                                .opacity(active ? 0.75 : 0.55)
+                        }
+                        .foregroundStyle(active ? Palette.paper : Palette.ink)
+                        .padding(.horizontal, 10)
+                        .frame(height: 28)
+                        .background(Capsule().fill(active ? Palette.ink : Palette.paperWarm))
+                        .overlay(Capsule().strokeBorder(Palette.ink, lineWidth: active ? 1.2 : 0.9))
+                    }
+                    .buttonStyle(PressableButtonStyle(scale: 0.95))
+                    .accessibilityLabel("Day \(index + 1), \(model.tripDays[index].date)")
+                }
+            }
+            .padding(.horizontal, 10)
+        }
+        .padding(.top, 10)
+        .padding(.bottom, 8)
+    }
+
+    private var mapTools: some View {
+        HStack(spacing: 5) {
+            Button {
+                model.toggleTripEdit()
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: model.tripEdit ? "checkmark" : "hand.draw")
+                        .font(.system(size: 8.5, weight: .bold))
+                    Text(model.tripEdit ? "Done" : "Edit pins")
+                        .font(.system(size: 9.5, weight: .semibold))
+                }
+                .foregroundStyle(Palette.ink)
+                .padding(.horizontal, 9)
+                .frame(height: 28)
+                .background(Capsule().fill(model.tripEdit ? Palette.lime : Palette.paper))
+                .overlay(Capsule().strokeBorder(Palette.ink, lineWidth: 1.1))
+                .compositingGroup()
+                .shadow(color: model.tripEdit ? Palette.ink.opacity(0.14) : .clear, radius: 0, x: 0, y: 2)
+            }
+            .buttonStyle(PressableButtonStyle(scale: 0.95))
+
+            Button {
+                Haptics.tap()
+                showReorder = true
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "arrow.up.arrow.down")
+                        .font(.system(size: 8.5, weight: .bold))
+                    Text("Reorder")
+                        .font(.system(size: 9.5, weight: .semibold))
+                }
+                .foregroundStyle(Palette.ink)
+                .padding(.horizontal, 9)
+                .frame(height: 28)
+                .background(Capsule().fill(Palette.paper))
+                .overlay(Capsule().strokeBorder(Palette.ink, lineWidth: 1.1))
+            }
+            .buttonStyle(PressableButtonStyle(scale: 0.95))
         }
     }
 
-    private func todayFact(icon: String, title: String, detail: String, action: @escaping () -> Void) -> some View {
+    private func head(_ day: TripDay) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 5) {
+                    Text(String(format: "DAY %02d", day.day))
+                        .font(.system(size: 7.5, weight: .bold, design: .monospaced))
+                        .tracking(1)
+                        .foregroundStyle(Palette.ink3)
+                    TagView(text: model.tripDay == 0 ? "Today" : day.tag, style: day.tagStyle)
+                }
+                Text(day.title)
+                    .font(.system(size: 18, weight: .heavy))
+                    .tracking(-0.3)
+                    .foregroundStyle(Palette.ink)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                Text(metaText(day))
+                    .font(.system(size: 9, weight: .medium, design: .monospaced))
+                    .foregroundStyle(Palette.ink2)
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 4)
+            savedPill
+        }
+    }
+
+    private var savedPill: some View {
+        HStack(spacing: 3) {
+            Image(systemName: model.tripSaved ? (model.tripDirty ? "exclamationmark.circle" : "checkmark.circle") : "pencil.circle")
+                .font(.system(size: 8, weight: .bold))
+            Text(model.tripSaved ? (model.tripDirty ? "Unsaved" : "Saved") : "Draft")
+                .font(.system(size: 8, weight: .bold, design: .monospaced))
+        }
+        .foregroundStyle(model.tripDirty ? Palette.warn : (model.tripSaved ? Palette.ok : Palette.ink2))
+        .padding(.horizontal, 7)
+        .frame(height: 21)
+        .background(Capsule().fill(model.tripDirty ? Palette.accentSoft : (model.tripSaved ? Palette.mintSoft : Palette.paperWarm)))
+        .overlay(Capsule().strokeBorder(Palette.ink.opacity(0.35), lineWidth: 0.8))
+    }
+
+    private var showsAIBar: Bool {
+        model.aiSuggestionVisible && model.tripDay == 0 && !model.tripEdit
+    }
+
+    private var aiBar: some View {
+        HStack(spacing: 7) {
+            Image(systemName: "sparkles")
+                .font(.system(size: 9.5, weight: .bold))
+                .foregroundStyle(Palette.ink)
+                .frame(width: 23, height: 23)
+                .background(Circle().fill(Palette.lime))
+                .overlay(Circle().strokeBorder(Palette.ink, lineWidth: 0.9))
+            VStack(alignment: .leading, spacing: 1) {
+                Text("Pico: move Shichahai to 13:00")
+                    .font(.system(size: 9.5, weight: .bold))
+                    .foregroundStyle(Palette.ink)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.82)
+                Text("1.2 km less · one backtrack fewer")
+                    .font(.system(size: 7.5, weight: .medium, design: .monospaced))
+                    .foregroundStyle(Palette.ink2)
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 2)
+            Button {
+                model.applyRouteSuggestion()
+            } label: {
+                Text("Apply")
+                    .font(.system(size: 9.5, weight: .bold))
+                    .foregroundStyle(Palette.paper)
+                    .padding(.horizontal, 10)
+                    .frame(height: 25)
+                    .background(Capsule().fill(Palette.ink))
+            }
+            .buttonStyle(PressableButtonStyle())
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(Palette.limeSoft)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(Palette.ink, lineWidth: 1)
+        )
+    }
+
+    private let stopChipColors: [Color] = [Palette.mustard, Palette.pink, Palette.mint, Palette.periwinkle, Palette.lime, Palette.sky]
+
+    private func stopRow(index: Int, stop: RouteStop) -> some View {
+        let selected = model.selectedStopID == stop.id
+        let last = index == model.currentStops.count - 1
+        return HStack(spacing: 9) {
+            Text(stop.time)
+                .font(.system(size: 9.5, weight: .semibold, design: .monospaced))
+                .foregroundStyle(Palette.ink3)
+                .frame(width: 37, alignment: .leading)
+
+            ZStack {
+                Circle()
+                    .fill(stopChipColors[index % stopChipColors.count])
+                    .frame(width: 23, height: 23)
+                Circle()
+                    .strokeBorder(Palette.ink, lineWidth: 1.1)
+                    .frame(width: 23, height: 23)
+                Text("\(index + 1)")
+                    .font(.system(size: 9.5, weight: .black))
+                    .foregroundStyle(Palette.ink)
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 5) {
+                    Text(stop.name)
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(Palette.ink)
+                        .lineLimit(1)
+                    if !model.tripEdit, let tag = stop.tag, !tag.isEmpty {
+                        TagView(text: tag, style: stop.tagStyle)
+                    }
+                }
+                Text(stop.duration + (last ? "" : " · 8 min walk"))
+                    .font(.system(size: 8.6, weight: .medium, design: .monospaced))
+                    .foregroundStyle(Palette.ink3)
+                    .lineLimit(1)
+            }
+
+            Spacer(minLength: 4)
+
+            if model.tripEdit {
+                editControls(index: index, stop: stop)
+            } else {
+                Image(systemName: selected ? "arrow.up.right" : "line.3.horizontal")
+                    .font(.system(size: selected ? 9 : 10, weight: .bold))
+                    .foregroundStyle(selected ? Palette.ink : Palette.ink3.opacity(0.6))
+            }
+        }
+        .padding(.vertical, 6)
+        .padding(.horizontal, 6)
+        .background(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .fill(selected ? Palette.limeSoft : Color.clear)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(selected ? Palette.ink.opacity(0.5) : Color.clear, lineWidth: 1)
+        )
+        .contentShape(Rectangle())
+        .onTapGesture {
+            guard !model.tripEdit else { return }
+            Haptics.tap()
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.82)) {
+                model.selectedStopID = selected ? nil : stop.id
+            }
+        }
+    }
+
+    private func editControls(index: Int, stop: RouteStop) -> some View {
+        HStack(spacing: 4) {
+            miniControl(icon: "chevron.up", disabled: index == 0) {
+                model.shiftTripStop(stop.id, up: true)
+            }
+            miniControl(icon: "chevron.down", disabled: index == model.currentStops.count - 1) {
+                model.shiftTripStop(stop.id, up: false)
+            }
+            miniControl(icon: "trash", disabled: model.currentStops.count <= 2) {
+                model.deleteTripStop(stop.id)
+            }
+        }
+    }
+
+    private func miniControl(icon: String, disabled: Bool, action: @escaping () -> Void) -> some View {
         Button {
+            action()
+        } label: {
+            Image(systemName: icon)
+                .font(.system(size: 8, weight: .black))
+                .foregroundStyle(disabled ? Palette.ink3.opacity(0.4) : Palette.ink)
+                .frame(width: 23, height: 23)
+                .background(Circle().fill(Palette.paper))
+                .overlay(Circle().strokeBorder(disabled ? Palette.ink.opacity(0.16) : Palette.ink.opacity(0.7), lineWidth: 1))
+        }
+        .buttonStyle(PressableButtonStyle(scale: 0.92))
+        .disabled(disabled)
+        .accessibilityLabel(icon == "trash" ? "Remove stop" : "Move stop")
+    }
+
+    private func metaText(_ day: TripDay) -> String {
+        var parts = day.meta.components(separatedBy: " · ")
+        guard !parts.isEmpty else { return day.meta }
+        parts[0] = "\(model.currentStops.count) stops"
+        return parts.joined(separator: " · ")
+    }
+
+    // MARK: CTA
+
+    private var tripCTA: some View {
+        let saved = model.tripSaved && !model.tripDirty
+        return HStack(spacing: 10) {
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 5) {
+                    Circle()
+                        .fill(saved ? Palette.ok : (model.tripDirty ? Palette.warn : Palette.ink3))
+                        .frame(width: 6, height: 6)
+                    Text(model.tripSaved ? (model.tripDirty ? "Unsaved changes" : "Plan saved") : "Draft plan")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(Palette.ink)
+                }
+                Text("\(model.currentStops.count) stops · Day \(model.tripDay + 1) of \(planDayCount)")
+                    .font(.system(size: 8.5, weight: .medium, design: .monospaced))
+                    .foregroundStyle(Palette.ink3)
+            }
+
+            Spacer(minLength: 4)
+
+            Button {
+                if saved {
+                    model.startTrip()
+                } else {
+                    model.saveTripPlan()
+                }
+            } label: {
+                HStack(spacing: 5) {
+                    Image(systemName: saved ? "figure.walk" : "checkmark")
+                        .font(.system(size: 10, weight: .black))
+                    Text(saved ? "Start trip" : "Save plan")
+                        .font(.system(size: 12, weight: .bold))
+                    Image(systemName: "arrow.right")
+                        .font(.system(size: 9, weight: .black))
+                }
+                .foregroundStyle(saved ? Palette.ink : Palette.paper)
+                .padding(.horizontal, 15)
+                .frame(height: 42)
+                .background(Capsule().fill(saved ? Palette.lime : Palette.ink))
+                .overlay(Capsule().strokeBorder(Palette.ink, lineWidth: 1.2))
+                .compositingGroup()
+                .shadow(color: Palette.ink.opacity(0.18), radius: 0, x: 0, y: 2.5)
+            }
+            .buttonStyle(PressableButtonStyle())
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(RoundedRectangle(cornerRadius: 23, style: .continuous).fill(Palette.paper))
+        .overlay(
+            RoundedRectangle(cornerRadius: 23, style: .continuous)
+                .strokeBorder(Palette.ink, lineWidth: 1.3)
+        )
+        .compositingGroup()
+        .shadow(color: Palette.ink.opacity(0.16), radius: 0, x: 0, y: 4)
+        .shadow(color: Palette.ink.opacity(0.08), radius: 22, x: 0, y: 10)
+        .animation(.spring(response: 0.35, dampingFraction: 0.86), value: saved)
+    }
+
+    // MARK: Your days
+
+    @ViewBuilder
+    private func daysSection(scrollToRoute: @escaping () -> Void) -> some View {
+        if model.planBuilt, !model.tripDays.isEmpty {
+            VStack(alignment: .leading, spacing: 10) {
+                SectionHeading(title: "Your days", icon: "calendar", trailing: "\(planDayCount) days")
+
+                VStack(spacing: 7) {
+                    ForEach(Array(model.tripDays.enumerated()), id: \.element.id) { index, day in
+                        dayRow(day, index: index) {
+                            model.selectTripDay(index)
+                            scrollToRoute()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func dayRow(_ day: TripDay, index: Int, action: @escaping () -> Void) -> some View {
+        let active = model.tripDay == index
+        return Button {
             Haptics.tap()
             action()
         } label: {
-            HStack(spacing: 6) {
-                Image(systemName: icon)
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(Palette.ink)
-                    .frame(width: 13)
-                VStack(alignment: .leading, spacing: 1.5) {
-                    Text(title)
-                        .font(.system(size: 9, weight: .bold))
+            HStack(spacing: 10) {
+                VStack(spacing: 1) {
+                    Text(day.date)
+                        .font(.system(size: 14, weight: .black))
+                        .tracking(-0.4)
+                        .foregroundStyle(Palette.ink)
+                    Text(day.week)
+                        .font(.system(size: 8, weight: .semibold, design: .monospaced))
+                        .foregroundStyle(Palette.ink3)
+                }
+                .frame(width: 44)
+                .overlay(alignment: .trailing) {
+                    Rectangle()
+                        .fill(Palette.ink.opacity(0.15))
+                        .frame(width: 1, height: 30)
+                }
+
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 5) {
+                        Text(String(format: "DAY %02d", day.day))
+                            .font(.system(size: 7.5, weight: .bold, design: .monospaced))
+                            .tracking(0.8)
+                            .foregroundStyle(Palette.ink3)
+                        TagView(text: index == 0 ? "Today" : day.tag, style: day.tagStyle)
+                    }
+                    Text(day.title)
+                        .font(.system(size: 12.5, weight: .bold))
                         .foregroundStyle(Palette.ink)
                         .lineLimit(1)
-                        .minimumScaleFactor(0.82)
-                    Text(detail)
-                        .font(.system(size: 7.5, weight: .medium, design: .monospaced))
+                    Text("\(day.stops.count) stops · \(day.meta.components(separatedBy: " · ").dropFirst().joined(separator: " · "))")
+                        .font(.system(size: 8, weight: .medium, design: .monospaced))
                         .foregroundStyle(Palette.ink3)
                         .lineLimit(1)
                 }
-                Spacer(minLength: 0)
-            }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 9)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-    }
 
-    private var factDivider: some View {
-        Rectangle()
-            .fill(Palette.ink.opacity(0.16))
-            .frame(width: 1, height: 28)
+                Spacer(minLength: 4)
+
+                Image(systemName: active ? "checkmark" : "chevron.right")
+                    .font(.system(size: 8.5, weight: .black))
+                    .foregroundStyle(Palette.ink)
+                    .frame(width: 25, height: 25)
+                    .background(Circle().fill(active ? Palette.lime : Palette.paperWarm))
+                    .overlay(Circle().strokeBorder(Palette.ink, lineWidth: 1))
+            }
+            .padding(.horizontal, 11)
+            .padding(.vertical, 9)
+            .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(active ? Palette.limeSoft : Palette.paper))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .strokeBorder(Palette.ink, lineWidth: active ? 1.4 : 1.1)
+            )
+            .compositingGroup()
+            .shadow(color: Palette.ink.opacity(0.09), radius: 0, x: 0, y: 2)
+        }
+        .buttonStyle(PressableButtonStyle(scale: 0.99))
     }
 
     // MARK: Travel style check
@@ -463,24 +806,43 @@ struct TripView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 4)
-            Button {
-                Haptics.tap()
-                withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
-                    model.tab = .plan
+            if model.planBuilt {
+                Button {
+                    Haptics.tap()
+                    model.openAssistant("Trip · Adjust the plan")
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 8, weight: .black))
+                        Text("Adjust")
+                            .font(.system(size: 9.5, weight: .bold))
+                    }
+                    .foregroundStyle(Palette.paper)
+                    .padding(.horizontal, 10)
+                    .frame(height: 29)
+                    .background(Capsule().fill(Palette.ink))
                 }
-            } label: {
-                HStack(spacing: 4) {
-                    Image(systemName: "map")
-                        .font(.system(size: 8, weight: .black))
-                    Text(persona.fit)
-                        .font(.system(size: 9.5, weight: .bold))
+                .buttonStyle(PressableButtonStyle(scale: 0.95))
+            } else {
+                Button {
+                    Haptics.tap()
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                        model.tab = .plan
+                    }
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "map")
+                            .font(.system(size: 8, weight: .black))
+                        Text(persona.fit)
+                            .font(.system(size: 9.5, weight: .bold))
+                    }
+                    .foregroundStyle(Palette.paper)
+                    .padding(.horizontal, 10)
+                    .frame(height: 29)
+                    .background(Capsule().fill(Palette.ink))
                 }
-                .foregroundStyle(Palette.paper)
-                .padding(.horizontal, 10)
-                .frame(height: 29)
-                .background(Capsule().fill(Palette.ink))
+                .buttonStyle(PressableButtonStyle(scale: 0.95))
             }
-            .buttonStyle(PressableButtonStyle(scale: 0.95))
         }
         .padding(9)
         .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Palette.paperWarm))
@@ -534,289 +896,880 @@ struct TripView: View {
             }
         }
     }
+}
 
-    // MARK: Plans
+// MARK: - Live trip
 
-    private var plansSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            SectionHeading(title: "Your days", icon: "calendar", trailing: "Ask Pico") {
-                model.openAssistant("Trip · Adjust the plan")
-            }
+private struct LiveTripView: View {
+    @EnvironmentObject private var model: AppModel
 
-            VStack(spacing: 9) {
-                ForEach(Array(tripPlanDays.enumerated()), id: \.element.id) { index, plan in
-                    planCard(plan, index: index)
+    private var stops: [RouteStop] { model.currentStops }
+    private var day: TripDay? { model.currentTripDay }
+    private var visited: Int { min(model.liveStop, stops.count) }
+    private var done: Bool { model.liveStop >= stops.count }
+    private var current: RouteStop? {
+        guard !done, stops.indices.contains(model.liveStop) else { return nil }
+        return stops[model.liveStop]
+    }
+    private var next: RouteStop? {
+        guard !done, stops.indices.contains(model.liveStop + 1) else { return nil }
+        return stops[model.liveStop + 1]
+    }
+    private var progress: Double {
+        stops.isEmpty ? 0 : Double(visited) / Double(stops.count)
+    }
+    private var walked: String {
+        String(format: "%.1f", Double(visited) * 0.7)
+    }
+    private var finishTime: String {
+        AppModel.plusMinutes(stops.last?.time ?? "17:30", 60)
+    }
+    private var clock: String {
+        if let current { return model.liveClock(current) }
+        if let last = stops.last { return AppModel.plusMinutes(last.time, 30) }
+        return "15:42"
+    }
+
+    var body: some View {
+        ZStack(alignment: .bottom) {
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 14) {
+                    header
+                    summaryCard
+                    mapCard
+                    if let current {
+                        nowCard(current)
+                        if let next {
+                            nextCard(next)
+                        } else {
+                            lastStopCard
+                        }
+                    } else {
+                        doneCard
+                    }
                 }
+                .padding(.horizontal, 20)
+                .padding(.top, 10)
+                .padding(.bottom, 190)
             }
+
+            liveCTA
+                .padding(.horizontal, 16)
+                .padding(.bottom, 80)
         }
     }
 
-    private func planCard(_ plan: TripPlanDay, index: Int) -> some View {
-        let expanded = expandedPlan == index
-        return VStack(spacing: 0) {
-            Button {
-                Haptics.tap()
-                withAnimation(.spring(response: 0.32, dampingFraction: 0.86)) {
-                    expandedPlan = expanded ? -1 : index
-                }
-            } label: {
-                HStack(spacing: 10) {
-                    VStack(spacing: 2) {
-                        Text(plan.date)
-                            .font(.system(size: 16, weight: .black))
-                            .tracking(-0.4)
-                            .foregroundStyle(Palette.ink)
-                        Text(plan.week)
-                            .font(.system(size: 8.5, weight: .semibold, design: .monospaced))
-                            .foregroundStyle(Palette.ink3)
-                    }
-                    .frame(width: 48)
-                    .overlay(alignment: .trailing) {
-                        Rectangle()
-                            .fill(Palette.ink.opacity(0.16))
-                            .frame(width: 1, height: 36)
-                            .offset(x: 5)
-                    }
-
-                    VStack(alignment: .leading, spacing: 3) {
-                        HStack(spacing: 5) {
-                            Text(String(format: "DAY %02d", plan.day))
-                                .font(.system(size: 7.5, weight: .bold, design: .monospaced))
-                                .tracking(1)
-                                .foregroundStyle(Palette.ink3)
-                            TagView(text: plan.tag, style: plan.tagStyle)
-                        }
-                        Text(plan.title)
-                            .font(.system(size: 13.5, weight: .bold))
-                            .tracking(-0.2)
-                            .foregroundStyle(Palette.ink)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.85)
-                        Text(plan.meta)
-                            .font(.system(size: 8.5, weight: .medium, design: .monospaced))
-                            .foregroundStyle(Palette.ink2)
-                            .lineLimit(1)
-                    }
-
-                    Spacer(minLength: 4)
-
-                    Image(systemName: "chevron.right")
-                        .font(.system(size: 9, weight: .black))
+    private var header: some View {
+        HStack(alignment: .top) {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 6) {
+                    LiveDot()
+                    Text("LIVE TRIP")
+                        .font(.system(size: 9, weight: .bold, design: .monospaced))
+                        .tracking(1.4)
                         .foregroundStyle(Palette.ink)
-                        .frame(width: 26, height: 26)
-                        .background(Circle().fill(expanded ? Palette.lime : Palette.paperWarm))
-                        .overlay(Circle().strokeBorder(Palette.ink, lineWidth: 1))
-                        .rotationEffect(.degrees(expanded ? 90 : 0))
+                    StickerLabel(text: "DAY \(String(format: "%02d", day?.day ?? 1))", fill: Palette.accentSoft, rotation: 2)
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 11)
-                .contentShape(Rectangle())
+                Text(day?.shortTitle ?? "Today's route")
+                    .font(.system(size: 28, weight: .black))
+                    .tracking(-0.6)
+                    .foregroundStyle(Palette.ink)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+                Text("\(day?.date ?? "10/15") \(day?.week ?? "Wed") · Day \(model.tripDay + 1) of \(model.tripDayCount) · 2 travelers")
+                    .font(.system(size: 9, weight: .medium, design: .monospaced))
+                    .foregroundStyle(Palette.ink2)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
             }
-            .buttonStyle(.plain)
+            Spacer(minLength: 6)
+            Button {
+                model.endLiveTrip()
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 8, weight: .black))
+                    Text("End")
+                        .font(.system(size: 10, weight: .bold))
+                }
+                .foregroundStyle(Palette.ink)
+                .padding(.horizontal, 10)
+                .frame(height: 30)
+                .background(Capsule().fill(Palette.paper))
+                .overlay(Capsule().strokeBorder(Palette.ink, lineWidth: 1.1))
+            }
+            .buttonStyle(PressableButtonStyle(scale: 0.95))
+        }
+    }
 
-            if expanded {
-                VStack(alignment: .leading, spacing: 8) {
-                    VStack(spacing: 5) {
-                        ForEach(plan.stops) { stop in
-                            HStack(spacing: 7) {
-                                Circle()
-                                    .fill(Palette.accent)
-                                    .frame(width: 5.5, height: 5.5)
-                                    .overlay(Circle().strokeBorder(Palette.ink.opacity(0.55), lineWidth: 0.5))
-                                Text(stop.name)
-                                    .font(.system(size: 10.5, weight: .semibold))
-                                    .foregroundStyle(Palette.ink)
-                                Spacer(minLength: 6)
-                                Text(stop.time)
-                                    .font(.system(size: 8, weight: .semibold, design: .monospaced))
-                                    .foregroundStyle(Palette.ink3)
-                            }
-                        }
-                    }
+    private var summaryCard: some View {
+        VStack(spacing: 11) {
+            HStack(spacing: 12) {
+                ProgressRingView(
+                    progress: progress,
+                    label: "\(visited)/\(stops.count)",
+                    size: 62,
+                    lineWidth: 5,
+                    tint: done ? Palette.ok : Palette.accent
+                )
 
-                    Text(plan.note)
-                        .font(.system(size: 9.5, weight: .medium))
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(done ? "Day complete" : "On the move")
+                        .font(.system(size: 16, weight: .heavy))
+                        .foregroundStyle(Palette.ink)
+                    Text("\(visited) of \(stops.count) stops done")
+                        .font(.system(size: 10.5, weight: .medium))
                         .foregroundStyle(Palette.ink2)
-                        .lineSpacing(2)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 7)
-                        .background(RoundedRectangle(cornerRadius: 9, style: .continuous).fill(Palette.limeSoft))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 9, style: .continuous)
-                                .strokeBorder(Palette.ink.opacity(0.24), lineWidth: 1)
-                        )
+                    Text("\(walked) km walked · finished ~\(finishTime)")
+                        .font(.system(size: 8.5, weight: .medium, design: .monospaced))
+                        .foregroundStyle(Palette.ink3)
+                }
 
-                    HStack(spacing: 5) {
-                        Button {
-                            Haptics.tap()
-                            withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
-                                model.tab = .plan
-                            }
-                        } label: {
-                            HStack(spacing: 3) {
-                                Text("Open map")
-                                Image(systemName: "arrow.up.right")
-                                    .font(.system(size: 8, weight: .black))
-                            }
-                            .font(.system(size: 9.5, weight: .bold))
-                            .foregroundStyle(Palette.paper)
-                            .padding(.horizontal, 10)
-                            .frame(height: 27)
-                            .background(Capsule().fill(Palette.ink))
-                        }
-                        .buttonStyle(PressableButtonStyle(scale: 0.96))
+                Spacer(minLength: 2)
 
-                        Button {
-                            Haptics.tap()
-                            model.openAssistant("Trip · \(plan.title)")
-                        } label: {
-                            HStack(spacing: 3) {
-                                Text("Ask Pico")
-                                Image(systemName: "sparkles")
-                                    .font(.system(size: 8, weight: .black))
-                            }
-                            .font(.system(size: 9.5, weight: .bold))
-                            .foregroundStyle(Palette.ink)
-                            .padding(.horizontal, 10)
-                            .frame(height: 27)
-                            .background(Capsule().fill(Palette.paper))
-                            .overlay(Capsule().strokeBorder(Palette.ink, lineWidth: 1))
-                        }
-                        .buttonStyle(PressableButtonStyle(scale: 0.96))
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text(clock)
+                        .font(.system(size: 18, weight: .black, design: .monospaced))
+                        .foregroundStyle(Palette.ink)
+                    Text("BEIJING TIME")
+                        .font(.system(size: 6.8, weight: .bold, design: .monospaced))
+                        .tracking(0.6)
+                        .foregroundStyle(Palette.ink3)
+                }
+            }
 
-                        Spacer(minLength: 0)
+            LinearProgressBar(progress: progress, height: 6, tint: done ? Palette.ok : Palette.accent)
 
-                        Text("\(plan.stops.count) stops")
-                            .font(.system(size: 7.5, weight: .medium, design: .monospaced))
-                            .foregroundStyle(Palette.ink3)
+            HStack(spacing: 5) {
+                Image(systemName: done ? "checkmark.circle.fill" : "location.fill")
+                    .font(.system(size: 8.5, weight: .bold))
+                Text(done ? "Every stop on this day is covered" : "You are here · \(current?.name ?? "")")
+                    .font(.system(size: 9.5, weight: .bold))
+                    .lineLimit(1)
+                Spacer(minLength: 4)
+                Text("GPS · 12 m")
+                    .font(.system(size: 7.5, weight: .medium, design: .monospaced))
+                    .foregroundStyle(Palette.ink3)
+            }
+            .foregroundStyle(Palette.ink)
+            .padding(.horizontal, 9)
+            .frame(height: 27)
+            .background(Capsule().fill(Palette.limeSoft))
+            .overlay(Capsule().strokeBorder(Palette.ink.opacity(0.55), lineWidth: 1))
+        }
+        .padding(13)
+        .background(RoundedRectangle(cornerRadius: 22, style: .continuous).fill(Palette.paper))
+        .overlay(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .strokeBorder(Palette.ink, lineWidth: 1.4)
+        )
+        .compositingGroup()
+        .shadow(color: Palette.ink.opacity(0.13), radius: 0, x: 0, y: 3)
+    }
+
+    private var mapCard: some View {
+        VStack(spacing: 0) {
+            TripRouteMap(
+                stops: stops,
+                editing: false,
+                selectedID: nil,
+                liveStop: model.liveStop,
+                onTap: { stop in
+                    Haptics.tap()
+                    model.openAssistant("Trip · \(stop.name)")
+                }
+            )
+            .frame(height: 206)
+
+            HStack(spacing: 6) {
+                Image(systemName: "location.fill")
+                    .font(.system(size: 8, weight: .bold))
+                    .foregroundStyle(Palette.accent)
+                Text(coordinateText)
+                    .font(.system(size: 8.5, weight: .medium, design: .monospaced))
+                    .foregroundStyle(Palette.ink2)
+                Spacer(minLength: 4)
+                Text("\(stops.count) pins · Central Axis")
+                    .font(.system(size: 7.5, weight: .medium, design: .monospaced))
+                    .foregroundStyle(Palette.ink3)
+            }
+            .padding(.horizontal, 11)
+            .frame(height: 30)
+            .background(Palette.paperWarm)
+        }
+        .background(Palette.paper)
+        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .strokeBorder(Palette.ink, lineWidth: 1.4)
+        )
+        .compositingGroup()
+        .shadow(color: Palette.ink.opacity(0.13), radius: 0, x: 0, y: 3)
+    }
+
+    private var coordinateText: String {
+        if let current { return model.liveCoordinate(current) }
+        if let last = stops.last { return model.liveCoordinate(last) }
+        return "39.9163° N, 116.3972° E"
+    }
+
+    private func nowCard(_ stop: RouteStop) -> some View {
+        VStack(alignment: .leading, spacing: 9) {
+            HStack(spacing: 6) {
+                TagView(text: "NOW · \(model.liveClock(stop))", style: .accent)
+                Spacer()
+                Text("STOP \(model.liveStop + 1) OF \(stops.count)")
+                    .font(.system(size: 7.5, weight: .bold, design: .monospaced))
+                    .tracking(0.7)
+                    .foregroundStyle(Palette.ink3)
+            }
+
+            Text(stop.name)
+                .font(.system(size: 21, weight: .black))
+                .tracking(-0.4)
+                .foregroundStyle(Palette.ink)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+
+            Text("\(stop.duration) · next leg 6 min walk")
+                .font(.system(size: 9.5, weight: .medium, design: .monospaced))
+                .foregroundStyle(Palette.ink2)
+
+            HStack(spacing: 6) {
+                Image(systemName: "mappin.and.ellipse")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(Palette.accent)
+                Text(model.liveCoordinate(stop))
+                    .font(.system(size: 8.5, weight: .medium, design: .monospaced))
+                    .foregroundStyle(Palette.ink2)
+                Spacer(minLength: 4)
+                TagView(text: "Open now", style: .ok)
+            }
+
+            HStack(spacing: 6) {
+                Button {
+                    Haptics.tap()
+                    model.openAssistant("Trip · \(stop.name)")
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 8.5, weight: .bold))
+                        Text("Ask Pico")
+                            .font(.system(size: 10, weight: .bold))
                     }
+                    .foregroundStyle(Palette.paper)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 36)
+                    .background(Capsule().fill(Palette.ink))
                 }
-                .padding(.horizontal, 12)
-                .padding(.top, 9)
-                .padding(.bottom, 11)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Palette.paperWarm)
-                .overlay(alignment: .top) {
-                    Rectangle()
-                        .fill(Palette.ink.opacity(0.16))
-                        .frame(height: 1)
+                .buttonStyle(PressableButtonStyle())
+
+                Button {
+                    Haptics.tap()
+                    model.toast("Walking route opened · 6 min", icon: "map.fill")
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "arrow.triangle.turn.up.right.diamond.fill")
+                            .font(.system(size: 8.5, weight: .bold))
+                        Text("Navigate")
+                            .font(.system(size: 10, weight: .bold))
+                    }
+                    .foregroundStyle(Palette.ink)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 36)
+                    .background(Capsule().fill(Palette.lime))
+                    .overlay(Capsule().strokeBorder(Palette.ink, lineWidth: 1.1))
                 }
-                .transition(.opacity)
+                .buttonStyle(PressableButtonStyle())
             }
         }
-        .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(Palette.paper))
+        .padding(14)
+        .background(RoundedRectangle(cornerRadius: 22, style: .continuous).fill(Palette.paper))
+        .overlay(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .strokeBorder(Palette.ink, lineWidth: 1.4)
+        )
+        .compositingGroup()
+        .shadow(color: Palette.ink.opacity(0.13), radius: 0, x: 0, y: 3)
+    }
+
+    private func nextCard(_ stop: RouteStop) -> some View {
+        HStack(spacing: 10) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("UP NEXT · 6 MIN")
+                    .font(.system(size: 7.5, weight: .bold, design: .monospaced))
+                    .tracking(1)
+                    .foregroundStyle(Palette.ink3)
+                Text(stop.name)
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(Palette.ink)
+                    .lineLimit(1)
+                Text("\(stop.time) · \(stop.duration)")
+                    .font(.system(size: 8.5, weight: .medium, design: .monospaced))
+                    .foregroundStyle(Palette.ink2)
+            }
+            Spacer(minLength: 4)
+            HStack(spacing: 4) {
+                Text("\(model.liveStop + 2)")
+                    .font(.system(size: 10, weight: .black, design: .monospaced))
+                Image(systemName: "arrow.right")
+                    .font(.system(size: 8.5, weight: .black))
+            }
+            .foregroundStyle(Palette.ink)
+            .padding(.horizontal, 10)
+            .frame(height: 28)
+            .background(Capsule().fill(Palette.paper))
+            .overlay(Capsule().strokeBorder(Palette.ink, lineWidth: 1))
+        }
+        .padding(12)
+        .background(RoundedRectangle(cornerRadius: 18, style: .continuous).fill(Palette.paperWarm))
         .overlay(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .strokeBorder(Palette.ink, lineWidth: 1.2)
+                .strokeBorder(Palette.ink.opacity(0.5), style: StrokeStyle(lineWidth: 1.1, dash: [4, 3]))
         )
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+    }
+
+    private var lastStopCard: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "flag.checkered")
+                .font(.system(size: 12, weight: .bold))
+                .foregroundStyle(Palette.ink)
+                .frame(width: 30, height: 30)
+                .background(Circle().fill(Palette.lime))
+                .overlay(Circle().strokeBorder(Palette.ink, lineWidth: 1))
+            VStack(alignment: .leading, spacing: 1) {
+                Text("LAST STOP")
+                    .font(.system(size: 7.5, weight: .bold, design: .monospaced))
+                    .tracking(0.8)
+                    .foregroundStyle(Palette.ink3)
+                Text("Finish here, then wrap the day")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(Palette.ink)
+            }
+            Spacer()
+        }
+        .padding(11)
+        .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Palette.paper))
+        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Palette.ink.opacity(0.4), style: StrokeStyle(lineWidth: 1, dash: [4, 3])))
+    }
+
+    private var doneCard: some View {
+        VStack(alignment: .leading, spacing: 9) {
+            HStack(spacing: 8) {
+                Image(systemName: "checkmark.seal.fill")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundStyle(Palette.ok)
+                Text("Day complete")
+                    .font(.system(size: 20, weight: .black))
+                    .tracking(-0.3)
+                    .foregroundStyle(Palette.ink)
+                Spacer()
+            }
+            Text("Every stop on this day is checked off. Load tomorrow's route, or end the live trip and keep the saved plan.")
+                .font(.system(size: 10.5, weight: .medium))
+                .foregroundStyle(Palette.ink2)
+                .lineSpacing(2)
+                .fixedSize(horizontal: false, vertical: true)
+            HStack(spacing: 5) {
+                TagView(text: "\(stops.count) stops", style: .ok)
+                TagView(text: "\(walked) km walked", style: .soft)
+                TagView(text: "~\(finishTime) finish", style: .soft)
+                Spacer()
+            }
+        }
+        .padding(14)
+        .background(RoundedRectangle(cornerRadius: 22, style: .continuous).fill(Palette.limeSoft))
+        .overlay(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .strokeBorder(Palette.ink, lineWidth: 1.4)
+        )
+    }
+
+    private var liveCTA: some View {
+        HStack(spacing: 9) {
+            Button {
+                model.endLiveTrip()
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 11, weight: .black))
+                    .foregroundStyle(Palette.ink)
+                    .frame(width: 40, height: 42)
+                    .background(Circle().fill(Palette.paper))
+                    .overlay(Circle().strokeBorder(Palette.ink, lineWidth: 1.2))
+            }
+            .buttonStyle(PressableButtonStyle())
+            .accessibilityLabel("End live trip")
+
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 5) {
+                    Circle()
+                        .fill(done ? Palette.ok : Palette.accent)
+                        .frame(width: 6, height: 6)
+                    Text(done ? "Day complete" : "Live · Day \(model.tripDay + 1) of \(model.tripDayCount)")
+                        .font(.system(size: 10.5, weight: .bold))
+                        .foregroundStyle(Palette.ink)
+                }
+                Text(done ? "Every stop covered" : "Next: \(next?.name ?? "finish line")")
+                    .font(.system(size: 8.5, weight: .medium, design: .monospaced))
+                    .foregroundStyle(Palette.ink3)
+                    .lineLimit(1)
+            }
+
+            Spacer(minLength: 4)
+
+            Button {
+                if done {
+                    model.finishLiveDay()
+                } else {
+                    model.advanceLiveStop()
+                }
+            } label: {
+                HStack(spacing: 4) {
+                    Text(done ? (model.tripDay < model.tripDayCount - 1 ? "Next day" : "Back to plan") : "Next stop")
+                        .font(.system(size: 11.5, weight: .bold))
+                    Image(systemName: done ? "map" : "arrow.right")
+                        .font(.system(size: 9, weight: .black))
+                }
+                .foregroundStyle(Palette.ink)
+                .padding(.horizontal, 13)
+                .frame(height: 42)
+                .background(Capsule().fill(Palette.lime))
+                .overlay(Capsule().strokeBorder(Palette.ink, lineWidth: 1.2))
+                .compositingGroup()
+                .shadow(color: Palette.ink.opacity(0.16), radius: 0, x: 0, y: 2.5)
+            }
+            .buttonStyle(PressableButtonStyle())
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 9)
+        .background(RoundedRectangle(cornerRadius: 23, style: .continuous).fill(Palette.paper))
+        .overlay(
+            RoundedRectangle(cornerRadius: 23, style: .continuous)
+                .strokeBorder(Palette.ink, lineWidth: 1.3)
+        )
         .compositingGroup()
-        .shadow(color: Palette.ink.opacity(0.11), radius: 0, x: 0, y: 2.5)
+        .shadow(color: Palette.ink.opacity(0.16), radius: 0, x: 0, y: 4)
+        .shadow(color: Palette.ink.opacity(0.08), radius: 22, x: 0, y: 10)
     }
 }
 
-// MARK: - Trip plan data
+private struct LiveDot: View {
+    @State private var pulse = false
 
-private struct TripStop: Identifiable {
-    let id = UUID()
-    let name: String
-    let time: String
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(Palette.accent.opacity(0.28))
+                .frame(width: 15, height: 15)
+                .scaleEffect(pulse ? 1.25 : 0.7)
+                .opacity(pulse ? 0.15 : 1)
+            Circle()
+                .fill(Palette.accent)
+                .frame(width: 7, height: 7)
+                .overlay(Circle().strokeBorder(Palette.ink, lineWidth: 0.8))
+        }
+        .onAppear {
+            withAnimation(.easeOut(duration: 1.3).repeatForever(autoreverses: false)) {
+                pulse = true
+            }
+        }
+    }
 }
 
-private struct TripPlanDay: Identifiable {
-    var id: String { date }
-    let date: String
-    let week: String
-    let day: Int
-    let title: String
-    let meta: String
-    let tag: String
-    let tagStyle: TagStyle
-    let stops: [TripStop]
-    let note: String
+// MARK: - Compact route map
+
+private struct TripRouteMap: View {
+    var stops: [RouteStop]
+    var editing: Bool
+    var selectedID: UUID?
+    var liveStop: Int?
+    var onTap: (RouteStop) -> Void = { _ in }
+    var onMove: (UUID, CGFloat, CGFloat) -> Void = { _, _, _ in }
+    var onMoveEnd: () -> Void = {}
+
+    @State private var dragID: UUID?
+    @State private var dragOrigin: CGPoint?
+    @State private var pulse = false
+
+    private let pad: CGFloat = 18
+
+    private var currentIndex: Int? {
+        guard let live = liveStop, stops.indices.contains(live) else { return nil }
+        return live
+    }
+
+    var body: some View {
+        GeometryReader { geo in
+            let size = geo.size
+            let content = CGRect(
+                x: pad,
+                y: pad,
+                width: max(1, size.width - pad * 2),
+                height: max(1, size.height - pad * 2)
+            )
+
+            ZStack {
+                Canvas { context, canvasSize in
+                    drawBase(&context, size: canvasSize, content: content)
+                }
+
+                ForEach(Array(stops.enumerated()), id: \.element.id) { index, stop in
+                    mapPin(index: index, stop: stop, content: content)
+                        .position(
+                            x: content.minX + content.width * stop.x,
+                            y: content.minY + content.height * stop.y
+                        )
+                        .zIndex(dragID == stop.id ? 6 : (currentIndex == index ? 4 : (selectedID == stop.id ? 3 : 1)))
+                }
+
+                if currentIndex != nil {
+                    HStack(spacing: 4) {
+                        Circle()
+                            .fill(Palette.paper)
+                            .frame(width: 4.5, height: 4.5)
+                            .opacity(pulse ? 1 : 0.35)
+                        Text("YOU ARE HERE")
+                            .font(.system(size: 6.8, weight: .black, design: .monospaced))
+                            .tracking(0.4)
+                            .foregroundStyle(Palette.paper)
+                            .lineLimit(1)
+                            .fixedSize()
+                    }
+                    .padding(.horizontal, 7)
+                    .frame(height: 18)
+                    .background(Capsule().fill(Palette.accent))
+                    .overlay(Capsule().strokeBorder(Palette.ink, lineWidth: 0.9))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    .padding(8)
+                    .zIndex(10)
+                    .allowsHitTesting(false)
+                }
+            }
+        }
+        .onAppear {
+            withAnimation(.easeOut(duration: 1.2).repeatForever(autoreverses: true)) {
+                pulse = true
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func mapPin(index: Int, stop: RouteStop, content: CGRect) -> some View {
+        if editing {
+            pinBody(index: index, stop: stop)
+                .gesture(dragGesture(for: stop, in: content))
+        } else {
+            Button {
+                onTap(stop)
+            } label: {
+                pinBody(index: index, stop: stop)
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private func pinBody(index: Int, stop: RouteStop) -> some View {
+        let selected = selectedID == stop.id
+        let isDone = liveStop.map { index < $0 } ?? false
+        let isNow = liveStop.map { index == $0 } ?? false
+        let diameter: CGFloat = isNow ? 29 : (selected ? 28 : 23)
+
+        return VStack(spacing: 3) {
+            ZStack {
+                if isNow {
+                    Circle()
+                        .strokeBorder(Palette.accent.opacity(0.45), lineWidth: 2)
+                        .frame(width: 40, height: 40)
+                        .scaleEffect(pulse ? 1.12 : 0.85)
+                        .opacity(pulse ? 0.18 : 0.85)
+                }
+                if editing {
+                    Circle()
+                        .strokeBorder(Palette.accent.opacity(0.9), style: StrokeStyle(lineWidth: 1.3, dash: [3, 3]))
+                        .frame(width: 41, height: 41)
+                }
+
+                Circle()
+                    .fill(fillColor(isDone: isDone, isNow: isNow, selected: selected))
+                    .frame(width: diameter, height: diameter)
+                Circle()
+                    .strokeBorder(Palette.ink, lineWidth: isNow ? 2 : 1.2)
+                    .frame(width: diameter, height: diameter)
+
+                if isDone {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 8, weight: .black))
+                        .foregroundStyle(Palette.ink)
+                } else {
+                    Text("\(index + 1)")
+                        .font(.system(size: isNow ? 10 : 8.5, weight: .black))
+                        .foregroundStyle(textColor(isNow: isNow, selected: selected))
+                }
+
+                if editing {
+                    Image(systemName: "arrow.up.and.down.and.arrow.left.and.right")
+                        .font(.system(size: 5, weight: .black))
+                        .foregroundStyle(Palette.ink)
+                        .frame(width: 14, height: 14)
+                        .background(Circle().fill(Palette.lime))
+                        .overlay(Circle().strokeBorder(Palette.ink, lineWidth: 0.8))
+                        .offset(x: 15, y: 13)
+                }
+            }
+            .compositingGroup()
+            .shadow(color: Palette.ink.opacity(0.18), radius: 0, x: 0, y: 2)
+
+            if selected && liveStop == nil && !editing {
+                Text(stop.name)
+                    .font(.system(size: 8, weight: .bold))
+                    .foregroundStyle(Palette.ink)
+                    .lineLimit(1)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 3)
+                    .background(Capsule().fill(Palette.paper))
+                    .overlay(Capsule().strokeBorder(Palette.ink, lineWidth: 0.9))
+                    .fixedSize()
+            }
+        }
+        .contentShape(Rectangle())
+    }
+
+    private func fillColor(isDone: Bool, isNow: Bool, selected: Bool) -> Color {
+        if isNow { return Palette.accent }
+        if isDone { return Palette.lime }
+        if selected { return Palette.ink }
+        return Palette.paper
+    }
+
+    private func textColor(isNow: Bool, selected: Bool) -> Color {
+        if isNow { return Palette.paper }
+        if selected { return Palette.lime }
+        return Palette.ink
+    }
+
+    private func dragGesture(for stop: RouteStop, in content: CGRect) -> some Gesture {
+        DragGesture(minimumDistance: 0)
+            .onChanged { value in
+                guard editing else { return }
+                if dragID != stop.id {
+                    dragID = stop.id
+                    dragOrigin = CGPoint(x: stop.x, y: stop.y)
+                    Haptics.tap()
+                }
+                guard let origin = dragOrigin, content.width > 0, content.height > 0 else { return }
+                onMove(
+                    stop.id,
+                    origin.x + value.translation.width / content.width,
+                    origin.y + value.translation.height / content.height
+                )
+            }
+            .onEnded { _ in
+                guard dragID == stop.id else { return }
+                dragID = nil
+                dragOrigin = nil
+                onMoveEnd()
+            }
+    }
+
+    private func drawBase(_ context: inout GraphicsContext, size: CGSize, content: CGRect) {
+        let w = size.width
+        let h = size.height
+
+        context.fill(Path(CGRect(origin: .zero, size: size)), with: .color(Palette.paper))
+
+        for row in 0..<7 {
+            for col in 0..<4 {
+                let block = CGRect(
+                    x: CGFloat(col) * (w / 4) + 5,
+                    y: CGFloat(row) * (h / 7) + 6,
+                    width: w / 4 - 10,
+                    height: h / 7 - 12
+                )
+                let rounded = Path(roundedRect: block, cornerRadius: 5)
+                context.fill(rounded, with: .color(Palette.cream.opacity(0.32)))
+                context.stroke(rounded, with: .color(Palette.lineSoft.opacity(0.75)), lineWidth: 0.6)
+            }
+        }
+
+        let parkA = Path(roundedRect: CGRect(x: w * 0.02, y: h * 0.06, width: w * 0.30, height: h * 0.26), cornerRadius: 18)
+        context.fill(parkA, with: .color(Palette.mint.opacity(0.8)))
+        context.stroke(parkA, with: .color(Palette.ink.opacity(0.5)), lineWidth: 0.9)
+
+        let lake = Path(roundedRect: CGRect(x: w * 0.06, y: h * 0.10, width: w * 0.16, height: h * 0.10), cornerRadius: 12)
+        context.fill(lake, with: .color(Palette.sky))
+        context.stroke(lake, with: .color(Palette.ink.opacity(0.5)), lineWidth: 0.9)
+
+        let parkB = Path(roundedRect: CGRect(x: w * 0.66, y: h * 0.60, width: w * 0.30, height: h * 0.28), cornerRadius: 16)
+        context.fill(parkB, with: .color(Palette.limeSoft))
+        context.stroke(parkB, with: .color(Palette.ink.opacity(0.45)), lineWidth: 0.9)
+
+        for index in 0..<6 {
+            let treeX = w * (0.07 + CGFloat(index % 3) * 0.055)
+            let treeY = h * (0.13 + CGFloat(index / 3) * 0.06)
+            let tree = Path(ellipseIn: CGRect(x: treeX, y: treeY, width: 5.5, height: 5.5))
+            context.fill(tree, with: .color(Palette.olive))
+        }
+
+        var roads = Path()
+        roads.move(to: CGPoint(x: w * 0.42, y: 0))
+        roads.addLine(to: CGPoint(x: w * 0.56, y: h))
+        roads.move(to: CGPoint(x: 0, y: h * 0.52))
+        roads.addLine(to: CGPoint(x: w, y: h * 0.44))
+        roads.move(to: CGPoint(x: 0, y: h * 0.20))
+        roads.addLine(to: CGPoint(x: w, y: h * 0.30))
+        context.stroke(roads, with: .color(Palette.cream), style: StrokeStyle(lineWidth: 8, lineCap: .round))
+        context.stroke(roads, with: .color(Palette.line.opacity(0.8)), style: StrokeStyle(lineWidth: 0.9, lineCap: .round))
+
+        let labels: [(String, CGPoint)] = [
+            ("Shichahai", CGPoint(x: content.minX + content.width * 0.18, y: content.minY + content.height * 0.18)),
+            ("Forbidden City", CGPoint(x: content.minX + content.width * 0.70, y: content.minY + content.height * 0.66)),
+            ("Jingshan", CGPoint(x: content.minX + content.width * 0.74, y: content.minY + content.height * 0.48))
+        ]
+        for label in labels {
+            context.draw(
+                Text(label.0)
+                    .font(.system(size: 6.8, weight: .bold))
+                    .foregroundColor(Palette.ink3.opacity(0.8)),
+                at: label.1,
+                anchor: .center
+            )
+        }
+
+        guard stops.count > 1 else { return }
+        let points = stops.map {
+            CGPoint(x: content.minX + content.width * $0.x, y: content.minY + content.height * $0.y)
+        }
+
+        if let live = liveStop {
+            let full = routePath(points)
+            context.stroke(full, with: .color(Palette.ink.opacity(0.32)), style: StrokeStyle(lineWidth: 2.2, lineCap: .round, lineJoin: .round, dash: [4, 4]))
+
+            let doneCount = min(live + 1, points.count)
+            if doneCount > 1 {
+                let donePath = routePath(Array(points.prefix(doneCount)))
+                context.stroke(donePath, with: .color(Palette.ink), style: StrokeStyle(lineWidth: 5.5, lineCap: .round, lineJoin: .round))
+                context.stroke(donePath, with: .color(Palette.accent), style: StrokeStyle(lineWidth: 2.6, lineCap: .round, lineJoin: .round))
+            }
+        } else {
+            let route = routePath(points)
+            context.stroke(route, with: .color(Palette.ink), style: StrokeStyle(lineWidth: 6, lineCap: .round, lineJoin: .round))
+            context.stroke(route, with: .color(Palette.accent), style: StrokeStyle(lineWidth: 2.8, lineCap: .round, lineJoin: .round))
+        }
+    }
+
+    private func routePath(_ points: [CGPoint]) -> Path {
+        var path = Path()
+        guard let first = points.first else { return path }
+        path.move(to: first)
+        guard points.count > 1 else { return path }
+        for index in 1..<points.count {
+            let mid = CGPoint(
+                x: (points[index - 1].x + points[index].x) / 2,
+                y: (points[index - 1].y + points[index].y) / 2
+            )
+            path.addQuadCurve(to: mid, control: points[index - 1])
+        }
+        if let last = points.last {
+            path.addLine(to: last)
+        }
+        return path
+    }
 }
 
-private let baseTripPlanDays: [TripPlanDay] = [
-    TripPlanDay(
-        date: "10/15", week: "Wed", day: 1,
-        title: "Central Axis · Palace & hutongs",
-        meta: "6 stops · 4.2 km · ~5 hr",
-        tag: "Today", tagStyle: .accent,
-        stops: [
-            TripStop(name: "Tiananmen Square", time: "09:00"),
-            TripStop(name: "Forbidden City", time: "09:40"),
-            TripStop(name: "Jingshan · Wanchun Pavilion", time: "12:30"),
-            TripStop(name: "Shichahai", time: "15:00"),
-            TripStop(name: "Nanluoguxiang", time: "16:30"),
-            TripStop(name: "Drum & Bell Towers", time: "17:30")
-        ],
-        note: "Palace booked for 09:00 · in at Meridian Gate, out at Shenwu Gate"
-    ),
-    TripPlanDay(
-        date: "10/16", week: "Thu", day: 2,
-        title: "Great Wall day · Badaling",
-        meta: "3 stops · private car · full day",
-        tag: "Car booked", tagStyle: .blue,
-        stops: [
-            TripStop(name: "Hotel pickup", time: "07:30"),
-            TripStop(name: "Badaling Great Wall", time: "09:00"),
-            TripStop(name: "Olympic Forest Park", time: "16:30")
-        ],
-        note: "Bring your passport · windy up there, pack an extra layer"
-    ),
-    TripPlanDay(
-        date: "10/17", week: "Fri", day: 3,
-        title: "Imperial gardens · Palace & museum",
-        meta: "4 stops · Metro Line 4 · ~8 hr",
-        tag: "Tickets to book", tagStyle: .soft,
-        stops: [
-            TripStop(name: "Summer Palace", time: "09:00"),
-            TripStop(name: "Lunch in Wudaokou", time: "12:30"),
-            TripStop(name: "National Museum of China", time: "14:00"),
-            TripStop(name: "Qianmen Street", time: "18:00")
-        ],
-        note: "The National Museum needs a real-name booking; bring your passport"
-    ),
-    TripPlanDay(
-        date: "10/18", week: "Sat", day: 4,
-        title: "Slow hutongs · departure",
-        meta: "4 stops · 3.1 km walk · ~4 hr",
-        tag: "Departure", tagStyle: .ok,
-        stops: [
-            TripStop(name: "Nanluoguxiang", time: "09:30"),
-            TripStop(name: "Drum & Bell Towers", time: "11:00"),
-            TripStop(name: "Daoxiangcun run", time: "13:00"),
-            TripStop(name: "Beijing Capital Airport", time: "16:00")
-        ],
-        note: "Flight 18:40 · be at the airport 2.5 hr early"
-    )
-]
+// MARK: - Add stop
 
-private let extraTripPlanDays: [TripPlanDay] = [
-    TripPlanDay(
-        date: "10/19", week: "Mon", day: 5,
-        title: "Temple of Heaven & Beihai",
-        meta: "4 stops · 5.1 km · ~6 hr",
-        tag: "Pico pick", tagStyle: .accent,
-        stops: [
-            TripStop(name: "Temple of Heaven", time: "09:00"),
-            TripStop(name: "Lunch in Qianmen", time: "12:30"),
-            TripStop(name: "Beihai Park", time: "15:00"),
-            TripStop(name: "Shichahai at dusk", time: "18:00")
-        ],
-        note: "Enter the Temple of Heaven from the south gate · rent a boat if the weather holds"
-    ),
-    TripPlanDay(
-        date: "10/20", week: "Tue", day: 6,
-        title: "Museum morning · departure",
-        meta: "3 stops · 2.4 km · ~5 hr",
-        tag: "Departure", tagStyle: .ok,
-        stops: [
-            TripStop(name: "National Museum of China", time: "09:30"),
-            TripStop(name: "Lunch in Qianmen", time: "12:30"),
-            TripStop(name: "Beijing Capital Airport", time: "16:00")
-        ],
-        note: "Real-name booking needed for the museum · flight at 18:40"
-    )
-]
+private struct AddStopSheet: View {
+    @EnvironmentObject private var model: AppModel
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        ScrollView(.vertical, showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Eyebrow(text: "ROUTE · DAY \(String(format: "%02d", model.tripDay + 1))")
+                        Text("Add a stop")
+                            .font(.system(size: 28, weight: .black))
+                            .tracking(-0.5)
+                            .foregroundStyle(Palette.ink)
+                        Text("Pico picks near this day. New stops slot in after the last one and walking times recalculate.")
+                            .font(.system(size: 10.5, weight: .medium))
+                            .foregroundStyle(Palette.ink2)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    Spacer()
+                    Button {
+                        dismiss()
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 11, weight: .black))
+                            .foregroundStyle(Palette.ink)
+                            .frame(width: 33, height: 33)
+                            .background(Circle().fill(Palette.paper))
+                            .overlay(Circle().strokeBorder(Palette.ink, lineWidth: 1.1))
+                    }
+                    .buttonStyle(PressableButtonStyle())
+                }
+
+                if model.availableTripSuggestions.isEmpty {
+                    Text("Every nearby pick is already on this day.")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(Palette.ink2)
+                        .padding(14)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Palette.paper))
+                        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Palette.ink.opacity(0.5), style: StrokeStyle(lineWidth: 1, dash: [4, 3])))
+                } else {
+                    VStack(spacing: 8) {
+                        ForEach(model.availableTripSuggestions) { suggestion in
+                            Button {
+                                dismiss()
+                                Task { @MainActor in
+                                    try? await Task.sleep(for: .milliseconds(320))
+                                    model.addTripStop(suggestion)
+                                }
+                            } label: {
+                                HStack(spacing: 10) {
+                                    Image(systemName: "mappin.and.ellipse")
+                                        .font(.system(size: 13, weight: .bold))
+                                        .foregroundStyle(Palette.ink)
+                                        .frame(width: 34, height: 34)
+                                        .background(Circle().fill(Palette.lime))
+                                        .overlay(Circle().strokeBorder(Palette.ink, lineWidth: 1))
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(suggestion.name)
+                                            .font(.system(size: 13, weight: .bold))
+                                            .foregroundStyle(Palette.ink)
+                                        Text(suggestion.meta)
+                                            .font(.system(size: 9, weight: .medium, design: .monospaced))
+                                            .foregroundStyle(Palette.ink3)
+                                    }
+                                    Spacer(minLength: 4)
+                                    Image(systemName: "plus")
+                                        .font(.system(size: 10, weight: .black))
+                                        .foregroundStyle(Palette.ink)
+                                        .frame(width: 26, height: 26)
+                                        .background(Circle().fill(Palette.paperWarm))
+                                        .overlay(Circle().strokeBorder(Palette.ink, lineWidth: 1))
+                                }
+                                .padding(.horizontal, 11)
+                                .padding(.vertical, 9)
+                                .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Palette.paper))
+                                .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Palette.ink, lineWidth: 1.2))
+                            }
+                            .buttonStyle(PressableButtonStyle(scale: 0.99))
+                        }
+                    }
+                }
+
+                Text("Added stops mark the plan as unsaved — save again before you start.")
+                    .font(.system(size: 8.5, weight: .medium, design: .monospaced))
+                    .foregroundStyle(Palette.ink3)
+                    .padding(.bottom, 12)
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 20)
+        }
+        .background(Palette.bg.ignoresSafeArea())
+    }
+}

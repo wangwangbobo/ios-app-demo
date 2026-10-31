@@ -15,7 +15,7 @@ struct RootView: View {
             if let toast = model.toast {
                 ToastBanner(toast: toast)
                     .padding(.leading, 20)
-                    .padding(.bottom, 104)
+                    .padding(.bottom, model.tab == .trip && model.planBuilt ? 158 : 104)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .allowsHitTesting(false)
                     .transition(.move(edge: .bottom).combined(with: .opacity))

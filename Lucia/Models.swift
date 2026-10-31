@@ -175,6 +175,57 @@ enum MapLayer: String, CaseIterable, Identifiable {
     }
 }
 
+// MARK: - Trip plan (merged editor + live trip)
+
+struct TripDay: Identifiable {
+    let id: UUID
+    var date: String
+    var week: String
+    var day: Int
+    var title: String
+    var meta: String
+    var tag: String
+    var tagStyle: TagStyle
+    var stops: [RouteStop]
+    var note: String
+
+    init(
+        id: UUID = UUID(),
+        date: String,
+        week: String,
+        day: Int,
+        title: String,
+        meta: String,
+        tag: String,
+        tagStyle: TagStyle,
+        stops: [RouteStop],
+        note: String
+    ) {
+        self.id = id
+        self.date = date
+        self.week = week
+        self.day = day
+        self.title = title
+        self.meta = meta
+        self.tag = tag
+        self.tagStyle = tagStyle
+        self.stops = stops
+        self.note = note
+    }
+
+    var shortTitle: String {
+        title.components(separatedBy: "·").first?.trimmingCharacters(in: .whitespaces) ?? title
+    }
+}
+
+struct TripSuggestion: Identifiable {
+    let id = UUID()
+    var name: String
+    var meta: String
+    var x: CGFloat
+    var y: CGFloat
+}
+
 // MARK: - Translate
 
 enum Scenario: String, CaseIterable, Identifiable {

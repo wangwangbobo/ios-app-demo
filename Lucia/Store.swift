@@ -26,6 +26,23 @@ final class AppModel: ObservableObject {
     @Published var aiSuggestionVisible = true
     @Published var routeApplied = false
     @Published var mapEditMode = false
+    @Published var pendingSimilar = false
+
+    // MARK: Merged trip editor
+    @Published var tripDays: [TripDay] = []
+    @Published var tripDay = 0
+    @Published var tripEdit = false
+    @Published var tripSaved = false
+    @Published var tripDirty = false
+    @Published var tripLive = false
+    @Published var liveStop = 0
+
+    let tripSuggestions: [TripSuggestion] = [
+        TripSuggestion(name: "Metal Hands · Qianmen", meta: "Coffee · 45 min", x: 0.66, y: 0.74),
+        TripSuggestion(name: "Siji Minfu · Duck", meta: "Lunch · 1.5 hr", x: 0.60, y: 0.63),
+        TripSuggestion(name: "Beihai Park", meta: "Boats · 1.5 hr", x: 0.34, y: 0.44),
+        TripSuggestion(name: "Temple of Heaven", meta: "Sights · 1.5 hr", x: 0.44, y: 0.90)
+    ]
 
     // MARK: Forum
     @Published var forumFilter: ForumFilter = .all
@@ -277,6 +294,34 @@ final class AppModel: ObservableObject {
             tab = .translate
             translateMode = .offline
         }
+        if planBuilt {
+            ensureTripDays()
+            if args.contains("-tripday2") { tripDay = min(1, tripDays.count - 1) }
+            if args.contains("-tripday3") { tripDay = min(2, tripDays.count - 1) }
+            if args.contains("-tripedit") {
+                tripSaved = true
+                tripEdit = true
+                aiSuggestionVisible = false
+            }
+            if args.contains("-tripsaved") {
+                tripSaved = true
+                tripDirty = false
+                aiSuggestionVisible = false
+            }
+            if args.contains("-triplivedone") {
+                tripSaved = true
+                tripLive = true
+                liveStop = currentStops.count
+            } else if args.contains("-triplive3") {
+                tripSaved = true
+                tripLive = true
+                liveStop = min(3, max(0, currentStops.count - 1))
+            } else if args.contains("-triplive") {
+                tripSaved = true
+                tripLive = true
+                liveStop = 1
+            }
+        }
         #endif
     }
 
@@ -405,9 +450,11 @@ final class AppModel: ObservableObject {
         guard let index = stops.firstIndex(where: { $0.id == id }) else { return }
         stops[index].x = min(max(x, 0.06), 0.94)
         stops[index].y = min(max(y, 0.10), 0.90)
+        markTripEdited()
     }
 
     func didFinishMovingStop() {
+        markTripEdited()
         Haptics.success()
         toast("Stops updated · route redrawn", icon: "map.fill")
     }
@@ -427,6 +474,7 @@ final class AppModel: ObservableObject {
             routeApplied = true
             aiSuggestionVisible = false
         }
+        markTripEdited()
         Haptics.success()
         toast("Applied · route recalculated, 1.2 km shorter", icon: "arrow.triangle.swap")
     }
@@ -434,6 +482,7 @@ final class AppModel: ObservableObject {
     func moveStops(from source: IndexSet, to destination: Int) {
         stops.move(fromOffsets: source, toOffset: destination)
         renumberStops()
+        markTripEdited()
         toast("Order updated", icon: "arrow.up.arrow.down")
     }
 
@@ -468,6 +517,310 @@ final class AppModel: ObservableObject {
             "\(index + 1). \(stop.name) · \(stop.time) · \(stop.duration)"
         }
         return "\(routeName)\n6 stops · 4.2 km · ~5 hr\n\n" + lines.joined(separator: "\n") + "\n\nFrom Pico · Beijing trip plan"
+    }
+
+    // MARK: Merged trip editor
+
+    var tripDayCount: Int { tripDays.isEmpty ? planLength : tripDays.count }
+
+    var currentTripDay: TripDay? {
+        tripDays.indices.contains(tripDay) ? tripDays[tripDay] : tripDays.first
+    }
+
+    var currentStops: [RouteStop] {
+        tripDay == 0 ? stops : (currentTripDay?.stops ?? stops)
+    }
+
+    func ensureTripDays() {
+        guard planBuilt else { return }
+        if tripDays.count != planLength {
+            tripDays = Self.makeTripDays(stops: stops, count: planLength)
+            tripDay = min(tripDay, max(0, tripDays.count - 1))
+        }
+    }
+
+    func setCurrentStops(_ list: [RouteStop]) {
+        if tripDay == 0 {
+            stops = list
+        } else if tripDays.indices.contains(tripDay) {
+            tripDays[tripDay].stops = list
+        }
+    }
+
+    func markTripEdited() {
+        if tripSaved { tripDirty = true }
+    }
+
+    func selectTripDay(_ index: Int) {
+        guard tripDays.indices.contains(index) else { return }
+        Haptics.tap()
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.86)) {
+            tripDay = index
+            tripEdit = false
+            selectedStopID = nil
+        }
+    }
+
+    func toggleTripEdit() {
+        withAnimation(.spring(response: 0.34, dampingFraction: 0.84)) {
+            tripEdit.toggle()
+        }
+        Haptics.tap()
+        toast(
+            tripEdit ? "Edit stops · drag pins or use the arrows" : "Edit done · times kept",
+            icon: tripEdit ? "hand.draw.fill" : "checkmark.circle.fill"
+        )
+    }
+
+    func moveTripStop(_ id: UUID, toX x: CGFloat, toY y: CGFloat) {
+        var list = currentStops
+        guard let index = list.firstIndex(where: { $0.id == id }) else { return }
+        list[index].x = min(max(x, 0.06), 0.94)
+        list[index].y = min(max(y, 0.10), 0.90)
+        setCurrentStops(list)
+    }
+
+    func didFinishTripStopMove() {
+        markTripEdited()
+        Haptics.success()
+        toast("Stop moved · route recalculated", icon: "map.fill")
+    }
+
+    func moveTripStops(from source: IndexSet, to destination: Int) {
+        var list = currentStops
+        list.move(fromOffsets: source, toOffset: destination)
+        Self.renumberTrip(&list)
+        setCurrentStops(list)
+        markTripEdited()
+        Haptics.success()
+        toast("Order updated · times follow the stop", icon: "arrow.up.arrow.down")
+    }
+
+    func shiftTripStop(_ id: UUID, up: Bool) {
+        var list = currentStops
+        guard let index = list.firstIndex(where: { $0.id == id }) else { return }
+        let target = up ? index - 1 : index + 1
+        guard list.indices.contains(target) else { return }
+        list.swapAt(index, target)
+        Self.renumberTrip(&list)
+        setCurrentStops(list)
+        markTripEdited()
+        Haptics.tap()
+        toast("Order updated · times follow the stop", icon: "arrow.up.arrow.down")
+    }
+
+    func deleteTripStop(_ id: UUID) {
+        var list = currentStops
+        guard list.count > 2, let index = list.firstIndex(where: { $0.id == id }) else { return }
+        let name = list[index].name
+        list.remove(at: index)
+        Self.renumberTrip(&list)
+        setCurrentStops(list)
+        markTripEdited()
+        Haptics.tap()
+        toast("Removed \(name)", icon: "trash")
+    }
+
+    var availableTripSuggestions: [TripSuggestion] {
+        let names = Set(currentStops.map(\.name))
+        return tripSuggestions.filter { !names.contains($0.name) }
+    }
+
+    func addTripStop(_ suggestion: TripSuggestion) {
+        var list = currentStops
+        let time = Self.plusMinutes(list.last?.time ?? "09:00", 60)
+        let duration = suggestion.meta.components(separatedBy: " · ").last ?? "45 min"
+        list.append(
+            RouteStop(
+                name: suggestion.name,
+                time: time,
+                duration: duration,
+                x: suggestion.x,
+                y: suggestion.y,
+                tag: "Pico pick",
+                tagStyle: .accent
+            )
+        )
+        setCurrentStops(list)
+        markTripEdited()
+        Haptics.success()
+        toast("\(suggestion.name) added · route updated", icon: "mappin.and.ellipse")
+    }
+
+    func saveTripPlan() {
+        tripSaved = true
+        tripDirty = false
+        Haptics.success()
+        toast("Plan saved · start when you are ready", icon: "checkmark.seal.fill")
+    }
+
+    func startTrip() {
+        tripSaved = true
+        tripDirty = false
+        tripEdit = false
+        liveStop = 0
+        Haptics.success()
+        withAnimation(.spring(response: 0.42, dampingFraction: 0.86)) {
+            tripLive = true
+        }
+        toast("Trip started · first stop ahead", icon: "figure.walk")
+    }
+
+    func advanceLiveStop() {
+        guard tripLive else { return }
+        let count = currentStops.count
+        Haptics.tap()
+        withAnimation(.spring(response: 0.34, dampingFraction: 0.86)) {
+            liveStop = min(liveStop + 1, count)
+        }
+        if liveStop >= count {
+            Haptics.success()
+            toast("Day complete · every stop covered", icon: "checkmark.seal.fill")
+        } else {
+            let next = currentStops[liveStop]
+            toast("Next · \(next.name)", icon: "arrow.right")
+        }
+    }
+
+    func endLiveTrip() {
+        withAnimation(.easeOut(duration: 0.2)) {
+            tripLive = false
+            liveStop = 0
+        }
+        Haptics.tap()
+        toast("Live trip ended · plan saved", icon: "xmark.circle")
+    }
+
+    func finishLiveDay() {
+        if tripDay < tripDayCount - 1 {
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.86)) {
+                tripDay += 1
+                tripLive = false
+                liveStop = 0
+                selectedStopID = nil
+            }
+            Haptics.success()
+            toast("Day done · Day \(tripDay + 1) loaded", icon: "calendar")
+        } else {
+            withAnimation(.easeOut(duration: 0.2)) {
+                tripLive = false
+                liveStop = 0
+            }
+            Haptics.success()
+            toast("Trip complete · plan saved", icon: "checkmark.seal.fill")
+        }
+    }
+
+    func liveCoordinate(_ stop: RouteStop) -> String {
+        String(format: "%.4f° N, %.4f° E", 39.92 - Double(stop.y) * 0.06, 116.38 + Double(stop.x) * 0.06)
+    }
+
+    func liveClock(_ stop: RouteStop) -> String {
+        Self.plusMinutes(stop.time, 12)
+    }
+
+    var reorderStops: [RouteStop] {
+        tab == .trip && planBuilt ? currentStops : stops
+    }
+
+    func moveReorderStops(from source: IndexSet, to destination: Int) {
+        if tab == .trip && planBuilt {
+            moveTripStops(from: source, to: destination)
+        } else {
+            moveStops(from: source, to: destination)
+        }
+    }
+
+    static func plusMinutes(_ hhmm: String, _ minutes: Int) -> String {
+        let parts = hhmm.split(separator: ":")
+        guard parts.count == 2, let hour = Int(parts[0]), let minute = Int(parts[1]) else { return hhmm }
+        let total = (hour * 60 + minute + minutes + 24 * 60) % (24 * 60)
+        return String(format: "%02d:%02d", total / 60, total % 60)
+    }
+
+    private static func renumberTrip(_ list: inout [RouteStop]) {
+        var minutes = 9 * 60
+        for index in list.indices {
+            list[index].time = String(format: "%02d:%02d", minutes / 60, minutes % 60)
+            minutes += 50
+        }
+    }
+
+    private static let dayCoordinates: [[CGPoint]] = [
+        [CGPoint(x: 0.30, y: 0.82), CGPoint(x: 0.42, y: 0.64), CGPoint(x: 0.54, y: 0.48),
+         CGPoint(x: 0.44, y: 0.32), CGPoint(x: 0.60, y: 0.24), CGPoint(x: 0.70, y: 0.40)],
+        [CGPoint(x: 0.34, y: 0.86), CGPoint(x: 0.46, y: 0.70), CGPoint(x: 0.56, y: 0.54),
+         CGPoint(x: 0.50, y: 0.36), CGPoint(x: 0.64, y: 0.28), CGPoint(x: 0.72, y: 0.48)],
+        [CGPoint(x: 0.28, y: 0.78), CGPoint(x: 0.40, y: 0.62), CGPoint(x: 0.52, y: 0.44),
+         CGPoint(x: 0.62, y: 0.30), CGPoint(x: 0.70, y: 0.50), CGPoint(x: 0.58, y: 0.68)],
+        [CGPoint(x: 0.36, y: 0.84), CGPoint(x: 0.48, y: 0.66), CGPoint(x: 0.58, y: 0.50),
+         CGPoint(x: 0.48, y: 0.34), CGPoint(x: 0.34, y: 0.44), CGPoint(x: 0.26, y: 0.62)],
+        [CGPoint(x: 0.32, y: 0.80), CGPoint(x: 0.44, y: 0.62), CGPoint(x: 0.54, y: 0.46),
+         CGPoint(x: 0.66, y: 0.32), CGPoint(x: 0.74, y: 0.50), CGPoint(x: 0.62, y: 0.70)]
+    ]
+
+    private static func makeTripDays(stops: [RouteStop], count: Int) -> [TripDay] {
+        typealias Seed = (
+            date: String, week: String, title: String, meta: String, tag: String,
+            style: TagStyle, note: String, stops: [(String, String, String)]
+        )
+        let seeds: [Seed] = [
+            ("10/15", "Wed", "Central Axis · Palace & hutongs", "6 stops · 4.2 km · ~5 hr", "Today", .accent,
+             "Palace booked for 09:00 · in at Meridian Gate, out at Shenwu Gate", []),
+            ("10/16", "Thu", "Great Wall day · Badaling", "3 stops · private car · full day", "Car booked", .blue,
+             "Bring your passport · windy up there, pack an extra layer",
+             [("Hotel pickup", "07:30", "30 min"), ("Badaling Great Wall", "09:00", "3 hr"), ("Olympic Forest Park", "16:30", "1.5 hr")]),
+            ("10/17", "Fri", "Imperial gardens · Palace & museum", "4 stops · Metro Line 4 · ~8 hr", "Tickets to book", .soft,
+             "The National Museum needs a real-name booking; bring your passport",
+             [("Summer Palace", "09:00", "2 hr"), ("Lunch in Wudaokou", "12:30", "1.5 hr"), ("National Museum of China", "14:00", "2 hr"), ("Qianmen Street", "18:00", "1.5 hr")]),
+            ("10/18", "Sat", "Slow hutongs · departure", "4 stops · 3.1 km walk · ~4 hr", "Departure", .ok,
+             "Flight 18:40 · be at the airport 2.5 hr early",
+             [("Nanluoguxiang", "09:30", "45 min"), ("Drum & Bell Towers", "11:00", "45 min"), ("Daoxiangcun run", "13:00", "45 min"), ("Beijing Capital Airport", "16:00", "Flight")]),
+            ("10/19", "Mon", "Temple of Heaven & Beihai", "4 stops · 5.1 km · ~6 hr", "Pico pick", .accent,
+             "Enter the Temple of Heaven from the south gate · rent a boat if the weather holds",
+             [("Temple of Heaven", "09:00", "1.5 hr"), ("Lunch in Qianmen", "12:30", "1.5 hr"), ("Beihai Park", "15:00", "1.5 hr"), ("Shichahai at dusk", "18:00", "1.5 hr")]),
+            ("10/20", "Tue", "Museum morning · departure", "3 stops · 2.4 km · ~5 hr", "Departure", .ok,
+             "Real-name booking needed for the museum · flight at 18:40",
+             [("National Museum of China", "09:30", "2 hr"), ("Lunch in Qianmen", "12:30", "1.5 hr"), ("Beijing Capital Airport", "16:00", "Flight")])
+        ]
+
+        let total = min(max(count, 1), seeds.count)
+        var days: [TripDay] = []
+        for index in 0..<total {
+            let seed = seeds[index]
+            var dayStops: [RouteStop]
+            if index == 0 {
+                dayStops = stops
+            } else {
+                let coords = dayCoordinates[(index - 1) % dayCoordinates.count]
+                dayStops = seed.stops.enumerated().map { position, item in
+                    let point = coords[position % coords.count]
+                    return RouteStop(
+                        name: item.0,
+                        time: item.1,
+                        duration: item.2,
+                        x: point.x,
+                        y: point.y,
+                        tag: position == 0 ? "Start" : "",
+                        tagStyle: .soft
+                    )
+                }
+            }
+            days.append(
+                TripDay(
+                    date: seed.date,
+                    week: seed.week,
+                    day: index + 1,
+                    title: seed.title,
+                    meta: seed.meta,
+                    tag: seed.tag,
+                    tagStyle: seed.style,
+                    stops: dayStops,
+                    note: seed.note
+                )
+            )
+        }
+        return days
     }
 
     // MARK: Forum
@@ -675,6 +1028,13 @@ final class AppModel: ObservableObject {
         planBuilt = true
         assistantContext = "Plan · \(persona.fit) · \(planLength) days"
         routeName = "\(persona.fit) · New plan"
+        tripDays = Self.makeTripDays(stops: stops, count: planLength)
+        tripDay = 0
+        tripEdit = false
+        tripSaved = false
+        tripDirty = false
+        tripLive = false
+        liveStop = 0
         chatMessages.append(ChatMessage(role: .user, text: "\(quizDays ?? "") · \(quizStyle ?? "") · \(quizTheme ?? "")"))
         chatThinking = true
         Haptics.tap()

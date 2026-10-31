@@ -47,6 +47,17 @@ struct PlanView: View {
                 .presentationCornerRadius(30)
                 .presentationBackground(Palette.bg)
         }
+        .onAppear {
+            if model.pendingSimilar {
+                model.pendingSimilar = false
+                showSimilar = true
+            }
+        }
+        .onChange(of: model.pendingSimilar) { _, pending in
+            guard pending else { return }
+            model.pendingSimilar = false
+            showSimilar = true
+        }
         #if DEBUG
         .onAppear {
             let args = ProcessInfo.processInfo.arguments

@@ -328,7 +328,7 @@ struct ReorderSheet: View {
             .padding(.bottom, 12)
 
             List {
-                ForEach(model.stops) { stop in
+                ForEach(model.reorderStops) { stop in
                     HStack(spacing: 10) {
                         Text(stop.time)
                             .font(.system(size: 10, weight: .medium, design: .monospaced))
@@ -347,7 +347,7 @@ struct ReorderSheet: View {
                     .listRowSeparatorTint(Palette.lineSoft)
                 }
                 .onMove { source, destination in
-                    model.moveStops(from: source, to: destination)
+                    model.moveReorderStops(from: source, to: destination)
                 }
             }
             .listStyle(.plain)

@@ -329,6 +329,13 @@ const S = {
   assistantContext: 'New trip · Planning with Pico',
   planning: true,
   planBuilt: false,
+  tripDays: null,
+  tripDay: 0,
+  tripEdit: false,
+  tripSaved: false,
+  tripDirty: false,
+  tripLive: false,
+  liveStop: 0,
   messages: [{ role: 'assistant', text: "Hi, I'm Pico. Tell me what kind of trip you like and I'll build your first Beijing plan — route order, timing and all." }],
   thinking: false,
   draft: { title: '', date: '11/08 Sat', time: '14:00 – 18:00', place: '', fee: 'Free', note: '' },
@@ -534,12 +541,16 @@ function render(resetScroll = false) {
   const v = $('#view');
   const old = v.scrollTop;
   v.innerHTML = `<div class="screen ${S.tab === 'plan' ? 'fill' : ''}">${screens[S.tab]()}</div>`;
+  v.classList.toggle('has-cta', S.tab === 'trip' && S.planBuilt);
+  const cta = $('#ctaLayer');
+  if (cta) cta.innerHTML = (S.tab === 'trip' && S.planBuilt) ? (S.tripLive ? liveCTAHTML() : tripCTAHTML()) : '';
   if (S.tab !== S.lastTab || resetScroll) v.scrollTop = 0;
   else v.scrollTop = old;
   S.lastTab = S.tab;
   renderDock();
   if (S.sheet) renderSheet();
   if (S.tab === 'plan') initMapDrag();
+  if (S.tab === 'trip' && S.tripEdit && !S.tripLive) initMapDrag('#tripMapBody', activeDay().stops);
   clearInterval(heroTimer);
   if (S.tab === 'trip') initHeroCarousel();
   updateHash();
@@ -569,21 +580,97 @@ function tripPlans() {
   return all.slice(0, count);
 }
 
+/* ---------- merged trip editor ---------- */
+const DAY_COORDS = [
+  [[.30, .82], [.42, .64], [.54, .48], [.44, .32], [.60, .24], [.70, .40]],
+  [[.34, .86], [.46, .70], [.56, .54], [.50, .36], [.64, .28], [.72, .48]],
+  [[.28, .78], [.40, .62], [.52, .44], [.62, .30], [.70, .50], [.58, .68]],
+  [[.36, .84], [.48, .66], [.58, .50], [.48, .34], [.34, .44], [.26, .62]],
+  [[.32, .80], [.44, .62], [.54, .46], [.66, .32], [.74, .50], [.62, .70]]
+];
+
+function buildTripDays() {
+  const count = tripDayCount();
+  const plans = tripPlans();
+  const days = [];
+  for (let i = 0; i < count; i++) {
+    const p = plans[i] || plans[plans.length - 1];
+    const base = { date: p.date, week: p.week, title: p.title, meta: p.meta, note: p.note, tag: p.tag, tagStyle: p.tagStyle };
+    if (i === 0) {
+      days.push({ ...base, stops: S.stops });
+      continue;
+    }
+    const coords = DAY_COORDS[(i - 1) % DAY_COORDS.length];
+    const stops = p.stops.map((s, si) => ({
+      id: `d${i}s${si}`,
+      name: s.name,
+      time: s.time,
+      duration: si === 0 ? 'Start' : '45 min',
+      x: coords[si % coords.length][0],
+      y: coords[si % coords.length][1],
+      tag: si === 0 ? 'Start' : '',
+      tagStyle: 'soft'
+    }));
+    days.push({ ...base, stops });
+  }
+  return days;
+}
+
+function tripDays() {
+  const count = tripDayCount();
+  if (!S.tripDays || S.tripDays.length !== count || S.tripDays[0].stops !== S.stops) S.tripDays = buildTripDays();
+  return S.tripDays;
+}
+
+function activeDay() {
+  const days = tripDays();
+  return days[clamp(S.tripDay, 0, days.length - 1)];
+}
+
+function activeStops() {
+  return (S.tab === 'trip' && S.planBuilt) ? activeDay().stops : S.stops;
+}
+
+function dayStats(day) {
+  const n = day.stops.length;
+  const meta = day.meta || '';
+  const full = /full day/.test(meta);
+  const km = (/([\d.]+) km/.exec(meta) || [])[1] || (n * 0.72).toFixed(1);
+  const hr = full ? null : (/([\d.]+) hr/.exec(meta) || [])[1] || String(Math.max(1, Math.round(n * 0.85)));
+  return { n, km, hr, full };
+}
+
+function markPlanEdited() {
+  if (S.tripSaved) S.tripDirty = true;
+}
+
+function plusMinutes(hhmm, mins) {
+  const [h, m] = String(hhmm || '09:00').split(':').map(Number);
+  const total = (h || 0) * 60 + (m || 0) + mins;
+  return `${String(Math.floor(total / 60) % 24).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
+}
+
 function tripView() {
+  if (S.tripLive) return liveTripView();
   const dayCount = tripDayCount();
   const persona = quizPersona();
+  const days = tripDays();
+  const dayNo = clamp(S.tripDay, 0, days.length - 1);
+  const day = days[dayNo];
+  const stops = day.stops;
+  const stats = dayStats(day);
   return `
     <header class="top">
       <div>
         <div class="eyebrow"><span class="eyebrow-line"></span>My trip / BEIJING ${sparkleIcon(8)}</div>
-        <div class="h1row"><div class="h1">Beijing</div>${tag(`${dayCount} days, ${dayCount - 1} nights`, 'coral')}</div>
+        <div class="h1row"><div class="h1">Beijing</div>${tag(`${dayCount} days · ${dayCount - 1} nights`, 'coral')}</div>
         <div class="meta">10/15 – 10/${14 + dayCount} · 2 travelers</div>
       </div>
       <div class="top-right">
         <div class="row">
           <div class="avatar">W</div>
         </div>
-        <div class="meta">Today · Day 1</div>
+        <div class="meta">${dayNo === 0 ? 'Today · Day 1' : `Day ${dayNo + 1} of ${dayCount}`}</div>
       </div>
     </header>
 
@@ -593,64 +680,82 @@ function tripView() {
       <span class="ps-act">Adjust ${icon('arrowur', 8)}</span>
     </button>` : ''}
 
-    <div class="section-title" style="margin-top:18px">
-      <div class="st-left"><span class="idx idx-logo">${icon('sun', 11)}</span><h2>Today at a glance</h2></div>
-      <span class="today-date">10/15 · Wed</span>
+    <div class="section-title" style="margin-top:16px">
+      <div class="st-left"><span class="idx idx-logo">${icon('map', 11)}</span><h2>Your route</h2></div>
+      <button class="link" data-act="assistant" data-ctx="Trip · ${esc(day.title)}">Ask Pico ${icon('arrowur', 8)}</button>
     </div>
 
-    <article class="card today-card">
-      <div class="cityscape">
-        <div class="hero-track" id="heroTrack" aria-label="Trip photos">
-          ${TRIP_HERO.map((h) => `<figure class="hero-slide">
-            <img class="today-photo" src="${h.src}" alt="${esc(h.name)}, Beijing" draggable="false">
-            <figcaption class="hero-caption">
-              <b>${esc(h.name)}</b>
-              <span>${esc(h.credit)}</span>
-            </figcaption>
-          </figure>`).join('')}
+    <article class="plan-card">
+      <div class="rc-days" role="tablist" aria-label="Trip days">
+        ${days.map((d, i) => `<button class="rc-day ${i === dayNo ? 'on' : ''}" data-act="trip-day" data-day="${i}" role="tab" aria-selected="${i === dayNo}" aria-label="Day ${i + 1}, ${esc(d.date)}">
+          <b>Day ${i + 1}</b><span>${esc(d.date)}</span>
+        </button>`).join('')}
+      </div>
+
+      <div class="tmap">
+        ${mapBase()}
+        <div class="map-wash"></div>
+        <div class="map-body" id="tripMapBody">
+          <svg class="route-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+            <path d="${routePathD(stops)}" fill="none" stroke="var(--ink)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+            <path d="${routePathD(stops)}" fill="none" stroke="var(--coral)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+          </svg>
+          ${stops.map((s, i) => pinHTML(s, i)).join('')}
         </div>
-        <div class="scene-chips">
-          <span class="weather">${icon('sun', 12)}22° <small>Clear · 11–22°</small></span>
-          ${tag(`Today · Day 1 of ${dayCount}`, 'dark')}
-        </div>
-        <div class="hero-pager">
-          <span class="hero-count"><b data-hero-index>${S.hero + 1}</b> / ${TRIP_HERO.length}</span>
-          <div class="hero-dots">
-            ${TRIP_HERO.map((_, i) => `<button class="hero-dot${i === S.hero ? ' on' : ''}" data-act="hero-go" data-hero="${i}" aria-label="Photo ${i + 1} of ${TRIP_HERO.length}" aria-current="${i === S.hero ? 'true' : 'false'}"></button>`).join('')}
-          </div>
+        <div class="tmap-tools">
+          <button class="small-chip ${S.tripEdit ? 'on' : ''}" data-act="trip-edit">${icon(S.tripEdit ? 'check' : 'hand', 9)}${S.tripEdit ? 'Done' : 'Edit pins'}</button>
+          <button class="small-chip" data-act="reorder">${icon('updown', 9)}Reorder</button>
         </div>
       </div>
-      <div class="hero-foot">
+
+      <div class="rc-head">
         <div class="grow">
-          <div class="h3">Central Axis · Palace and Hutongs</div>
-          <div class="mini">
-            <span>${icon('pin', 9)} 6 stops</span>
-            <span>${icon('walk', 9)} 4.2 km</span>
-            <span>${icon('clock', 9)} ~5 hr</span>
+          <div class="rowline"><span class="day">DAY ${String(dayNo + 1).padStart(2, '0')}</span>${tag(day.tag, day.tagStyle)}</div>
+          <div class="rc-title">${esc(day.title)}</div>
+          <div class="rc-stats">
+            <span>${icon('pin', 9)}${stats.n} stops</span>
+            <span>${icon('walk', 9)}${stats.km} km</span>
+            <span>${icon('clock', 9)}${stats.full ? '~full day' : `~${stats.hr} hr`}</span>
           </div>
         </div>
-        <button class="round-lime" data-act="tab" data-tab="plan" aria-label="Open map">${icon('arrowur', 14)}</button>
+        ${S.tripSaved && !S.tripDirty ? `<span class="rc-saved">${icon('check', 8)}Saved</span>` : ''}
       </div>
-      <div class="today-facts">
-        <button class="fact" data-act="assistant" data-ctx="Tickets · Forbidden City 10/15 09:00">
-          ${icon('ticket', 11)}<span><b>Palace 09:00</b><small>Booked · Meridian Gate</small></span>
-        </button>
-        <button class="fact" data-act="assistant" data-ctx="Weather · Beijing 10/15">
-          ${icon('sun', 11)}<span><b>11° – 22°</b><small>Chilly mornings</small></span>
-        </button>
-        <button class="fact" data-act="assistant" data-ctx="Trip · sunset today 17:18">
-          ${icon('clock', 11)}<span><b>Sunset 17:18</b><small>Wanchun Pavilion</small></span>
-        </button>
+
+      ${S.aiVisible && dayNo === 0 && !S.tripEdit ? `
+      <div class="ai-bar rc-ai">
+        <span class="spark">${sparkleIcon(10)}</span>
+        <span>Pico: move Shichahai to 13:00</span>
+        <span class="note">1.2 km less</span>
+        <button data-act="apply-ai">Apply</button>
+      </div>` : ''}
+
+      <div class="rc-stops">
+        ${stops.map((s, i) => tripStopRow(s, i)).join('')}
+      </div>
+
+      ${day.note ? `<div class="rc-note">${icon('info', 9)}<span>${esc(day.note)}</span></div>` : ''}
+
+      <div class="rc-actions">
+        <button class="pa dashed" data-act="trip-add">${icon('plus', 10)}Add stop</button>
+        <button class="pa lime" data-act="similar">${icon('layers', 10)}Similar routes</button>
       </div>
     </article>
 
     <div class="section-title">
       <div class="st-left"><span class="idx idx-logo">${icon('calendar', 11)}</span><h2>Your days</h2></div>
-      <button class="link" data-act="assistant" data-ctx="Trip · Adjust the plan">Ask Pico ${icon('arrowur', 8)}</button>
+      <span class="meta">${days.length} days · ${days.reduce((n, d) => n + d.stops.length, 0)} stops</span>
     </div>
 
-    <div class="trip-plans">
-      ${tripPlans().map((p, i) => tripPlanCard(p, i)).join('')}
+    <div class="day-list">
+      ${days.map((d, i) => `<button class="day-row ${i === dayNo ? 'on' : ''}" data-act="trip-day" data-day="${i}" data-scroll="1">
+        <span class="dd"><b>${esc(d.date)}</b><small>${esc(d.week)}</small></span>
+        <span class="di">
+          <span class="rowline"><span class="day">DAY ${String(i + 1).padStart(2, '0')}</span>${tag(d.tag, d.tagStyle)}</span>
+          <b>${esc(d.title)}</b>
+          <small>${esc(d.meta)}</small>
+        </span>
+        <span class="go">${icon('right', 9)}</span>
+      </button>`).join('')}
     </div>
 
     <div class="section-title">
@@ -658,6 +763,157 @@ function tripView() {
       <span class="meta">${quizAnswered()} / 3 answered</span>
     </div>
     ${quizCard()}`;
+}
+
+function tripStopRow(stop, index) {
+  const colors = ['var(--mustard)', 'var(--pink)', 'var(--mint)', 'var(--peri)', 'var(--lime)', 'var(--sky)'];
+  const selected = S.selected === stop.id;
+  const n = activeDay().stops.length;
+  return `<div class="trow ${selected ? 'on' : ''}">
+    <span class="time">${esc(stop.time)}</span>
+    <span class="num" style="background:${colors[index % colors.length]}">${index + 1}</span>
+    <button class="info" data-act="select-stop" data-id="${stop.id}">
+      <b>${esc(stop.name)} ${stop.tag ? tag(stop.tag, stop.tagStyle || 'soft') : ''}</b>
+      <small>${esc(stop.duration || '45 min')} · ${index === 0 ? 'Start here' : 'on the route'}</small>
+    </button>
+    ${S.tripEdit ? `<span class="tedit">
+      <button data-act="trip-up" data-index="${index}" ${index === 0 ? 'disabled' : ''} aria-label="Move up">${icon('up', 9)}</button>
+      <button data-act="trip-down" data-index="${index}" ${index === n - 1 ? 'disabled' : ''} aria-label="Move down">${icon('down', 9)}</button>
+      <button class="del" data-act="trip-del" data-index="${index}" ${n <= 2 ? 'disabled' : ''} aria-label="Remove stop">${icon('trash', 9)}</button>
+    </span>` : `<span class="grip">${icon('sliders', 10)}</span>`}
+  </div>`;
+}
+
+function tripCTAHTML() {
+  const days = tripDays();
+  const dayNo = clamp(S.tripDay, 0, days.length - 1);
+  const stops = days[dayNo].stops;
+  const saved = S.tripSaved;
+  const dirty = S.tripDirty;
+  return `<div class="trip-cta${saved && !dirty ? ' ready' : ''}">
+    <div class="tc-status">
+      <b><span class="tc-dot ${saved && !dirty ? 'ok' : ''}"></span>${saved ? (dirty ? 'Unsaved changes' : 'Plan saved') : 'Draft plan'}</b>
+      <small>${stops.length} stops · Day ${dayNo + 1} of ${days.length}</small>
+    </div>
+    ${saved && !dirty
+      ? `<button class="tc-btn lime" data-act="trip-start">${icon('walk', 13)}Start trip ${icon('arrowr', 12)}</button>`
+      : `<button class="tc-btn" data-act="trip-save">${icon('check', 12)}Save plan</button>`}
+  </div>`;
+}
+
+/* ---------- live trip ---------- */
+function livePin(stop, index) {
+  const state = index < S.liveStop ? 'done' : index === S.liveStop ? 'now' : 'next';
+  return `<span class="lpin ${state}" style="left:${stop.x * 100}%;top:${stop.y * 100}%">${state === 'done' ? icon('check', 9) : index + 1}</span>`;
+}
+
+function liveTripView() {
+  const days = tripDays();
+  const dayNo = clamp(S.tripDay, 0, days.length - 1);
+  const day = days[dayNo];
+  const stops = day.stops;
+  const n = stops.length;
+  const done = S.liveStop >= n;
+  const idx = done ? n - 1 : S.liveStop;
+  const stop = stops[idx];
+  const next = stops[S.liveStop + 1];
+  const visited = Math.min(S.liveStop, n);
+  const pct = Math.round((visited / n) * 100);
+  const walked = (visited * 0.72).toFixed(1);
+  const clock = plusMinutes(done ? (stops[n - 1] ? stops[n - 1].time : '17:30') : stop.time, 12);
+  const eta = plusMinutes(stops[n - 1] ? stops[n - 1].time : '17:30', 60);
+  const lat = (39.93 - (stop.y - 0.5) * 0.09).toFixed(4);
+  const lng = (116.39 + (stop.x - 0.5) * 0.11).toFixed(4);
+  const shortTitle = day.title.split('·')[0].trim();
+
+  return `
+    <header class="top live-top">
+      <div>
+        <div class="eyebrow live-eyebrow"><span class="live-dot"></span>LIVE TRIP / DAY ${dayNo + 1} · ${esc(day.date)}</div>
+        <div class="h1row"><div class="h1">${esc(shortTitle)}</div></div>
+        <div class="meta">2 travelers · started 09:00</div>
+      </div>
+      <div class="top-right">
+        <button class="small-chip" data-act="trip-live-end">${icon('x', 9)}End</button>
+        <div class="meta">${clock} · Beijing</div>
+      </div>
+    </header>
+
+    <article class="live-card">
+      <div class="live-row">
+        ${ring(pct / 100, 42, 3.6, 'var(--coral)', 'rgba(25,23,16,.14)', `${pct}%`)}
+        <div class="grow">
+          <b>${done ? 'Trip complete' : visited === 0 ? 'Just started · first stop ahead' : `${visited} of ${n} stops done`}</b>
+          <small>${walked} km walked · ${done ? 'all stops covered' : `ends about ${eta}`}</small>
+        </div>
+        ${done ? '' : `<span class="live-where">${icon('pin', 9)}${esc(stop.name.split('·')[0].trim())}</span>`}
+      </div>
+      <div class="live-bar"><i style="width:${Math.max(4, pct)}%"></i></div>
+    </article>
+
+    <article class="tmap live-map">
+      ${mapBase()}
+      <div class="map-wash"></div>
+      <div class="map-body">
+        <svg class="route-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+          <path d="${routePathD(stops)}" fill="none" stroke="rgba(25,23,16,.32)" stroke-width="3" stroke-dasharray="6 5" vector-effect="non-scaling-stroke"/>
+          ${S.liveStop > 0 ? `<path d="${routePathD(stops.slice(0, Math.min(S.liveStop + 1, n)))}" fill="none" stroke="var(--coral)" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>` : ''}
+        </svg>
+        ${stops.map((s, i) => livePin(s, i)).join('')}
+        ${done ? '' : `<span class="you-tag" style="left:${stop.x * 100}%;top:${stop.y * 100}%">You are here</span>`}
+      </div>
+      <div class="live-map-tag">${icon('pin', 8)} ${lat}° N, ${lng}° E</div>
+    </article>
+
+    ${done ? `
+    <article class="done-card">
+      <span class="done-ico">${icon('check', 16)}</span>
+      <b>Day ${dayNo + 1} complete</b>
+      <p>You covered ${n} stops and ${(n * 0.72).toFixed(1)} km. Your plan and the other ${days.length - 1} days are still saved.</p>
+      <div class="done-stats">
+        <div><b>${n}</b><span>stops</span></div>
+        <div><b>${(n * 0.72).toFixed(1)}</b><span>km walked</span></div>
+        <div><b>${eta}</b><span>finished</span></div>
+      </div>
+    </article>` : `
+    <article class="now-card">
+      <div class="now-top">
+        <span class="now-badge">${icon('pin', 8)}NOW · ${esc(stop.time)}</span>
+        <span class="now-count">Stop ${idx + 1} / ${n}</span>
+      </div>
+      <div class="now-title">${esc(stop.name)}</div>
+      <div class="now-meta">${esc(stop.duration || '45 min')} · ${esc(stop.tag || 'On the route')}</div>
+      <div class="now-loc">${icon('pin', 9)}<span>${idx === 0 ? 'Start point · 120 m away' : '6 min walk from the last stop'} · ${lat}° N ${lng}° E</span></div>
+      <div class="now-actions">
+        <button data-act="assistant" data-ctx="Live · ${esc(stop.name)}">${sparkleIcon(9)}Ask Pico</button>
+        <button data-act="toast" data-text="Navigation opened · ${esc(stop.name)}" data-icon="pin">${icon('map', 9)}Navigate</button>
+      </div>
+    </article>
+
+    ${next ? `<button class="next-card" data-act="trip-live-next">
+      <span class="nc-label">UP NEXT · 6 MIN</span>
+      <span class="nc-main"><b>${esc(next.name)}</b><small>${esc(next.time)} · ${esc(next.duration || '45 min')}</small></span>
+      <span class="nc-go">${icon('right', 9)}</span>
+    </button>` : `<div class="next-card last"><span class="nc-label">LAST STOP</span><span class="nc-main"><b>Finish here</b><small>Tap Next stop to wrap up the day</small></span></div>`}
+    `}
+    `;
+}
+
+function liveCTAHTML() {
+  const n = activeDay().stops.length;
+  const done = S.liveStop >= n;
+  const visited = Math.min(S.liveStop, n);
+  const walked = (visited * 0.72).toFixed(1);
+  return `<div class="trip-cta live-cta">
+    <button class="tc-stop" data-act="trip-live-end" aria-label="End live trip">${icon('x', 13)}</button>
+    <div class="tc-status">
+      <b>${done ? 'Day complete' : 'On the move'}</b>
+      <small>${done ? `${n} stops · ${(n * 0.72).toFixed(1)} km` : `${S.liveStop} of ${n} stops · ${walked} km`}</small>
+    </div>
+    <button class="tc-btn lime" data-act="${done ? 'trip-live-back' : 'trip-live-next'}">
+      ${done ? 'Back to plan' : S.liveStop === n - 1 ? 'Finish day' : 'Next stop'} ${icon('arrowr', 12)}
+    </button>
+  </div>`;
 }
 
 function quizAnswered() {
@@ -670,14 +926,16 @@ function quizCard() {
     <div class="quiz-top">
       <span class="quiz-badge">${icon('sparkle', 10)} Trip match</span>
       ${persona
-        ? `<button class="quiz-retake" data-act="quiz-reset">Retake ${icon('arrowur', 7)}</button>`
+        ? (S.planBuilt
+          ? `<button class="quiz-retake" data-act="assistant" data-ctx="Trip · Adjust the plan">Adjust ${icon('arrowur', 7)}</button>`
+          : `<button class="quiz-retake" data-act="quiz-reset">Retake ${icon('arrowur', 7)}</button>`)
         : `<span class="quiz-hintline">Answer all three for your title</span>`}
     </div>
     ${persona
       ? `<div class="quiz-result">
           <span class="qr-ico">${icon(persona.icon, 14)}</span>
           <span class="grow"><small>YOUR TRAVEL TITLE</small><b>${esc(persona.title)}</b><em>${esc(persona.meta)}</em></span>
-          <button class="qr-go" data-act="tab" data-tab="plan">${icon('map', 9)}${esc(persona.fit)}</button>
+          <button class="qr-go" data-act="trip-day" data-day="0" data-scroll="1">${icon('map', 9)}${esc(persona.fit)}</button>
         </div>`
       : `${QUIZ.map((q) => `<div class="quiz-q">
           <div class="quiz-label">${esc(q.label)}</div>
@@ -823,10 +1081,11 @@ function collaborator(name, pos, lime = false) {
 }
 function pinHTML(stop, index) {
   const selected = S.selected === stop.id;
-  return `<button class="pin ${selected ? 'selected' : ''} ${S.editMode ? 'edit' : ''}" style="left:${stop.x * 100}%;top:${stop.y * 100}%"
-    data-pin="${stop.id}" data-act="${S.editMode ? 'noop' : 'select-stop'}" data-id="${stop.id}" aria-label="${esc(stop.name)}">
+  const editing = S.editMode || S.tripEdit;
+  return `<button class="pin ${selected ? 'selected' : ''} ${editing ? 'edit' : ''}" style="left:${stop.x * 100}%;top:${stop.y * 100}%"
+    data-pin="${stop.id}" data-act="${editing ? 'noop' : 'select-stop'}" data-id="${stop.id}" aria-label="${esc(stop.name)}">
     ${index + 1}
-    ${S.editMode ? `<span class="move">${icon('move', 7)}</span>` : ''}
+    ${editing ? `<span class="move">${icon('move', 7)}</span>` : ''}
   </button>
   ${selected ? `<div class="pin-label" style="left:${stop.x * 100}%;top:${stop.y * 100}%"><b>${esc(stop.name)}</b><span>${esc(stop.time)}</span></div>` : ''}`;
 }
@@ -859,14 +1118,14 @@ function crowdOverlay() {
   </div>`;
 }
 
-function initMapDrag() {
-  const body = $('#mapBody');
-  if (!body || !S.editMode) return;
+function initMapDrag(bodySel = '#mapBody', stops = S.stops) {
+  const body = $(bodySel);
+  if (!body || (bodySel === '#mapBody' ? !S.editMode : !S.tripEdit)) return;
   $$('.pin', body).forEach((pin) => {
     pin.addEventListener('pointerdown', (ev) => {
       ev.preventDefault();
       const id = pin.dataset.pin;
-      const stop = S.stops.find((s) => s.id === id);
+      const stop = stops.find((s) => s.id === id);
       if (!stop) return;
       S.selected = id;
       const rect = body.getBoundingClientRect();
@@ -883,7 +1142,7 @@ function initMapDrag() {
         pin.style.left = `${nx * 100}%`;
         pin.style.top = `${ny * 100}%`;
         const paths = $$('.route-svg path', body);
-        paths.forEach((p) => { if (p.getAttribute('stroke') !== null) p.setAttribute('d', routePathD()); });
+        paths.forEach((p) => { if (p.getAttribute('stroke') !== null) p.setAttribute('d', routePathD(stops)); });
         const label = $('.pin-label', body);
         if (label) { label.style.left = `${nx * 100}%`; label.style.top = `${ny * 100}%`; }
       };
@@ -891,7 +1150,9 @@ function initMapDrag() {
         window.removeEventListener('pointermove', move);
         window.removeEventListener('pointerup', up);
         window.removeEventListener('pointercancel', up);
+        markPlanEdited();
         toast('Stop moved · route recalculated', 'refresh');
+        if (bodySel === '#tripMapBody') render();
       };
       window.addEventListener('pointermove', move);
       window.addEventListener('pointerup', up);
@@ -1651,6 +1912,7 @@ const sheetBuilders = {
   assistant: assistantSheet,
   similar: similarSheet,
   reorder: reorderSheet,
+  addStop: addStopSheet,
   notes: notesSheet,
   checklist: checklistSheet,
   place: placeSheet,
@@ -1907,6 +2169,13 @@ function generatePlan() {
   const days = planLength();
   S.planning = false;
   S.planBuilt = true;
+  S.tripDays = null;
+  S.tripDay = 0;
+  S.tripEdit = false;
+  S.tripSaved = false;
+  S.tripDirty = false;
+  S.tripLive = false;
+  S.liveStop = 0;
   S.assistantContext = `Plan · ${persona ? persona.fit : 'Beijing'} · ${days} days`;
   S.routeName = `${persona ? persona.fit : 'Central Axis'} · New plan`;
   S.messages.push({ role: 'user', text: `${S.quiz.days} · ${S.quiz.style} · ${S.quiz.theme}` });
@@ -2088,22 +2357,44 @@ function similarSheet() {
 
 /* ---------- reorder ---------- */
 function reorderSheet() {
+  const stops = activeStops();
   return `<div class="sheet medium">
-    ${sheetHead('Reorder stops', 'ROUTE · TUNE THE ORDER')}
+    ${sheetHead('Reorder stops', S.tab === 'trip' ? `ROUTE · DAY ${String(clamp(S.tripDay, 0, tripDays().length - 1) + 1).padStart(2, '0')}` : 'ROUTE · TUNE THE ORDER')}
     <div class="sheet-body">
       <p class="sub" style="margin:2px 0 8px">Use the arrows to change the order; the route and times recalculate.</p>
-      ${S.stops.map((s, i) => `<div class="reorder-row">
+      ${stops.map((s, i) => `<div class="reorder-row">
         <span class="num">${i + 1}</span>
-        <span class="grow"><b>${esc(s.name)}</b><small>${esc(s.time)} · ${esc(s.duration)}</small></span>
+        <span class="grow"><b>${esc(s.name)}</b><small>${esc(s.time)} · ${esc(s.duration || '45 min')}</small></span>
         <span class="btns">
           <button data-act="move-stop" data-index="${i}" data-dir="-1" ${i === 0 ? 'disabled' : ''} aria-label="Move up">${icon('up', 10)}</button>
-          <button data-act="move-stop" data-index="${i}" data-dir="1" ${i === S.stops.length - 1 ? 'disabled' : ''} aria-label="Move down">${icon('down', 10)}</button>
+          <button data-act="move-stop" data-index="${i}" data-dir="1" ${i === stops.length - 1 ? 'disabled' : ''} aria-label="Move down">${icon('down', 10)}</button>
         </span>
       </div>`).join('')}
     </div>
     <div class="sheet-cta">
       <button class="ghost" data-act="close-sheet">Cancel</button>
       <button class="primary" data-act="finish-reorder">Done</button>
+    </div>
+  </div>`;
+}
+
+/* ---------- add a stop ---------- */
+function addStopSheet() {
+  const day = activeDay();
+  const dayNo = clamp(S.tripDay, 0, tripDays().length - 1) + 1;
+  const existing = new Set(day.stops.map((s) => s.name.toLowerCase()));
+  return `<div class="sheet tall">
+    ${sheetHead('Add a stop', `ROUTE · DAY ${String(dayNo).padStart(2, '0')} · ${day.date}`)}
+    <div class="sheet-body">
+      <p class="sub" style="margin:2px 0 9px">Pick a place — it lands at the end of the route with a new time, then you can reorder it.</p>
+      ${PLACES.map((p) => {
+        const added = existing.has(p.title.toLowerCase());
+        return `<button class="place-add" data-act="trip-add-pick" data-id="${p.id}" ${added ? 'disabled' : ''}>
+          <span class="pa-ico" style="background:var(--${p.tint})">${icon(p.symbol, 12)}</span>
+          <span class="grow"><b>${esc(p.title)}</b><small>${esc(p.subtitle)} · ${esc(p.price)}</small></span>
+          ${added ? `<span class="tag soft">On route</span>` : `<span class="pa-plus">${icon('plus', 10)}</span>`}
+        </button>`;
+      }).join('')}
     </div>
   </div>`;
 }
@@ -2332,6 +2623,7 @@ function applyRouteSuggestion(silent) {
   S.aiVisible = false;
   S.applied = true;
   S.routeName = 'Central Axis · Tuned';
+  markPlanEdited();
   render();
   if (!silent) toast("Pico's suggestion applied · 1.2 km shorter", 'sparkle');
 }
@@ -2348,8 +2640,10 @@ function applySimilar(index) {
   if (next.length) S.stops = next.map((s, i) => ({ ...s, time: times[i] || s.time }));
   S.routeName = r.title;
   S.aiVisible = false;
+  markPlanEdited();
+  const wasTrip = S.tab === 'trip';
   closeSheet();
-  S.tab = 'plan';
+  S.tab = wasTrip ? 'trip' : 'plan';
   render(true);
   toast(`Applied “${r.title}”`, 'check');
 }
@@ -2366,8 +2660,10 @@ function applyForumRoute(index) {
   if (next.length) S.stops = next.map((s, i) => ({ ...s, time: times[i] || s.time }));
   S.routeName = r.title;
   S.aiVisible = false;
+  markPlanEdited();
+  const wasTrip = S.tab === 'trip';
   closeSheet();
-  S.tab = 'plan';
+  S.tab = wasTrip ? 'trip' : 'plan';
   render(true);
   toast(`Applied “${r.title}”`, 'check');
 }
@@ -2479,13 +2775,16 @@ function toggleCheck(id) {
 }
 
 function moveStop(index, dir) {
+  const stops = activeStops();
   const to = index + dir;
-  if (to < 0 || to >= S.stops.length) return;
+  if (to < 0 || to >= stops.length) return;
   const body = $('.sheet-body');
   const top = body ? body.scrollTop : 0;
-  const arr = S.stops.slice();
+  const arr = stops.slice();
   [arr[index], arr[to]] = [arr[to], arr[index]];
-  S.stops = arr;
+  if (stops === S.stops) S.stops = arr;
+  else stops.splice(0, stops.length, ...arr);
+  markPlanEdited();
   renderSheet();
   requestAnimationFrame(() => {
     const nb = $('.sheet-body');
@@ -2569,9 +2868,114 @@ document.addEventListener('click', (e) => {
       break;
     case 'open-trip':
       closeSheet();
+      S.tripDay = 0;
       go('trip');
       toast(`Your plan · ${planLength()} days`, 'map');
       break;
+    case 'trip-day': {
+      S.tripDay = clamp(Number(el.dataset.day) || 0, 0, tripDays().length - 1);
+      S.tripEdit = false;
+      S.selected = null;
+      render();
+      if (el.dataset.scroll) requestAnimationFrame(() => $('.plan-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+      break;
+    }
+    case 'trip-edit':
+      S.tripEdit = !S.tripEdit;
+      if (S.tripEdit) S.selected = null;
+      render();
+      toast(S.tripEdit ? 'Drag a numbered dot, or use the row buttons' : 'Stops saved', S.tripEdit ? 'hand' : 'check');
+      break;
+    case 'trip-add':
+      openSheet('addStop');
+      break;
+    case 'trip-add-pick': {
+      const p = placeById(el.dataset.id);
+      if (!p) break;
+      const stops = activeStops();
+      if (stops.some((s) => s.name.toLowerCase() === p.title.toLowerCase())) { toast('Already on this route', 'info'); break; }
+      const last = stops[stops.length - 1];
+      const time = plusMinutes(last ? last.time : '10:00', 60);
+      stops.push({
+        id: 'x' + Date.now(),
+        name: p.title,
+        time,
+        duration: '45 min',
+        x: clamp((last ? last.x : .5) + .06, .1, .9),
+        y: clamp((last ? last.y : .5) + .06, .12, .9),
+        tag: 'Pico pick',
+        tagStyle: 'coral'
+      });
+      markPlanEdited();
+      closeSheet();
+      render();
+      toast(`${p.title} added · ${time}`, 'plus');
+      break;
+    }
+    case 'trip-up':
+    case 'trip-down': {
+      const stops = activeStops();
+      const i = Number(el.dataset.index);
+      const to = i + (act === 'trip-up' ? -1 : 1);
+      if (to < 0 || to >= stops.length) break;
+      [stops[i], stops[to]] = [stops[to], stops[i]];
+      markPlanEdited();
+      render();
+      toast('Order updated · times follow the stop', 'refresh');
+      break;
+    }
+    case 'trip-del': {
+      const stops = activeStops();
+      const i = Number(el.dataset.index);
+      if (stops.length <= 2) { toast('Keep at least two stops', 'info'); break; }
+      stops.splice(i, 1);
+      S.selected = null;
+      markPlanEdited();
+      render();
+      toast('Stop removed · route recalculated', 'trash');
+      break;
+    }
+    case 'trip-save':
+      S.tripSaved = true;
+      S.tripDirty = false;
+      render();
+      toast('Plan saved · start when you are ready', 'check');
+      break;
+    case 'trip-start':
+      S.tripSaved = true;
+      S.tripDirty = false;
+      S.tripEdit = false;
+      S.selected = null;
+      S.tripLive = true;
+      S.liveStop = 0;
+      render(true);
+      toast('Trip started · first stop ahead', 'walk');
+      break;
+    case 'trip-live-next': {
+      const stops = activeDay().stops;
+      if (S.liveStop < stops.length) {
+        S.liveStop += 1;
+        render();
+        if (S.liveStop >= stops.length) toast('Day complete · every stop covered', 'check');
+        else toast(`Next · ${stops[S.liveStop].name}`, 'pin');
+      }
+      break;
+    }
+    case 'trip-live-end':
+      S.tripLive = false;
+      S.liveStop = 0;
+      render(true);
+      toast('Live trip ended · plan saved', 'check');
+      break;
+    case 'trip-live-back': {
+      const atEnd = S.tripDay >= tripDays().length - 1;
+      S.tripLive = false;
+      S.liveStop = 0;
+      S.tripDay = clamp(S.tripDay + 1, 0, tripDays().length - 1);
+      render(true);
+      toast(atEnd ? 'Trip complete · plan saved' : `Day done · Day ${S.tripDay + 1} loaded`, 'check');
+      break;
+    }
     case 'quiz-reset':
       S.quiz = { days: null, style: null, theme: null };
       render();
@@ -2643,6 +3047,7 @@ document.addEventListener('click', (e) => {
       break;
     case 'finish-reorder':
       closeSheet();
+      markPlanEdited();
       render();
       toast('Order updated · times recalculated', 'refresh');
       break;
