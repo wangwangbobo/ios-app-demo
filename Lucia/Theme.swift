@@ -457,12 +457,20 @@ struct IconCircleButton: View {
 struct SectionHeading: View {
     var title: String
     var index: String? = nil
+    var icon: String? = nil
     var trailing: String? = nil
     var trailingAction: (() -> Void)? = nil
 
     var body: some View {
         HStack(alignment: .center, spacing: 8) {
-            if let index {
+            if let icon {
+                Image(systemName: icon)
+                    .font(.system(size: 10.5, weight: .bold))
+                    .foregroundStyle(Palette.ink)
+                    .frame(width: 22, height: 22)
+                    .background(Circle().fill(Palette.lime))
+                    .overlay(Circle().strokeBorder(Palette.ink, lineWidth: 1))
+            } else if let index {
                 Text(index)
                     .font(.system(size: 9, weight: .bold, design: .monospaced))
                     .foregroundStyle(Palette.ink)

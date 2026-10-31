@@ -33,8 +33,8 @@ struct TripView: View {
                 VStack(alignment: .leading, spacing: 20) {
                     header
                     todaySection
-                    quizSection
                     plansSection
+                    quizSection
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 10)
@@ -119,7 +119,7 @@ struct TripView: View {
 
     private var todaySection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            SectionHeading(title: "Today at a glance", index: "01", trailing: "10/15 · Wed")
+            SectionHeading(title: "Today at a glance", icon: "sun.max.fill", trailing: "10/15 · Wed")
 
             VStack(spacing: 0) {
                 ZStack(alignment: .topLeading) {
@@ -342,7 +342,7 @@ struct TripView: View {
 
     private var quizSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            SectionHeading(title: "Travel style check", index: "02", trailing: "\(answeredCount) / 3")
+            SectionHeading(title: "Travel style check", icon: "sparkles", trailing: "\(answeredCount) / 3")
 
             VStack(alignment: .leading, spacing: 11) {
                 HStack(spacing: 8) {
@@ -502,7 +502,7 @@ struct TripView: View {
 
     private var plansSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            SectionHeading(title: "Your days", index: "03", trailing: "Ask Pico") {
+            SectionHeading(title: "Your days", icon: "calendar", trailing: "Ask Pico") {
                 model.openAssistant("Trip · Adjust the plan")
             }
 

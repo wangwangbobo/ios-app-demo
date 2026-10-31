@@ -188,6 +188,11 @@ img{max-width:100%;display:block}
 .section-title{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin:22px 0 10px}
 .section-title .st-left{display:flex;align-items:baseline;gap:8px}
 .section-title .idx{font:700 9px var(--mono);color:var(--ink3);letter-spacing:.1em}
+.section-title .idx.idx-logo{
+  width:20px;height:20px;flex:none;display:inline-grid;place-items:center;align-self:center;
+  border-radius:50%;background:var(--lime);border:1px solid var(--ink);color:var(--ink);letter-spacing:0;
+}
+.section-title .idx.idx-logo svg{display:block}
 .section-title h2{font-size:17px;font-weight:900;letter-spacing:-.4px;margin:0}
 .section-title .link{
   display:inline-flex;align-items:center;gap:3px;font-size:9.5px;font-weight:700;color:var(--ink2);

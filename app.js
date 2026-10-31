@@ -553,7 +553,7 @@ function tripView() {
     </header>
 
     <div class="section-title" style="margin-top:18px">
-      <div class="st-left"><span class="idx">01</span><h2>Today at a glance</h2></div>
+      <div class="st-left"><span class="idx idx-logo">${icon('sun', 11)}</span><h2>Today at a glance</h2></div>
       <span class="today-date">10/15 · Wed</span>
     </div>
 
@@ -604,19 +604,19 @@ function tripView() {
     </article>
 
     <div class="section-title">
-      <div class="st-left"><span class="idx">02</span><h2>Travel style check</h2></div>
-      <span class="meta">${quizAnswered()} / 3 answered</span>
-    </div>
-    ${quizCard()}
-
-    <div class="section-title">
-      <div class="st-left"><span class="idx">03</span><h2>Your days</h2></div>
+      <div class="st-left"><span class="idx idx-logo">${icon('calendar', 11)}</span><h2>Your days</h2></div>
       <button class="link" data-act="assistant" data-ctx="Trip · Adjust the plan">Ask Pico ${icon('arrowur', 8)}</button>
     </div>
 
     <div class="trip-plans">
       ${TRIP_PLANS.map((p, i) => tripPlanCard(p, i)).join('')}
-    </div>`;
+    </div>
+
+    <div class="section-title">
+      <div class="st-left"><span class="idx idx-logo">${icon('compass', 11)}</span><h2>Travel style check</h2></div>
+      <span class="meta">${quizAnswered()} / 3 answered</span>
+    </div>
+    ${quizCard()}`;
 }
 
 function quizAnswered() {
