@@ -5,7 +5,6 @@ import UIKit
 
 struct NotesPoster: View {
     @EnvironmentObject private var model: AppModel
-    @Environment(\.dismiss) private var dismiss
     @State private var copied = false
 
     private var cleanName: String {
@@ -13,53 +12,59 @@ struct NotesPoster: View {
     }
 
     var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: 14) {
-                topBar
-                poster
-                ShareLink(item: model.routeSummary) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "square.and.arrow.up")
-                            .font(.system(size: 11, weight: .bold))
-                        Text("Share this note")
-                            .font(.system(size: 12, weight: .bold))
-                    }
-                    .foregroundStyle(Palette.ink)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 45)
-                    .background(Capsule().fill(Palette.lime))
-                    .overlay(Capsule().strokeBorder(Palette.ink, lineWidth: 1.2))
-                    .compositingGroup()
-                    .shadow(color: Palette.ink.opacity(0.15), radius: 0, x: 0, y: 3)
-                }
+        VStack(spacing: 0) {
+            topBar
+                .padding(.horizontal, 20)
+                .padding(.top, 10)
+                .padding(.bottom, 6)
 
-                Button {
-                    UIPasteboard.general.string = model.routeSummary
-                    withAnimation { copied = true }
-                    Haptics.success()
-                } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: copied ? "checkmark" : "doc.on.doc")
-                            .font(.system(size: 10, weight: .semibold))
-                        Text(copied ? "Caption copied" : "Copy caption")
-                            .font(.system(size: 11.5, weight: .medium))
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(spacing: 14) {
+                    poster
+                    ShareLink(item: model.routeSummary) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "square.and.arrow.up")
+                                .font(.system(size: 11, weight: .bold))
+                            Text("Share this note")
+                                .font(.system(size: 12, weight: .bold))
+                        }
+                        .foregroundStyle(Palette.ink)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 45)
+                        .background(Capsule().fill(Palette.lime))
+                        .overlay(Capsule().strokeBorder(Palette.ink, lineWidth: 1.2))
+                        .compositingGroup()
+                        .shadow(color: Palette.ink.opacity(0.15), radius: 0, x: 0, y: 3)
                     }
-                    .foregroundStyle(Palette.ink)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 43)
-                    .background(Capsule().fill(Palette.paper))
-                    .overlay(Capsule().strokeBorder(Palette.ink, lineWidth: 1.1))
-                }
-                .buttonStyle(PressableButtonStyle())
 
-                Text("The note includes route order, times and distance — ready for social.")
-                    .font(.system(size: 9.5))
-                    .foregroundStyle(Palette.ink3)
-                    .multilineTextAlignment(.center)
+                    Button {
+                        UIPasteboard.general.string = model.routeSummary
+                        withAnimation { copied = true }
+                        Haptics.success()
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: copied ? "checkmark" : "doc.on.doc")
+                                .font(.system(size: 10, weight: .semibold))
+                            Text(copied ? "Caption copied" : "Copy caption")
+                                .font(.system(size: 11.5, weight: .medium))
+                        }
+                        .foregroundStyle(Palette.ink)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 43)
+                        .background(Capsule().fill(Palette.paper))
+                        .overlay(Capsule().strokeBorder(Palette.ink, lineWidth: 1.1))
+                    }
+                    .buttonStyle(PressableButtonStyle())
+
+                    Text("The note includes route order, times and distance — ready for social.")
+                        .font(.system(size: 9.5))
+                        .foregroundStyle(Palette.ink3)
+                        .multilineTextAlignment(.center)
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 4)
+                .padding(.bottom, 30)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 10)
-            .padding(.bottom, 30)
         }
         .background(Palette.bg.ignoresSafeArea())
     }
@@ -71,17 +76,25 @@ struct NotesPoster: View {
                 .foregroundStyle(Palette.ink)
             Spacer()
             Button {
-                dismiss()
+                Haptics.tap()
+                closeNote()
             } label: {
                 Image(systemName: "xmark")
                     .font(.system(size: 11, weight: .black))
                     .foregroundStyle(Palette.ink)
-                    .frame(width: 33, height: 33)
+                    .frame(width: 40, height: 40)
                     .background(Circle().fill(Palette.paper))
                     .overlay(Circle().strokeBorder(Palette.ink, lineWidth: 1.1))
+                    .contentShape(Circle())
             }
             .buttonStyle(PressableButtonStyle())
+            .simultaneousGesture(TapGesture().onEnded { closeNote() })
+            .accessibilityLabel("Close visual note")
         }
+    }
+
+    private func closeNote() {
+        model.notesOpen = false
     }
 
     private var poster: some View {
