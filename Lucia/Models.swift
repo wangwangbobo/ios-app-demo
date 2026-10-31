@@ -1,6 +1,31 @@
 import Foundation
 import CoreGraphics
 
+// MARK: - Language
+
+enum AppLanguage: String, CaseIterable, Identifiable {
+    case en, zh
+
+    var id: String { rawValue }
+
+    var locale: Locale { Locale(identifier: self == .zh ? "zh-Hans" : "en") }
+    var label: String { self == .en ? "EN" : "中文" }
+    var other: AppLanguage { self == .en ? .zh : .en }
+}
+
+/// Manual lookup for strings built at runtime (toasts, data-driven labels).
+enum L10n {
+    private static let zhBundle: Bundle? = {
+        guard let path = Bundle.main.path(forResource: "zh-Hans", ofType: "lproj") else { return nil }
+        return Bundle(path: path)
+    }()
+
+    static func text(_ key: String, _ lang: AppLanguage) -> String {
+        guard lang == .zh, let bundle = zhBundle else { return key }
+        return bundle.localizedString(forKey: key, value: key, table: nil)
+    }
+}
+
 // MARK: - Navigation
 
 enum Tab: String, CaseIterable, Identifiable {

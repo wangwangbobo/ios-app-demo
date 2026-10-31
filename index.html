@@ -9,7 +9,7 @@
 <meta name="theme-color" content="#F4ECDC">
 <link rel="icon" href="AppIcon-256.png">
 <link rel="apple-touch-icon" href="AppIcon.png">
-<link rel="stylesheet" href="app.css?v=20261031n">
+<link rel="stylesheet" href="app.css?v=20261101b">
 </head>
 <body>
 <div class="stage">
@@ -47,11 +47,16 @@
 
       <nav class="dock" id="dock" aria-label="Main navigation"></nav>
       <div class="toast" id="toast" role="status"></div>
+      <div class="welcome-layer" id="welcomeLayer"></div>
       <div class="sheet-layer" id="sheetLayer" aria-modal="true" role="dialog"></div>
+      <div class="recap-layer" id="recapLayer" aria-modal="true" role="dialog" aria-label="Trip recap"></div>
+      <button class="lang-switch" id="langSwitch" type="button" aria-label="Switch language">
+        <b data-lang="en">EN</b><i aria-hidden="true"></i><span data-lang="zh">中文</span>
+      </button>
     </div>
   </div>
 </div>
 
-<script src="app.js?v=20261031n"></script>
+<script src="app.js?v=20261101b"></script>
 </body>
 </html>

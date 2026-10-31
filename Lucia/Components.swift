@@ -42,7 +42,7 @@ struct FloatingTabBar: View {
                     }
                 }
                 if active {
-                    Text(tab.title)
+                    Text(LocalizedStringKey(tab.title))
                         .font(.system(size: 11.5, weight: .bold))
                         .fixedSize()
                 }
@@ -683,7 +683,7 @@ struct MiniMetric: View {
             Text(value)
                 .font(.system(size: 25, weight: .black).width(.condensed))
                 .foregroundStyle(accent)
-            Text(label)
+            Text(LocalizedStringKey(label))
                 .font(.system(size: 9, weight: .medium, design: .monospaced))
                 .foregroundStyle(Palette.ink3)
                 .lineLimit(1)
@@ -709,5 +709,42 @@ struct IconBadge: View {
                 RoundedRectangle(cornerRadius: size * 0.32, style: .continuous)
                     .strokeBorder(Palette.ink.opacity(0.85), lineWidth: 1)
             )
+    }
+}
+
+
+// MARK: - Language switch
+
+struct LanguagePill: View {
+    @EnvironmentObject private var model: AppModel
+    var dark = false
+
+    private var ink: Color { dark ? Palette.cream : Palette.ink }
+
+    var body: some View {
+        HStack(spacing: 4) {
+            ForEach(AppLanguage.allCases) { lang in
+                Button {
+                    guard model.lang != lang else { return }
+                    Haptics.tap()
+                    withAnimation(.easeInOut(duration: 0.18)) {
+                        model.lang = lang
+                    }
+                } label: {
+                    Text(verbatim: lang.label)
+                        .font(.system(size: 9.5, weight: .bold, design: .monospaced))
+                        .foregroundStyle(model.lang == lang ? Palette.ink : ink.opacity(0.72))
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 3.5)
+                        .background(Capsule().fill(model.lang == lang ? Palette.lime : Color.clear))
+                }
+                .buttonStyle(PressableButtonStyle(scale: 0.94))
+            }
+        }
+        .padding(3)
+        .background(Capsule().fill(dark ? Color(hex: 0x16130C).opacity(0.92) : Palette.paper.opacity(0.96)))
+        .overlay(Capsule().strokeBorder(dark ? Palette.cream.opacity(0.34) : Palette.ink, lineWidth: 1.1))
+        .shadow(color: Color.black.opacity(dark ? 0.35 : 0.14), radius: 0, x: 0, y: 2)
+        .accessibilityLabel("Switch language")
     }
 }

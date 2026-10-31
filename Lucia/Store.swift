@@ -12,6 +12,9 @@ final class AppModel: ObservableObject {
     @Published var notesOpen = false
     @Published var onboarding = true
     @Published var planBuilt = false
+    @Published var lang: AppLanguage = .en
+    @Published var recapOpen = false
+    @Published var recapSlide = 0
 
     // MARK: Trip
     @Published var reminderDismissed = false
@@ -200,6 +203,7 @@ final class AppModel: ObservableObject {
     private func applyLaunchScreen() {
         #if DEBUG
         let args = ProcessInfo.processInfo.arguments
+        if args.contains("-zh") { lang = .zh }
         if args.contains("-plan") || args.contains("-similar") { tab = .plan }
         if args.contains("-mapedit") {
             tab = .plan
@@ -293,6 +297,18 @@ final class AppModel: ObservableObject {
         if args.contains("-bigtype") {
             tab = .translate
             translateMode = .offline
+        }
+        if args.contains("-recap") {
+            tab = .trip
+            onboarding = false
+            planBuilt = true
+            ensureTripDays()
+            recapOpen = true
+            if let index = args.firstIndex(of: "-recapslide"),
+               args.indices.contains(index + 1),
+               let value = Int(args[index + 1]) {
+                recapSlide = min(max(value, 0), 7)
+            }
         }
         if planBuilt {
             ensureTripDays()
@@ -724,6 +740,13 @@ final class AppModel: ObservableObject {
             }
             Haptics.success()
             toast("Trip complete · plan saved", icon: "checkmark.seal.fill")
+            tripSaved = true
+            tripDirty = false
+            recapSlide = 0
+            Task { @MainActor [weak self] in
+                try? await Task.sleep(for: .milliseconds(420))
+                self?.recapOpen = true
+            }
         }
     }
 

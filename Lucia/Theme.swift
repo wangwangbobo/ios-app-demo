@@ -98,7 +98,8 @@ struct Eyebrow: View {
     let text: String
     var color: Color = Palette.ink3
     var body: some View {
-        Text(text.uppercased())
+        Text(LocalizedStringKey(text))
+            .textCase(.uppercase)
             .font(LuciaType.eyebrow())
             .tracking(1.6)
             .foregroundStyle(color)
@@ -143,7 +144,7 @@ struct TagView: View {
     let text: String
     var style: TagStyle = .neutral
     var body: some View {
-        Text(text)
+        Text(LocalizedStringKey(text))
             .font(.system(size: 9, weight: .bold))
             .foregroundStyle(style.foreground)
             .padding(.horizontal, 7.5)
@@ -165,7 +166,8 @@ struct StickerLabel: View {
             if let icon {
                 Image(systemName: icon).font(.system(size: 8, weight: .bold))
             }
-            Text(text.uppercased())
+            Text(LocalizedStringKey(text))
+                .textCase(.uppercase)
                 .font(.system(size: 8.5, weight: .bold, design: .monospaced))
                 .tracking(0.6)
         }

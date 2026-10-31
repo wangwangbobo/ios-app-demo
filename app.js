@@ -63,7 +63,8 @@ const ICONS = {
   lock: '<rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7.5a4 4 0 0 1 8 0V10"/>',
   trash: '<path d="M4.5 6.5h15M9 6.5V4h6v2.5M6.5 6.5 8 21h8l1.5-14.5M10 10v7M14 10v7"/>',
   refresh: '<path d="M20 12a8 8 0 1 1-2.4-5.7M20 4v4.5h-4.5"/>',
-  wave: '<path d="M3 12c2 0 2-3 4-3s2 6 4 6 2-6 4-6 2 3 4 3"/>'
+  wave: '<path d="M3 12c2 0 2-3 4-3s2 6 4 6 2-6 4-6 2 3 4 3"/>',
+  globe: '<circle cx="12" cy="12" r="8.6"/><path d="M3.6 12h16.8M12 3.4c2.4 2.4 3.6 5.3 3.6 8.6s-1.2 6.2-3.6 8.6c-2.4-2.4-3.6-5.3-3.6-8.6S9.6 5.8 12 3.4z"/>'
 };
 function icon(name, size = 16, cls = '') {
   const p = ICONS[name] || ICONS.sparkle;
@@ -203,8 +204,11 @@ function quizPersona() {
   };
   const base = titles[q.style] || titles['Slow culture'];
   const fit = q.theme === 'Imperial history' || q.theme === 'Hutongs & coffee' ? 'Central Axis' : 'Imperial Gardens';
-  return { ...base, meta: `${q.days} · ${q.style} · ${q.theme}`, fit };
+  return { ...base, meta: `${q.days} · ${q.style} · ${q.theme}`, metaParts: [q.days, q.style, q.theme], fit };
 }
+
+/* translate a single known UI/content label; leaves proper nouns alone */
+function tr(key) { return S.lang === 'zh' ? (ZH[key] || key) : key; }
 
 /* archived trip reports — the fun end-of-journey wrap-up */
 const JOURNEYS = [
@@ -330,6 +334,11 @@ const S = {
   assistantContext: 'New trip · Planning with Pico',
   planning: true,
   planBuilt: false,
+  welcome: false,
+  lang: 'en',
+  tripWrapped: false,
+  recap: null,
+  recapSlide: 0,
   tripDays: null,
   tripDay: 0,
   tripEdit: false,
@@ -347,9 +356,455 @@ const S = {
 };
 
 /* ---------- helpers ---------- */
+/* UI chrome switches between English and Chinese. Place names, post bodies and
+   demo content stay in their original language. */
+const ZH = {
+  // shell
+  'Trip': '行程', 'Plan': '计划', 'Community': '社区', 'Translate': '翻译', 'Me': '我的',
+  'Ask Pico': '问 Pico', 'Close': '关闭', 'Done': '完成', 'Save': '保存', 'Cancel': '取消',
+  'New trip · Planning with Pico': '新旅程 · 和 Pico 一起规划',
+  'Ask Pico about routes, tickets, translation…': '问 Pico 路线、门票、翻译…',
+  'Ask Pico a question': '向 Pico 提问',
+  'Rework my route': '重排我的路线', 'Any palace tickets left?': '故宫还有票吗？',
+  'Where should I eat?': '去哪儿吃？', 'Translate: I have an allergy': '翻译：我过敏',
+  'Check my pre-trip list': '检查行前清单',
+  'Share': '分享', 'Share report': '分享报告', 'Share recap': '分享总结', 'Next': '下一步',
+  'Back': '返回', 'Finish': '完成', 'Copy': '复制', 'Search': '搜索', 'Add': '添加',
+  'Open': '打开', 'Booked': '已预约', 'Book': '预约', 'Free': '免费', 'Today': '今天',
+  // trip header
+  'My trip / BEIJING': '我的行程 / 北京',
+  'Today · Day 1': '今天 · 第 1 天',
+  'Your route': '你的路线', 'Your days': '你的日程',
+  'Travel style check': '旅行风格测试',
+  'Pico built this plan': 'Pico 为你规划', 'Adjust': '调整',
+  'Unsaved changes': '有未保存的修改', 'Save plan': '保存计划', 'Start trip': '开始旅程',
+  'Plan saved': '计划已保存', 'Plan ready': '计划已就绪',
+  'Edit pins': '编辑点位', 'Reorder': '重新排序', 'Add stop': '添加站点',
+  'Similar routes': '相似路线', 'Saved': '已保存', 'Draft plan': '草稿计划',
+  'From the community': '来自社区', 'Stops': '站点',
+  'DAY 01': '第 01 天', 'DAY 02': '第 02 天', 'DAY 03': '第 03 天', 'DAY 04': '第 04 天',
+  'Just started · first stop ahead': '刚出发 · 下一站就在前面',
+  'On the move': '在路上', 'Day complete': '今日完成', 'Trip complete': '旅程完成',
+  'Car booked': '已订车', 'Tickets to book': '待订票', 'Departure': '离京', 'Pico pick': 'Pico 推荐',
+  'Central Axis · Palace and Hutongs': '中轴线 · 宫殿与胡同',
+  'Great Wall Day · Badaling': '长城日 · 八达岭',
+  'Imperial Gardens · Palace & Museum': '皇家园林 · 宫殿与博物馆',
+  'Slow Hutongs · Departure': '慢游胡同 · 离京',
+  'Temple of Heaven & Beihai': '天坛与北海',
+  'Museum morning · Departure': '博物馆上午 · 离京',
+  'Bring your passport · it is windy up there, pack an extra layer': '带上护照 · 上面风大，多带一件外套',
+  'The National Museum needs a real-name booking — bring your passport': '国家博物馆需要实名预约——记得带护照',
+  'Flight at 18:40 · be at the airport 2.5 hr ahead': '航班 18:40 · 提前 2.5 小时到机场',
+  'Enter the Temple of Heaven from the south gate · rent a boat if the weather holds': '从南门进天坛 · 天气好就租条船',
+  'Real-name booking needed for the museum · flight at 18:40': '博物馆需实名预约 · 航班 18:40',
+  'Central Axis · Forbidden City & Jingshan': '中轴线 · 故宫与景山',
+  'Great Wall · Badaling by private car': '长城 · 专车去八达岭',
+  'Imperial gardens · Palace & museum': '皇家园林 · 宫殿与博物馆',
+  'Slow hutongs · departure': '慢游胡同 · 离京',
+  'YOUR TRAVEL TITLE': '你的旅行称号', 'New plan': '新计划', 'Beijing': '北京',
+  'Chengdu': '成都', 'Shanghai': '上海',
+  'Apply': '应用', '1.2 km less': '少走 1.2 公里',
+  'Pico: move Shichahai to 13:00': 'Pico：把什刹海挪到 13:00',
+  'Start here': '从这里开始', 'on the route': '在路线上',
+  'Answer all three for your title': '答完三题解锁称号',
+  'Retake': '重测',
+  'Pick one per question — it only changes your suggestion, never the plan.': '每题选一个——只影响推荐，不改行程。',
+  'Answer all three first': '先答完三道题',
+  'Next stop': '下一站', 'Next day': '下一天', 'Back to plan': '回到计划',
+  'End live trip': '结束实时旅程', 'End': '结束',
+  'Live': '实时', 'NOW': '当前', 'UP NEXT': '下一站', 'YOU ARE HERE': '你在这里',
+  'You are here': '你在这里', 'all stops covered': '全部站点完成', 'finished': '结束',
+  'Finish day': '结束今天', 'LAST STOP': '最后一站', 'Finish here': '在这里结束',
+  'Tap Next stop to wrap up the day': '点“下一站”结束今天', 'On the route': '在路线上',
+  'Great Wall Day': '长城日', 'Slow Hutongs': '慢游胡同', 'Navigate': '导航',
+  'Mon': '周一', 'Tue': '周二', 'Wed': '周三', 'Thu': '周四', 'Fri': '周五', 'Sat': '周六', 'Sun': '周日',
+  'Hilltop': '山顶', 'Sunset': '日落', 'Photo': '拍照点', 'Coffee': '咖啡',
+  'Start point · 120 m away': '起点 · 120 米外', '6 min walk from the last stop': '距上一站步行 6 分钟',
+  'Every stop covered': '所有站点已完成', 'Every stop on this day is checked off. Load tomorrow\'s route, or end the live trip and keep the saved plan.': '今天的站点已全部打卡。载入明天的路线，或结束实时旅程并保留已保存的计划。',
+  'Forbidden City booked for 09:00 · in at Meridian Gate, out at Shenwu Gate': '故宫已预约 09:00 · 午门进、神武门出',
+  // plan tab
+  'Make a note': '写笔记', 'Add place': '添加地点', 'City walk': '城市漫步',
+  'My plan / CITYWALK': '我的计划 / 城市漫步', 'Central Axis · Draft': '中轴线 · 草稿',
+  'My route': '我的路线', 'Community 3': '社区 3', 'Crowds': '人流',
+  '~5 hr · walk + metro': '约 5 小时 · 步行 + 地铁',
+  'Adjust stops': '调整站点', 'Drag stops': '拖动站点', 'Draft': '草稿',
+  'Drag a numbered dot — the route recalculates': '拖动编号圆点——路线会重新计算',
+  'Drag the numbered dots · route updates live': '拖动编号圆点 · 路线实时更新',
+  'Crowds rise after 14:00': '14:00 后人流变多',
+  'Nearby': '附近', 'Tickets': '门票', 'Food': '美食', 'Coffee': '咖啡', 'Gifts': '伴手礼',
+  'Local favorite': '本地人爱去', 'Queues': '排队', 'Quiet': '安静', 'Quick bite': '小吃',
+  'Palace views': '宫殿景观', 'Family': '亲子', 'Boating': '划船', 'Night': '夜景',
+  'Shopping': '购物', 'Sights': '景点', 'All': '全部',
+  // community
+  'For you': '为你推荐', 'Following': '关注', 'Events': '活动', 'Saved': '已保存',
+  'Community / BEIJING': '社区 / 北京', 'Our Beijing': '我们的北京',
+  '4,208 notes · 126 today · locals post here too': '4,208 条笔记 · 今日 126 条 · 本地人也在这里发',
+  'Search notes, places, people': '搜索笔记、地点、作者', 'Search community notes': '搜索社区笔记',
+  'Latest notes': '最新笔记', 'Routes': '路线',
+  'SEE': '看', 'WALK': '走', 'EAT': '吃', 'GIFT': '礼', 'EVENT': '活动',
+  'You are all caught up': '都看完了', '4,208 notes · pull down to refresh': '4,208 条笔记 · 下拉刷新',
+  'Cities': '城市', 'Post': '发布', 'Publish': '发布', 'Follow': '关注', 'Following': '已关注',
+  'All posts': '全部帖子', 'Nearby posts': '附近帖子', 'Ask Pico to plan it': '让 Pico 规划',
+  'Save this walk': '收藏这条路线', 'Open in map': '在地图中打开',
+  // translate
+  'Live translate': '实时翻译', 'Menu': '菜单', 'Sign': '路牌', 'Phrases': '常用语',
+  'Translate / PHRASES': '翻译 / 常用语', 'Translate / Phrases': '翻译 / 常用语', 'SAY IT': '开口说',
+  'LIVE CONVERSATION': '实时对话', 'Live conversation': '实时对话',
+  'Say it clearly,': '慢慢说清楚，', 'then breathe': '再换口气。',
+  'Live conversation · offline phrases · camera': '实时对话 · 离线常用语 · 拍照',
+  'Works offline': '离线可用', 'Chinese': '中文', 'English': '英文',
+  'Directions': '问路', 'Dining': '吃饭', 'Medical': '就医', 'Taxi': '打车', 'Emergency': '紧急情况',
+  'LIVE CONVERSATION': '实时对话',
+  'Tap to start talking': '点一下开始说话',
+  'Two-way · detects Chinese and English': '双向 · 自动识别中英文',
+  'Works without a signal. Speech is recognized on device, then translated into English.': '没有信号也能用。语音在设备上识别，再翻译成英文。',
+  'Voice is processed on device · recordings are never saved': '语音只在设备上处理 · 录音不会保存',
+  'Take a photo': '拍照翻译', 'Camera': '相机', 'Speak': '说话', 'Listen': '朗读',
+  'Translate': '翻译', 'Hold to talk': '按住说话', 'Scanning…': '识别中…',
+  // me
+  'Journey reports': '旅程报告', 'Attraction bookings': '景点预约', 'Travel services': '旅行服务',
+  'External info': '外部信息', 'Settings': '设置', 'Profile': '个人资料',
+  'Beijing · in progress': '北京 · 进行中', 'archived': '已归档',
+  'journey': '段旅程', 'journeys': '段旅程', 'stops done': '站已完成',
+  'Share route': '分享路线', 'View trip': '查看行程', 'Open route': '打开路线',
+  'All booked': '全部已约', 'Book all': '一键预约', 'Book now': '立即预约',
+  'Notifications': '通知', 'Privacy': '隐私', 'Terms': '条款', 'Language': '语言',
+  // me profile
+  'Me / PROFILE': '我的 / 资料', 'RoamChina member': 'RoamChina 会员', '12th city': '第 12 座城市',
+  'Cities visited': '到访城市', 'Saved places': '收藏地点', 'Shared routes': '分享路线',
+  'Beijing · 4 days, 3 nights': '北京 · 4 天 3 晚',
+  'Wangfujing · 2 adults · Central Axis on foot': '王府井 · 2 位成人 · 中轴线步行',
+  'With Lin and Zhou': '与 Lin、Zhou 同行',
+  'Beijing · recap ready': '北京 · 总结已就绪',
+  'Wrap-up unlocks 10/19 — tap to preview the recap': '总结 10/19 解锁——点开可先预览',
+  'Recap': '查看总结', 'Preview': '预览',
+  'Each finished trip is archived automatically, on your device.': '每段完成的旅程都会自动归档，只存在你的设备上。',
+  'Tickets are issued by the venues; scan your passport at the gate': '门票由场馆出票；入园时刷护照',
+  'The Forbidden City closes on Mondays; it is open Wednesday 10/15. Your booking receipts stay here.': '故宫周一闭馆，10/15 周三正常开放。预约凭证都保存在这里。',
+  'Offline pack': '离线包', 'Maps · phrases · ready': '地图 · 常用语 · 已就绪',
+  'Travel together': '一起出行', 'Lin, Zhou · 2 people': 'Lin、Zhou · 2 人',
+  'Trip notes': '旅行笔记', 'Export a poster': '导出海报',
+  'Booked elsewhere': '别处预订', 'Optional': '可选', 'Flights & hotel': '机票与酒店',
+  'Synced from the airline and hotel · nothing to manage in RoamChina': '同步自航空公司和酒店 · 在 RoamChina 里无需管理',
+  'Shown for reference only. It does not affect bookings, routes or your checklist.': '仅供参考，不影响预约、路线和清单。',
+  'Preferences': '偏好', 'Trip reminders': '行程提醒', '2 hr before · weather changes': '提前 2 小时 · 天气变化',
+  'Auto-play translations': '自动朗读翻译', 'Speak English as soon as it is read': '识别后立即用英文朗读',
+  'Offline maps': '离线地图', 'Beijing · 42 MB downloaded': '北京 · 已下载 42 MB',
+  'About': '关于', 'Your data stays on your device': '数据只保存在你的设备上',
+  'Last updated 2026/10': '更新于 2026/10', 'About RoamChina': '关于 RoamChina',
+  'Version 1.0.0 (12)': '版本 1.0.0 (12)',
+  'ROAMCHINA · MADE FOR SLOW TRAVEL': 'ROAMCHINA · 为慢旅行而生',
+  'A whole Beijing, in your pocket': '整个北京，装进口袋',
+  'Privacy policy · all voice is processed on device': '隐私政策 · 所有语音都在设备上处理',
+  'Terms of service · RoamChina 1.0.0': '服务条款 · RoamChina 1.0.0',
+  'RoamChina 1.0.0 (12) · native SwiftUI edition': 'RoamChina 1.0.0 (12) · SwiftUI 原生版',
+  'Offline maps are up to date · 42 MB': '离线地图已是最新 · 42 MB',
+  // welcome
+  'WELCOME TO ROAMCHINA': '欢迎来到 ROAMCHINA',
+  'FIRST TRIP · BEIJING': '第一趟旅行 · 北京',
+  'Beijing,\nat your pace.': '北京，\n按你的节奏走。',
+  'Beijing,': '北京，', 'at your pace.': '按你的节奏走。',
+  'A city is better on foot. Pico knows the gates, the queues and the side doors — answer three questions and your first plan is ready.': '这座城市适合用脚去走。Pico 知道哪个门进、哪里要排队、哪条小巷值得拐——回答三个问题，第一份计划就绪。',
+  'Hi, I\'m Pico. Tell me what kind of trip you like and I\'ll build your first Beijing plan — route order, timing and all.': '嗨，我是 Pico。告诉我你喜欢什么样的旅行，我来搭好第一份北京计划——顺序、时间都算好。',
+  'Build your first Beijing trip': '搭好你的第一趟北京之旅',
+  'Three answers and I\'ll set the order, the timing and the walking.': '三个问题，我来安排顺序、时间和步行量。',
+  'How many days do you like?': '想玩几天？',
+  'Your kind of holiday': '你喜欢哪种旅行？',
+  'A theme, or none?': '想定个主题吗？',
+  '2–3 days': '2–3 天', '4–5 days': '4–5 天', '6+ days': '6 天以上',
+  'Slow culture': '慢游文化', 'Food first': '美食优先', 'Outdoors': '户外', 'Night owl': '夜猫子',
+  'Imperial history': '皇城历史', 'Hutongs & coffee': '胡同与咖啡', 'Art & design': '艺术设计', 'No theme': '不限主题',
+  'Generate plan': '生成计划', 'Pick one per question — you can change it later.': '每题选一个——之后还能改。',
+  'All set — tap Generate plan.': '都选好了——点“生成计划”。',
+  'Plan ready · days on your trip': '计划就绪 · 已放进你的行程',
+  'View my trip': '查看我的行程', 'days': '天', 'stops': '站', 'km walking': '公里步行',
+  'Trip match': '行程匹配', 'Thinking…': '思考中…',
+  // reorder sheet
+  'Reorder stops': '调整站点顺序',
+  'Use the arrows to change the order; the route and times recalculate.': '用箭头调整顺序，路线和时间会重新计算。',
+  // sheets
+  'CITYWALK · 3 you can borrow': '城市漫步 · 3 条可借用',
+  'Matched against your 6 stops. Applying a route replaces the order and times.': '根据你的 6 站匹配。套用后会替换顺序和时间。',
+  'Apply to my route': '套用到我的路线', 'ROUTE · TUNE THE ORDER': '路线 · 调整顺序',
+  'Add a stop': '添加站点',
+  'Pick a place — it lands at the end of the route with a new time, then you can reorder it.': '选个地方——会排到路线末尾并生成新时间，之后可以再调整。',
+  'On route': '已在路线', 'Trip note': '旅行笔记', 'NOTE · SAVE AS POSTER': '笔记 · 存成海报',
+  'Save poster': '保存海报', 'Copy text': '复制文字',
+  'Exports at 3:4 — good for the community or a story.': '3:4 导出——适合发社区或故事。',
+  'Post to community': '发到社区',
+  'Pre-trip checklist': '行前清单', 'Documents': '证件', 'Connectivity': '网络通讯', 'Transit': '交通',
+  'Before you fly': '出发前', 'Arrival day': '抵达当天',
+  'Ticking items updates your progress on the Trip tab.': '勾选后行程页的进度会同步更新。',
+  'Ask Pico what is missing': '问 Pico 还差什么',
+  'Start a citywalk': '发起城市漫步', 'COMMUNITY · POST': '社区 · 发布',
+  'Event name': '活动名称', 'Meeting point': '集合地点', 'Cost': '费用', 'Notes': '备注',
+  'Date': '日期', 'Time': '时间', 'Free / ¥20': '免费 / ¥20',
+  'e.g. Shichahai sunset photo walk': '例如：什刹海日落摄影漫步',
+  'e.g. Yinding Bridge': '例如：银锭桥',
+  'What would you like to do together?': '想一起做点什么？',
+  'Posts appear in Local events and can be edited or cancelled any time.': '发布后会出现在本地活动里，随时可以编辑或取消。',
+  'Publish event': '发布活动',
+  'Move up': '上移', 'Move down': '下移', 'Remove': '删除',
+  // report
+  'TRIP COMPLETE': '旅程完成', 'JOURNEY ARCHIVE': '旅程归档',
+  'How rare was your route?': '你的路线有多稀有？',
+  'Share of RoamChina travelers who unlocked each place': 'RoamChina 旅行者解锁每个地点的比例',
+  'new places unlocked': '个新地点解锁', 'km walked': '公里步行',
+  'explorers': '旅行者', 'places visited in total': '个地点到访',
+  'Report saved to your archive': '报告已保存到归档',
+  'Your explorer title': '你的探索者称号',
+  'The Central Axis Cartographer': '中轴线制图师',
+  'TRIP WRAP-UP': '旅程总结',
+  'Your Beijing chapter': '你的北京篇章',
+  'places only a few travelers find': '个只有少数旅行者知道的地方',
+  'problems handled before they became stories': '个问题在变成故事前就被解决',
+  'new places unlocked on this trip': '个新地点在这趟旅程中解锁',
+  'meals worth the walk': '顿值得走过去的饭',
+  'km on foot': '公里步行',
+  'steps': '步', 'on your feet': '在路上',
+  'Back to your trip': '回到行程', 'Save recap': '保存总结',
+  'Your recap is ready': '你的总结已生成',
+  'YOUR EXPLORER TITLE': '你的探索者称号', 'You are officially': '你的正式称号是',
+  'OF THE TRIP': '本趟旅程', 'this season': '本季', 'rarest': '最稀有',
+  'THE ROAD LESS WALKED': '少有人走的路', 'PICO’S QUIET WINS': 'Pico 的悄悄胜利',
+  'NEW GROUND': '新地图', 'THE EATING PART': '吃这件事', 'MILES IN YOUR SHOES': '脚下的里程',
+  'Swipe or tap next': '左右滑动或点下一步', 'places only a few': '个只有少数',
+  'travelers find': '旅行者知道的地方', 'problems handled before': '个问题在变成',
+  'they became stories': '故事之前被解决', 'new places unlocked': '个新地点',
+  'on this trip': '在这趟旅程解锁', 'meals worth the walk': '顿值得走过去的饭',
+  'on foot': '步行', 'on your feet': '在路上', 'days out': '天在外', 'steps': '步',
+  'Also eaten': '还吃了', 'START': '出发', 'A true side door': '真正的小众入口',
+  'new places': '个新地点',
+  'Kept on your device · nothing shared unless you tap share.': '保存在你的设备上 · 不点分享就不会发出去。',
+  'Known by the curious': '好奇的人知道', 'A classic, well earned': '经典，值得',
+  'The city': '这座城市', 'remembers.': '会记得。', 'TRIP COMPLETE': '旅程完成',
+  'Share of travelers who checked in here — lower is rarer.': '旅行者到这里打卡的比例——越低越稀有。',
+  'No refunds, no rebookings, no lost afternoons.': '没有退款、没有改签、没有弄丢的下午。',
+  'First-time check-ins, collected into your Beijing passport.': '第一次打卡，收进你的北京护照。',
+  'Every one within a 12-minute walk of the route.': '每一家都在路线步行 12 分钟内。',
+  'About three-quarters of a marathon — in one pair of shoes, with coffee stops.': '差不多四分之三个马拉松——一双鞋，几杯咖啡。',
+  'This one is archived in Journey reports, with the title, the rare places and every meal attached.': '这份总结已归档到「旅程报告」，称号、稀有地点和每一顿饭都在里面。',
+  'Your Beijing chapter': '你的北京篇章',
+  'Your Chengdu chapter': '你的成都篇章', 'Your Shanghai chapter': '你的上海篇章',
+  'The city, one step at a time.': '这座城市，一步一个脚印。',
+  'The city,': '这座城市，', 'one step at a time.': '一步一个脚印。',
+  'Four days, seventeen stops, one straight line through the middle of Beijing — and every side door that opened along the way.': '四天、十七站，一条穿过北京中轴的直线——还有沿途每一扇打开的侧门。',
+  'You walked the axis like a local: early gates, long lunches, and never a queue longer than twelve minutes.': '你像本地人一样走完中轴：早进城门、慢慢吃饭，排队从没超过十二分钟。',
+  'Five days of teahouses, chilli oil and one very long bamboo walk. You never once took a taxi before noon.': '五天茶馆、红油和一段很长的竹林散步。中午之前你一次都没打车。',
+  'Four days of art deco lanes, midnight noodles and a ferry you took three times for the view.': '四天 Art Deco 里弄、深夜面和一趟为看风景坐了三次的轮渡。',
+  // personas & plan chrome
+  'The Slow Culture Wanderer': '慢游文化漫游者',
+  'The Table-First Wanderer': '先吃为敬的漫游者',
+  'The Open-Air Rambler': '户外闲逛者',
+  'The After-Dark Flâneur': '夜行漫步者',
+  'The Bamboo Teahouse Wanderer': '竹林茶馆漫游者',
+  'The Lane Flâneur': '里弄漫游者',
+  'Your travel plan': '你的旅行计划',
+  'Central Axis': '中轴线', 'Imperial Gardens': '皇家园林',
+  'WALKED': '步行',
+  'Your rarest stop was': '你最稀有的站点是',
+  '— only': '——只有',
+  'of RoamChina travelers have unlocked it.': '的 RoamChina 旅行者解锁过。',
+  '2 travelers · started 09:00': '2 位旅行者 · 09:00 出发',
+  // day meta
+  '6 stops · 4.2 km · ~5 hr': '6 站 · 4.2 公里 · 约 5 小时',
+  '3 stops · private car both ways · ~full day': '3 站 · 往返专车 · 约一整天',
+  '4 stops · Metro Line 4 · ~8 hr': '4 站 · 地铁 4 号线 · 约 8 小时',
+  '4 stops · 3.1 km on foot · ~4 hr': '4 站 · 3.1 公里步行 · 约 4 小时',
+  '4 stops · 5.1 km · ~6 hr': '4 站 · 5.1 公里 · 约 6 小时',
+  '3 stops · 2.4 km · ~5 hr': '3 站 · 2.4 公里 · 约 5 小时',
+  // recap quotes
+  'You walked the axis like a local: early gates, long lunches, and never a queue longer than twelve minutes.': '你像本地人一样走完中轴：早进城门、慢慢吃饭，排队从没超过十二分钟。',
+  'You ordered like a local by day two, and the teahouse auntie still remembers your usual seat.': '第二天你就点得像本地人了，茶馆阿姨还记得你常坐的那张椅子。',
+  'You found the city between the avenues — one lane at a time, always with a coffee in hand.': '你在马路之间找到了这座城市——一条里弄一条里弄地走，手里总有一杯咖啡。',
+  // Beijing solved
+  'The palace sold out at 13:00': '故宫 13:00 的票售罄',
+  'Pico moved you to the 09:00 gate — inside before the tour groups.': 'Pico 把你换到 09:00 入园——比旅行团还早进去。',
+  "Chang'an Avenue closed for the marathon": '长安街因马拉松封路',
+  'Rerouted through the hutongs; you arrived 20 minutes early.': '改道穿胡同，你反而早到了 20 分钟。',
+  'Rain forecast on Great Wall morning': '长城那天早上预报有雨',
+  'Swapped Days 2 and 3. You climbed Badaling in full sun.': '把第 2、3 天对调，你在晴天爬完了八达岭。',
+  'Siji Minfu had a 90-minute queue': '四季民福排队 90 分钟',
+  'A table was held for 11:20. Duck on the table by 11:35.': '留了 11:20 的位子，11:35 烤鸭就上桌了。',
+  'Jingshan last entry in 11 minutes': '景山还有 11 分钟停止入场',
+  'Found the east gate and made sunset with 4 minutes to spare.': '找到东门进去，赶在日落前 4 分钟登顶。',
+  'Two passports, one booking': '两本护照，一个订单',
+  'Split the reservation and kept both seats together.': '拆成两个预约，座位还挨在一起。',
+  'Shichahai kept pulling the route west': '什刹海一直把路线往西拽',
+  'Moved it to 13:00 — 1.2 km less on tired feet.': '挪到 13:00——脚累了就少走 1.2 公里。',
+  // Chengdu solved
+  'A week of drizzle': '一整周的毛毛雨',
+  'Teahouse mornings and museum afternoons; the rain never ruined one.': '上午茶馆、下午博物馆，雨一天都没毁掉。',
+  'Every hotpot had a queue': '每家火锅都在排队',
+  'Booked at 16:30 for an 18:00 table, twice.': '16:30 就订 18:00 的桌，订了两次。',
+  'The panda base was sold out': '熊猫基地卖完了',
+  'Caught the 07:10 slot the day it reopened.': '重新开放当天抢到 07:10 的场次。',
+  'A friend joined on day three': '第三天有朋友加入',
+  'Reworked the walk and kept the walking under 9 km.': '重排了路线，步行控制在 9 公里以内。',
+  // Shanghai solved
+  'The museum closed early': '博物馆提前闭馆',
+  'Caught the last entry with 25 minutes to spare.': '赶上最后入场，还早到 25 分钟。',
+  'A sudden downpour on the Bund': '外滩突然下大雨',
+  'Ducked into a ferry, crossed twice, stayed dry.': '钻进轮渡，来回坐了两趟，一点没淋湿。',
+  'Midnight noodles were full': '深夜面馆满座',
+  'Found the second shop on Yangjing street.': '在阳泾街找到第二家。',
+  'The river walk was longer than it looked': '江边步道比看起来长',
+  'Swapped to a tram for the last 3 km.': '最后 3 公里换成有轨电车。',
+  // food notes
+  'Crackled at 11:35, no queue.': '11:35 片鸭上桌，没排队。',
+  'Hand-cut lamb, sesame dip.': '手切羊肉，麻酱蘸料。',
+  'Loose ones, not the gift box.': '散装的，不是礼盒。',
+  'Afternoon light included.': '还附赠下午的光。',
+  'Mild side, twice.': '微辣锅底，吃了两次。',
+  'Breakfast of champions.': '冠军的早餐。',
+  'Peanuts and a bottomless cup.': '花生米配无限续杯。',
+  'A break from chilli.': '从辣椒里喘口气。',
+  'Midnight bowl.': '深夜的一碗。',
+  'Burnt bottom, soup inside.': '底脆，里头有汤。',
+  'Warm from the oven.': '刚出炉的温热。',
+  'Three in four days.': '四天喝了三杯。'
+};
+const ZH_RULES = [
+  [/^(\d+) days · (\d+) nights$/, '$1 天 · $2 晚'],
+  [/^(\d+) days · (\d+) stops$/, '$1 天 · $2 站'],
+  [/^(\d+) days?$/, '$1 天'],
+  [/^(\d+) min$/, '$1 分钟'],
+  [/^(\d+) min · 6 min walk$/, '$1 分钟 · 步行 6 分钟'],
+  [/^([\d.]+) hr · 6 min walk$/, '$1 小时 · 步行 6 分钟'],
+  [/^([\d.]+) hr$/, '$1 小时'],
+  [/^Plan ready · (\d+) days on your trip$/, '计划就绪 · 已在行程里安排好 $1 天'],
+  [/^\+ (\d+) more days, saved to your trip$/, '还有 $1 天，已存进行程'],
+  [/^Still need “(.+)”\.$/, '还差“$1”。'],
+  [/^(\d+) stops$/, '$1 站'],
+  [/^(\d+) travelers$/, '$1 位旅行者'],
+  [/^([\d\\/]+ – [\d\\/]+) · (\d+) travelers$/, '$1 · $2 位旅行者'],
+  [/^([\d\\/]+) · (Beijing|Chengdu|Shanghai) · (\d+) travelers · ([\d.]+) km$/, '$1 · $2 · $3 位旅行者 · $4 公里'],
+  [/^(\d+) stops · Day (\d+) of (\d+)$/, '$1 站 · 第 $2 天 / 共 $3 天'],
+  [/^(\d+) stops · ([\d.]+) km$/, '$1 站 · $2 公里'],
+  [/^(\d+) of (\d+) stops · ([\d.]+) km$/, '已完成 $1 / $2 站 · $3 公里'],
+  [/^(\d+) stops in total\. Some were on every list; the good ones were not\.$/, '$1 站全部到访。有些在所有人的清单上，真正好的没有。'],
+  [/^(.+) · (\d+) stops · ([\d.]+) km · (.+)$/, '$1 · $2 站 · $3 公里 · $4'],
+  [/^(\d+) archived$/, '$1 份归档'],
+  [/^(\d+) days to go$/, '还有 $1 天'],
+  [/^(\d+) posts · newest first$/, '$1 篇 · 最新在前'],
+  [/^(\d+) phrases · ([\d.]+) MB$/, '$1 句 · $2 MB'],
+  [/^CHECKLIST · (\d+) ITEMS$/, '清单 · $1 项'],
+  [/^(\d+) days to departure$/, '距出发还有 $1 天'],
+  [/^Done (\d+) of (\d+)\. The Forbidden City is the tightest — book today\.$/, '已完成 $1 / $2。故宫最紧张——今天就订。'],
+  [/^ROUTE · DAY (\d+) · (.+)$/, '路线 · 第 $1 天 · $2'],
+  [/^(.+) · (\d+) stops · ([\d.]+) km · ~(\d+) hr$/, '$1 · $2 站 · $3 公里 · 约 $4 小时'],
+  [/^List (\d+)\/(\d+)$/, '清单 $1/$2'],
+  [/^(\d+) new places · rarest find ([\d.]+)%$/, '$1 个新地点 · 最稀有 $2%'],
+  [/^(\d+) \/ (\d+) booked$/, '$1 / $2 已预约'],
+  [/^(\d+) guests$/, '$1 位'],
+  [/^([\d:]+) · (\d+) guests · Free$/, '$1 · $2 位 · 免费'],
+  [/^([\d:]+) · (\d+) guests · (.+)$/, '$1 · $2 位 · $3'],
+  [/^(\d+) places$/, '$1 个地点'],
+  [/^(\d+) adults$/, '$1 位成人'],
+  [/^(\d+) nights$/, '$1 晚'],
+  [/^(\d+) items$/, '$1 项'],
+  [/^(\d+) people$/, '$1 人'],
+  [/^10\/15 08:45 → 11:20 · Capital T3 · ticketed$/, '10/15 08:45 → 11:20 · 首都机场 T3 · 已出票'],
+  [/^10\/15 – 10\/18 · 3 nights · confirmed$/, '10/15 – 10/18 · 3 晚 · 已确认'],
+  [/^(\d+) km$/, '$1 公里'],
+  [/^([\d.]+) km$/, '$1 公里'],
+  [/^([\d.]+) KM$/, '$1 公里'],
+  [/^(\d+) km walking$/, '$1 公里步行'],
+  [/^~(\d+) hr$/, '约 $1 小时'],
+  [/^~(\d+\.\d+) hr$/, '约 $1 小时'],
+  [/^~full day$/, '约一整天'],
+  [/^Day (\d+)$/, '第 $1 天'],
+  [/^Day (\d+) of (\d+)$/, '第 $1 天 / 共 $2 天'],
+  [/^Today · Day (\d+)$/, '今天 · 第 $1 天'],
+  [/^(\d+) of (\d+) stops done$/, '已完成 $1 / $2 站'],
+  [/^(\d+) \/ (\d+) answered$/, '$1 / $2 已答'],
+  [/^(\d+) new places$/, '$1 个新地点'],
+  [/^(\d+) problems$/, '$1 个问题'],
+  [/^Top (\d+)%$/, '前 $1%'],
+  [/^(\d+) days · (\d+) nights · (\d+) travelers$/, '$1 天 · $2 晚 · $3 位旅行者'],
+  [/^(\d+) stops · ([\d.]+) km · (.*)$/, '$1 站 · $2 公里 · $3'],
+  [/^Only ([\d.]+)% of travelers found this — your rarest unlock\.$/, '只有 $1% 的旅行者找到过——你最稀有的解锁。'],
+  [/^(\d+)% of travelers know it$/, '$1% 的旅行者知道这里'],
+  [/^(\d+) of (\d+) stops$/, '$1 / $2 站'],
+  [/^TRIP WRAP-UP · (\d+)$/, '旅程总结 · $1'],
+  [/^LIVE TRIP \/ DAY (\d+) · (.+)$/, '实时旅程 / 第 $1 天 · $2'],
+  [/^([\d:]+) · Beijing$/, '$1 · 北京'],
+  [/^Day (\d+) complete$/, '第 $1 天完成'],
+  [/^You covered (\d+) stops and ([\d.]+) km\. Your plan and the other (\d+) days are still saved\.$/, '你走完了 $1 站、$2 公里。计划和其他 $3 天都还保存着。'],
+  [/^Stop (\d+) \/ (\d+)$/, '第 $1 站 / 共 $2 站'],
+  [/^UP NEXT · (\d+) MIN$/, '下一站 · 步行 $1 分钟'],
+  [/^NOW · ([\d:]+)$/, '当前 · $1'],
+  [/^([\d:]+) · ([\d.]+) hr$/, '$1 · $2 小时'],
+  [/^([\d:]+) · (\d+) min$/, '$1 · $2 分钟'],
+  [/^([\d.]+) km walked · ends about ([\d:]+)$/, '走了 $1 公里 · 预计 $2 结束'],
+  [/^([\d.]+) km walked · all stops covered$/, '走了 $1 公里 · 全部站点完成'],
+  [/^Start point · 120 m away · (.+)$/, '起点 · 120 米外 · $1'],
+  [/^6 min walk from the last stop · (.+)$/, '距上一站步行 6 分钟 · $1'],
+  [/^of (.+) explorers$/, '$1探索者'],
+  [/^rarest ([\d.]+)%$/, '稀有 $1%'],
+  [/^More than 82% of RoamChina travelers walk on a (\d+)-day trip\.$/, '超过 82% 的 RoamChina 旅行者在 $1 天的行程里走到这个数。']
+];
+function translateText(text) {
+  if (S.lang !== 'zh') return text;
+  const key = text.trim();
+  if (!key) return text;
+  let out = ZH[key];
+  if (!out) {
+    for (const [re, rep] of ZH_RULES) {
+      if (re.test(key)) { out = key.replace(re, rep); break; }
+    }
+  }
+  if (!out) return text;
+  return text.replace(key, out);
+}
+const ZH_SKIP = '.lang-switch, .no-i18n, script, style, svg';
+function zhify(root) {
+  if (S.lang !== 'zh' || !root) return;
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      if (!node.nodeValue || !node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+      const parent = node.parentElement;
+      if (!parent || parent.closest(ZH_SKIP)) return NodeFilter.FILTER_REJECT;
+      return NodeFilter.FILTER_ACCEPT;
+    }
+  });
+  const nodes = [];
+  while (walker.nextNode()) nodes.push(walker.currentNode);
+  nodes.forEach((node) => {
+    const next = translateText(node.nodeValue);
+    if (next !== node.nodeValue) node.nodeValue = next;
+  });
+  root.querySelectorAll('[aria-label], [placeholder], [title]').forEach((el) => {
+    if (el.closest(ZH_SKIP)) return;
+    ['aria-label', 'placeholder', 'title'].forEach((attr) => {
+      const value = el.getAttribute(attr);
+      if (!value) return;
+      const next = translateText(value);
+      if (next !== value) el.setAttribute(attr, next);
+    });
+  });
+}
+function renderLangSwitch() {
+  const el = $('#langSwitch');
+  if (!el) return;
+  el.dataset.lang = S.lang;
+  el.querySelector('[data-lang="en"]').classList.toggle('on', S.lang === 'en');
+  el.querySelector('[data-lang="zh"]').classList.toggle('on', S.lang === 'zh');
+  el.setAttribute('aria-label', S.lang === 'zh' ? 'Switch to English' : '切换为中文');
+}
+function setLang(lang) {
+  S.lang = lang === 'zh' ? 'zh' : 'en';
+  renderLangSwitch();
+  render(true);
+  if (S.sheet) renderSheet();
+  renderWelcome();
+  renderRecap();
+  toast(S.lang === 'zh' ? '已切换为中文' : 'Language switched to English', 'globe');
+}
 function toast(text, iconName = 'check') {
   const el = $('#toast');
   el.innerHTML = `${icon(iconName, 13)}<span>${esc(text)}</span>`;
+  zhify(el);
   el.classList.add('show');
   clearTimeout(S.toastTimer);
   S.toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
@@ -557,6 +1012,12 @@ function render(resetScroll = false) {
   }
   clearInterval(heroTimer);
   if (S.tab === 'trip') initHeroCarousel();
+  renderWelcome();
+  renderRecap();
+  zhify(v);
+  if (cta) zhify(cta);
+  zhify($('#dock'));
+  renderLangSwitch();
   updateHash();
 }
 
@@ -667,7 +1128,7 @@ function tripView() {
     <header class="top">
       <div>
         <div class="eyebrow"><span class="eyebrow-line"></span>My trip / BEIJING ${sparkleIcon(8)}</div>
-        <div class="h1row"><div class="h1">Beijing</div>${tag(`${dayCount} days · ${dayCount - 1} nights`, 'coral')}</div>
+        <div class="h1row"><div class="h1">${esc(tr('Beijing'))}</div>${tag(`${dayCount} days · ${dayCount - 1} nights`, 'coral')}</div>
         <div class="meta">10/15 – 10/${14 + dayCount} · 2 travelers</div>
       </div>
       <div class="top-right">
@@ -680,7 +1141,7 @@ function tripView() {
 
     ${S.planBuilt ? `<button class="plan-strip" data-act="assistant" data-ctx="${esc(S.assistantContext)}">
       <span class="ps-ico">${sparkleIcon(12)}</span>
-      <span class="grow"><b>Pico built this plan</b><small>${esc(persona ? persona.title : 'Your travel plan')} · ${dayCount} days</small></span>
+      <span class="grow"><b>Pico built this plan</b><small>${esc(tr(persona ? persona.title : 'Your travel plan'))} · ${dayCount} ${S.lang === 'zh' ? '天' : 'days'}</small></span>
       <span class="ps-act">Adjust ${icon('arrowur', 8)}</span>
     </button>` : ''}
 
@@ -714,8 +1175,8 @@ function tripView() {
 
       <div class="rc-head">
         <div class="grow">
-          <div class="rowline"><span class="day">DAY ${String(dayNo + 1).padStart(2, '0')}</span>${tag(day.tag, day.tagStyle)}</div>
-          <div class="rc-title">${esc(day.title)}</div>
+          <div class="rowline"><span class="day">DAY ${String(dayNo + 1).padStart(2, '0')}</span>${tag(tr(day.tag), day.tagStyle)}</div>
+          <div class="rc-title">${esc(tr(day.title))}</div>
           <div class="rc-stats">
             <span>${icon('pin', 9)}${stats.n} stops</span>
             <span>${icon('walk', 9)}${stats.km} km</span>
@@ -737,7 +1198,7 @@ function tripView() {
         ${stops.map((s, i) => tripStopRow(s, i)).join('')}
       </div>
 
-      ${day.note ? `<div class="rc-note">${icon('info', 9)}<span>${esc(day.note)}</span></div>` : ''}
+      ${day.note ? `<div class="rc-note">${icon('info', 9)}<span>${esc(tr(day.note))}</span></div>` : ''}
 
       <div class="rc-actions">
         <button class="pa dashed" data-act="trip-add">${icon('plus', 10)}Add stop</button>
@@ -754,8 +1215,8 @@ function tripView() {
       ${days.map((d, i) => `<button class="day-row ${i === dayNo ? 'on' : ''}" data-act="trip-day" data-day="${i}" data-scroll="1">
         <span class="dd"><b>${esc(d.date)}</b><small>${esc(d.week)}</small></span>
         <span class="di">
-          <span class="rowline"><span class="day">DAY ${String(i + 1).padStart(2, '0')}</span>${tag(d.tag, d.tagStyle)}</span>
-          <b>${esc(d.title)}</b>
+          <span class="rowline"><span class="day">DAY ${String(i + 1).padStart(2, '0')}</span>${tag(tr(d.tag), d.tagStyle)}</span>
+          <b>${esc(tr(d.title))}</b>
           <small>${esc(d.meta)}</small>
         </span>
         <span class="go">${icon('right', 9)}</span>
@@ -777,7 +1238,7 @@ function tripStopRow(stop, index) {
     <span class="num" style="background:${colors[index % colors.length]}">${index + 1}</span>
     <button class="info" data-act="select-stop" data-id="${stop.id}">
       <b>${esc(stop.name)} ${stop.tag ? tag(stop.tag, stop.tagStyle || 'soft') : ''}</b>
-      <small>${esc(stop.duration || '45 min')} · ${index === 0 ? 'Start here' : 'on the route'}</small>
+      <small><span>${esc(stop.duration || '45 min')}</span> · <span>${index === 0 ? 'Start here' : 'on the route'}</span></small>
     </button>
     ${S.tripEdit
       ? `<span class="tdrag"><span class="drag-grip" data-grip="${stop.id}" role="button" tabindex="0" aria-label="Drag ${esc(stop.name)} to reorder">${icon('grip', 13)}</span></span>`
@@ -831,7 +1292,7 @@ function liveTripView() {
     <header class="top live-top">
       <div>
         <div class="eyebrow live-eyebrow"><span class="live-dot"></span>LIVE TRIP / DAY ${dayNo + 1} · ${esc(day.date)}</div>
-        <div class="h1row"><div class="h1">${esc(shortTitle)}</div></div>
+        <div class="h1row"><div class="h1">${esc(tr(shortTitle))}</div></div>
         <div class="meta">2 travelers · started 09:00</div>
       </div>
       <div class="top-right">
@@ -883,7 +1344,7 @@ function liveTripView() {
         <span class="now-count">Stop ${idx + 1} / ${n}</span>
       </div>
       <div class="now-title">${esc(stop.name)}</div>
-      <div class="now-meta">${esc(stop.duration || '45 min')} · ${esc(stop.tag || 'On the route')}</div>
+      <div class="now-meta"><span>${esc(stop.duration || '45 min')}</span> · <span>${esc(stop.tag || 'On the route')}</span></div>
       <div class="now-loc">${icon('pin', 9)}<span>${idx === 0 ? 'Start point · 120 m away' : '6 min walk from the last stop'} · ${lat}° N ${lng}° E</span></div>
       <div class="now-actions">
         <button data-act="assistant" data-ctx="Live · ${esc(stop.name)}">${sparkleIcon(9)}Ask Pico</button>
@@ -935,8 +1396,8 @@ function quizCard() {
     ${persona
       ? `<div class="quiz-result">
           <span class="qr-ico">${icon(persona.icon, 14)}</span>
-          <span class="grow"><small>YOUR TRAVEL TITLE</small><b>${esc(persona.title)}</b><em>${esc(persona.meta)}</em></span>
-          <button class="qr-go" data-act="trip-day" data-day="0" data-scroll="1">${icon('map', 9)}${esc(persona.fit)}</button>
+          <span class="grow"><small>YOUR TRAVEL TITLE</small><b>${esc(tr(persona.title))}</b><em>${persona.metaParts.map((p) => esc(tr(p))).join(' · ')}</em></span>
+          <button class="qr-go" data-act="trip-day" data-day="0" data-scroll="1">${icon('map', 9)}${esc(tr(persona.fit))}</button>
         </div>`
       : `${QUIZ.map((q) => `<div class="quiz-q">
           <div class="quiz-label">${esc(q.label)}</div>
@@ -1022,7 +1483,7 @@ function planView() {
       <div class="spread" style="align-items:flex-start">
         <div>
           <div class="eyebrow"><span class="eyebrow-line"></span>My plan / CITYWALK <span class="tag lime" style="transform:rotate(3deg)">DAY 02</span></div>
-          <div class="name">${esc(S.routeName)}</div>
+          <div class="name">${esc(tr(S.routeName))}</div>
           <div class="meta">${stops.length} stops · 4.2 km · ~5 hr</div>
         </div>
         <div class="plan-head-right">
@@ -1342,7 +1803,7 @@ function feedIntroHTML() {
   const k = POST_KINDS.find((x) => x.id === S.forumFilter) || POST_KINDS[0];
   const n = filteredPosts(S.forumFilter).length;
   return `<div class="feed-intro">
-    <div class="st-left"><span class="live-dot"></span><b>${k.id === 'all' ? 'Latest notes' : k.lab + ' notes'}</b></div>
+    <div class="st-left"><span class="live-dot"></span><b>${k.id === 'all' ? 'Latest notes' : `${tr(k.lab)}${S.lang === 'zh' ? '笔记' : ' notes'}`}</b></div>
     <span class="meta">${n} posts · newest first</span>
   </div>`;
 }
@@ -1797,14 +2258,14 @@ function meView() {
 
     <div class="section-title"><div class="st-left"><span class="idx">01</span><h2>Journey reports</h2></div><span class="meta">${JOURNEYS.length} archived</span></div>
     <div class="jr-card">
-      <div class="jr-now">
+      <button class="jr-now" data-act="report" data-id="beijing">
         <span class="jr-pulse"></span>
-        <span class="grow"><b>Beijing · in progress</b><small>Wrap-up unlocks 10/19 — new places, rarity and your title</small></span>
-        <span class="tag soft">Day 1</span>
-      </div>
+        <span class="grow"><b>${S.tripWrapped ? 'Beijing · recap ready' : 'Beijing · in progress'}</b><small>${S.tripWrapped ? `<span>${esc(tr('The Central Axis Cartographer'))}</span> · <span>13 new places</span>` : 'Wrap-up unlocks 10/19 — tap to preview the recap'}</small></span>
+        <span class="tag soft">${S.tripWrapped ? 'Recap' : 'Preview'}</span>
+      </button>
       ${JOURNEYS.map((j) => `<button class="jr-row" data-act="report" data-id="${j.id}">
         <span class="jr-year">${esc(j.dates)}</span>
-        <span class="grow"><b>${esc(j.city)} · ${esc(j.title)}</b><small>${j.newPlaces} new places · rarest find ${j.rarePct}%</small></span>
+        <span class="grow"><b>${esc(tr(j.city))} · ${esc(tr(j.title))}</b><small>${j.newPlaces} new places · rarest find ${j.rarePct}%</small></span>
         <span class="jr-arrow">${icon('arrowur', 10)}</span>
       </button>`).join('')}
       <div class="jr-foot">${icon('info', 9)} Each finished trip is archived automatically, on your device.</div>
@@ -1919,8 +2380,7 @@ const sheetBuilders = {
   place: placeSheet,
   compose: composeSheet,
   phrase: phraseSheet,
-  post: postSheet,
-  report: reportSheet
+  post: postSheet
 };
 
 function openSheet(name, data = null) {
@@ -1949,6 +2409,7 @@ function renderSheet() {
   const build = sheetBuilders[S.sheet];
   if (!build) return;
   layer.innerHTML = `<div class="backdrop" data-act="close-sheet"></div>${build()}`;
+  zhify(layer);
   requestAnimationFrame(() => layer.classList.add('show'));
   if (S.sheet === 'assistant') requestAnimationFrame(scrollChat);
   if (S.sheet === 'compose') requestAnimationFrame(updateComposePreview);
@@ -2031,42 +2492,353 @@ function postSheet() {
   </div>`;
 }
 
-/* ---------- journey report ---------- */
-function reportSheet() {
-  const j = JOURNEYS.find((x) => x.id === S.sheetData) || JOURNEYS[0];
-  return `<div class="sheet tall">
-    ${sheetHead(`${j.city} trip report`, 'JOURNEY ARCHIVE · ' + j.dates.toUpperCase())}
-    <div class="sheet-body">
-      <div class="report-hero" style="--rc:var(--${j.color})">
-        <div class="rh-badge">${icon('check', 8)} TRIP COMPLETE</div>
-        <div class="rh-title">${esc(j.title)}</div>
-        <p>${esc(j.blurb)}</p>
-        <div class="row" style="flex-wrap:wrap;gap:4px">${j.stamps.map((t) => tag(t, 'lime')).join('')}</div>
+/* ---------- trip wrap-up (end-of-journey recap) ---------- */
+const RECAPS = {
+  beijing: {
+    id: 'beijing', city: 'Beijing', dates: '10/15 – 10/18', year: '2026',
+    color: 'lime',
+    title: 'The Central Axis Cartographer',
+    kicker: 'Your Beijing chapter',
+    blurb: 'Four days, seventeen stops, one straight line through the middle of Beijing — and every side door that opened along the way.',
+    quote: 'You walked the axis like a local: early gates, long lunches, and never a queue longer than twelve minutes.',
+    rank: 7, days: 4, places: 17, newPlaces: 13, km: 31.8, steps: '41,600', onFeet: '9h 20m',
+    rare: 'Corner Tower moat walk', rarePct: 2.7,
+    hidden: [
+      { name: 'Corner Tower moat walk', pct: 2.7 },
+      { name: 'Zhihua Temple side courtyard', pct: 4.9 },
+      { name: 'Yandai Xiejie back lane', pct: 12 },
+      { name: 'Jingshan east slope', pct: 23 },
+      { name: 'Shichahai west bank', pct: 31 },
+      { name: 'Forbidden City · 09:00 gate', pct: 88 }
+    ],
+    solved: [
+      { icon: 'ticket', title: 'The palace sold out at 13:00', note: 'Pico moved you to the 09:00 gate — inside before the tour groups.' },
+      { icon: 'route', title: "Chang'an Avenue closed for the marathon", note: 'Rerouted through the hutongs; you arrived 20 minutes early.' },
+      { icon: 'sun', title: 'Rain forecast on Great Wall morning', note: 'Swapped Days 2 and 3. You climbed Badaling in full sun.' },
+      { icon: 'fork', title: 'Siji Minfu had a 90-minute queue', note: 'A table was held for 11:20. Duck on the table by 11:35.' },
+      { icon: 'clock', title: 'Jingshan last entry in 11 minutes', note: 'Found the east gate and made sunset with 4 minutes to spare.' },
+      { icon: 'users', title: 'Two passports, one booking', note: 'Split the reservation and kept both seats together.' },
+      { icon: 'walk', title: 'Shichahai kept pulling the route west', note: 'Moved it to 13:00 — 1.2 km less on tired feet.' }
+    ],
+    unlocked: [
+      'Tiananmen Square', 'Forbidden City', 'Jingshan Park', 'Shichahai', 'Nanluoguxiang',
+      'Drum & Bell Towers', 'Badaling Great Wall', 'Summer Palace', 'National Museum of China',
+      'Qianmen Street', 'Olympic Forest Park', 'Daoxiangcun', 'Hutong coffee'
+    ],
+    foods: [
+      { name: 'Peking duck', place: 'Siji Minfu', img: 'img/posts/post-n3.jpg', note: 'Crackled at 11:35, no queue.' },
+      { name: 'Copper-pot hotpot', place: 'Manhengji', img: 'img/posts/post-n10.jpg', note: 'Hand-cut lamb, sesame dip.' },
+      { name: 'Daoxiangcun pastries', place: 'Qianmen', img: 'img/posts/post-n7.jpg', note: 'Loose ones, not the gift box.' },
+      { name: 'Hutong coffee', place: 'Qianmen back lane', img: 'img/posts/post-n4.jpg', note: 'Afternoon light included.' }
+    ],
+    extraFoods: ['Zhajiang noodles', 'Jianbing', 'Tanghulu', 'Sour plum drink']
+  },
+  chengdu: {
+    id: 'chengdu', city: 'Chengdu', dates: 'Mar 2026', year: '2026',
+    color: 'mint',
+    title: 'The Bamboo Teahouse Wanderer',
+    kicker: 'Your Chengdu chapter',
+    blurb: 'Five days of teahouses, chilli oil and one very long bamboo walk. You never once took a taxi before noon.',
+    quote: 'You ordered like a local by day two, and the teahouse auntie still remembers your usual seat.',
+    rank: 12, days: 5, places: 14, newPlaces: 11, km: 38.4, steps: '50,200', onFeet: '11h 05m',
+    rare: 'Wangjianglou bamboo grove', rarePct: 3.2,
+    hidden: [
+      { name: 'Wangjianglou bamboo grove', pct: 3.2 },
+      { name: "Yu's Bakery back lane", pct: 7.8 },
+      { name: "People's Park teahouse", pct: 28 },
+      { name: 'Wenshu Monastery', pct: 54 },
+      { name: 'Kuanzhai Alley', pct: 81 }
+    ],
+    solved: [
+      { icon: 'sun', title: 'A week of drizzle', note: 'Teahouse mornings and museum afternoons; the rain never ruined one.' },
+      { icon: 'fork', title: 'Every hotpot had a queue', note: 'Booked at 16:30 for an 18:00 table, twice.' },
+      { icon: 'route', title: 'The panda base was sold out', note: 'Caught the 07:10 slot the day it reopened.' },
+      { icon: 'users', title: 'A friend joined on day three', note: 'Reworked the walk and kept the walking under 9 km.' }
+    ],
+    unlocked: ['Wangjianglou Park', "Yu's Bakery", "People's Park", 'Wenshu Monastery', 'Kuanzhai Alley', 'Panda Base', 'Yulin back streets', 'Jinli', 'Sichuan Opera', 'Anshun Bridge', 'Taikoo Li'],
+    foods: [
+      { name: 'Sichuan hotpot', place: 'Yulin', img: 'img/posts/post-n10.jpg', note: 'Mild side, twice.' },
+      { name: 'Dan dan noodles', place: 'Back lane', img: 'img/posts/post-n3.jpg', note: 'Breakfast of champions.' },
+      { name: 'Teahouse snacks', place: "People's Park", img: 'img/posts/post-n7.jpg', note: 'Peanuts and a bottomless cup.' },
+      { name: 'Hutong coffee', place: 'Yulin', img: 'img/posts/post-n4.jpg', note: 'A break from chilli.' }
+    ],
+    extraFoods: ['Mapo tofu', 'Rabbit head', 'Sweet water noodles']
+  },
+  shanghai: {
+    id: 'shanghai', city: 'Shanghai', dates: 'Nov 2025', year: '2025',
+    color: 'pink',
+    title: 'The Lane Flâneur',
+    kicker: 'Your Shanghai chapter',
+    blurb: 'Four days of art deco lanes, midnight noodles and a ferry you took three times for the view.',
+    quote: 'You found the city between the avenues — one lane at a time, always with a coffee in hand.',
+    rank: 18, days: 4, places: 12, newPlaces: 9, km: 41.2, steps: '53,800', onFeet: '12h 10m',
+    rare: 'Zhangyuan lane houses', rarePct: 6.8,
+    hidden: [
+      { name: 'Zhangyuan lane houses', pct: 6.8 },
+      { name: 'Yangjing snack street', pct: 11 },
+      { name: 'West Bund galleries', pct: 34 },
+      { name: 'Wukang Road', pct: 62 },
+      { name: 'The Bund', pct: 94 }
+    ],
+    solved: [
+      { icon: 'clock', title: 'The museum closed early', note: 'Caught the last entry with 25 minutes to spare.' },
+      { icon: 'sun', title: 'A sudden downpour on the Bund', note: 'Ducked into a ferry, crossed twice, stayed dry.' },
+      { icon: 'fork', title: 'Midnight noodles were full', note: 'Found the second shop on Yangjing street.' },
+      { icon: 'walk', title: 'The river walk was longer than it looked', note: 'Swapped to a tram for the last 3 km.' }
+    ],
+    unlocked: ['Zhangyuan', 'Yangjing snack street', 'West Bund', 'Wukang Road', 'The Bund', 'Yuyuan Garden', 'Tianzifang', 'Power Station of Art', 'Ferry Line 2', 'Anfu Road'],
+    foods: [
+      { name: 'Scallion oil noodles', place: 'Yangjing', img: 'img/posts/post-n3.jpg', note: 'Midnight bowl.' },
+      { name: 'Shengjian bao', place: 'Yuyuan', img: 'img/posts/post-n10.jpg', note: 'Burnt bottom, soup inside.' },
+      { name: 'Butter pastries', place: 'Zhangyuan', img: 'img/posts/post-n7.jpg', note: 'Warm from the oven.' },
+      { name: 'Lane coffee', place: 'Wukang Road', img: 'img/posts/post-n4.jpg', note: 'Three in four days.' }
+    ],
+    extraFoods: ['Crab roe noodles', 'Shanghai soup dumplings', 'Sesame ice cream']
+  }
+};
+
+/* ---------- full-screen trip wrap-up ---------- */
+function recapData() { return RECAPS[S.recap] || RECAPS.beijing; }
+function recapCity(city) {
+  if (S.lang !== 'zh') return city;
+  return { Beijing: '北京', Chengdu: '成都', Shanghai: '上海' }[city] || city;
+}
+function recapTotal() { return 8; }
+function openRecap(id) {
+  S.recap = RECAPS[id] ? id : 'beijing';
+  S.recapSlide = 0;
+  if (S.sheet) closeSheet();
+  renderRecap();
+  HapticsPulse();
+}
+function closeRecap() {
+  S.recap = null;
+  const layer = $('#recapLayer');
+  if (!layer) return;
+  layer.classList.remove('show');
+  setTimeout(() => { if (!S.recap) layer.innerHTML = ''; }, 280);
+}
+function recapGo(delta) {
+  const next = clamp(S.recapSlide + delta, 0, recapTotal() - 1);
+  if (next === S.recapSlide) return;
+  S.recapSlide = next;
+  renderRecap();
+}
+function recapJump(index) {
+  const next = clamp(Number(index) || 0, 0, recapTotal() - 1);
+  if (next === S.recapSlide) return;
+  S.recapSlide = next;
+  renderRecap();
+}
+function HapticsPulse() { if (navigator.vibrate) { try { navigator.vibrate(6); } catch (e) {} } }
+
+function recapSlideHTML(r, index) {
+  const active = index === S.recapSlide ? ' active' : '';
+  const head = (kicker, extra = '') => `<div class="rslide-top"><span>${kicker}</span>${extra}</div>`;
+
+  if (index === 0) {
+    return `<section class="rslide r-cover${active}" data-slide="0">
+      <div class="cover-top">
+        <span class="cover-eyebrow">TRIP WRAP-UP · ${r.year}</span>
+        <span class="cover-stamp">WALKED<br><b>${r.km} KM</b></span>
       </div>
-      <div class="report-stats">
-        <div class="rs"><b>${j.newPlaces}</b><span>new places<br>unlocked</span></div>
-        <div class="rs"><b>${j.km}</b><span>km<br>walked</span></div>
-        <div class="rs"><b>Top ${j.rank}%</b><span>${esc(j.city)}<br>explorers</span></div>
+      <div class="cover-ghost" aria-hidden="true">${r.year}</div>
+      <div class="cover-main">
+        <div class="cover-city">${esc(r.city.toUpperCase())}</div>
+        <div class="cover-dates"><b>${esc(r.dates)}</b><span>${r.days} days · ${r.places} stops</span></div>
+        <svg class="cover-route" viewBox="0 0 340 120" fill="none" aria-hidden="true">
+          <path d="M6 92 C 58 92, 54 28, 110 34 S 190 102, 238 78 300 26 334 40" stroke="var(--rc)" stroke-width="3" stroke-linecap="round" stroke-dasharray="1 7"/>
+          <circle cx="6" cy="92" r="4" fill="var(--recap-cream)"/>
+          <circle cx="334" cy="40" r="4" fill="var(--rc)"/>
+        </svg>
+        <h1 class="cover-title">The city,<br><em>one step at a time.</em></h1>
+        <p class="cover-sub">${esc(r.blurb)}</p>
       </div>
-      <div class="report-rarity">
-        <div class="rr-head"><b>How rare was your route?</b><small>Share of RoamChina travelers who unlocked each place</small></div>
-        ${j.rarities.map((r) => `<div class="rr-row">
-          <span class="rr-name">${esc(r.name)}</span>
-          <span class="rr-bar"><i style="width:${Math.max(4, r.pct)}%"></i></span>
-          <b>${r.pct}%</b>
-        </div>`).join('')}
+      <div class="cover-foot">${icon('hand', 11)} Swipe or tap next</div>
+    </section>`;
+  }
+
+  if (index === 1) {
+    return `<section class="rslide r-title${active}" data-slide="1">
+      <div class="rslide-scroll">
+        ${head('YOUR EXPLORER TITLE', `<span class="r-tag">${icon('sparkle', 8)} ${S.lang === 'zh' ? '年度称号' : 'OF THE TRIP'}</span>`)}
+        <div class="title-wrap">
+          <span class="title-pre">You are officially</span>
+          <h2 class="rtitle">${esc(r.title)}</h2>
+        </div>
+        <div class="title-rule"></div>
+        <div class="rank-line">
+          <span class="rank-num">Top ${r.rank}%</span>
+          <span class="rank-label">of ${esc(recapCity(r.city))} explorers<br>this season</span>
+        </div>
+        <p class="rblurb">${esc(r.quote)}</p>
+        <div class="stamp-row">
+          <span class="rstamp">${icon('walk', 9)} ${r.km} km</span>
+          <span class="rstamp">${icon('pin', 9)} ${r.newPlaces} new places</span>
+          <span class="rstamp">${icon('star', 9)} rarest ${r.rarePct}%</span>
+        </div>
       </div>
-      <div class="report-award">
-        <span class="ra-ico">${icon('star', 12)}</span>
-        <span class="grow"><b>${esc(j.rare)}</b><small>Only ${j.rarePct}% of travelers found this — your rarest unlock.</small></span>
+    </section>`;
+  }
+
+  if (index === 2) {
+    return `<section class="rslide r-hidden${active}" data-slide="2">
+      <div class="rslide-scroll">
+        ${head('THE ROAD LESS WALKED', `<span class="r-count">${String(index + 1).padStart(2, '0')} / 08</span>`)}
+        <div class="big-line"><b>${r.hidden.length}</b><span>places only a few<br>travelers find</span></div>
+        <p class="rlede"><span>Your rarest stop was</span> <b>${esc(r.rare)}</b> <span>— only</span> <em>${r.rarePct}%</em> <span>of RoamChina travelers have unlocked it.</span></p>
+        <div class="rarity-list">
+          ${r.hidden.map((h, i) => `<div class="rarity-row" style="--i:${i}">
+            <div class="rarity-top"><span>${esc(h.name)}</span><b>${h.pct}%</b></div>
+            <div class="rarity-bar"><i style="width:${Math.max(3, h.pct)}%"></i></div>
+            <small>${h.pct < 10 ? 'A true side door' : h.pct < 50 ? 'Known by the curious' : 'A classic, well earned'}</small>
+          </div>`).join('')}
+        </div>
+        <div class="r-note">${icon('info', 9)} Share of travelers who checked in here — lower is rarer.</div>
       </div>
-      <div class="report-foot">${j.places} places visited in total · archived when the trip ended · kept on your device</div>
+    </section>`;
+  }
+
+  if (index === 3) {
+    return `<section class="rslide r-solved${active}" data-slide="3">
+      <div class="rslide-scroll">
+        ${head('PICO’S QUIET WINS', `<span class="r-count">${String(index + 1).padStart(2, '0')} / 08</span>`)}
+        <div class="big-line"><b>${String(r.solved.length).padStart(2, '0')}</b><span>problems handled before<br>they became stories</span></div>
+        <div class="solved-list">
+          ${r.solved.map((s, i) => `<div class="solved-row" style="--i:${i}">
+            <span class="solved-ico">${icon(s.icon, 13)}</span>
+            <div class="grow"><b>${esc(s.title)}</b><small>${esc(s.note)}</small></div>
+            <span class="solved-check">${icon('check', 8)}</span>
+          </div>`).join('')}
+        </div>
+        <div class="r-note">${icon('sparkle', 9)} No refunds, no rebookings, no lost afternoons.</div>
+      </div>
+    </section>`;
+  }
+
+  if (index === 4) {
+    return `<section class="rslide r-places${active}" data-slide="4">
+      <div class="rslide-scroll">
+        ${head('NEW GROUND', `<span class="r-count">${String(index + 1).padStart(2, '0')} / 08</span>`)}
+        <div class="big-line"><b>${r.newPlaces}</b><span>new places unlocked<br>on this trip</span></div>
+        <p class="rlede">${r.places} stops in total. Some were on every list; the good ones were not.</p>        <div class="place-grid">
+          ${r.unlocked.map((p, i) => `<span class="place-chip" style="--i:${i}"><b>${String(i + 1).padStart(2, '0')}</b>${esc(p)}</span>`).join('')}
+        </div>
+        <div class="r-note">${icon('pin', 9)} First-time check-ins, collected into your Beijing passport.</div>
+      </div>
+    </section>`;
+  }
+
+  if (index === 5) {
+    return `<section class="rslide r-food${active}" data-slide="5">
+      <div class="rslide-scroll">
+        ${head('THE EATING PART', `<span class="r-count">${String(index + 1).padStart(2, '0')} / 08</span>`)}
+        <div class="big-line"><b>${r.foods.length}</b><span>meals worth the walk</span></div>
+        <div class="food-grid">
+          ${r.foods.map((f, i) => `<div class="food-card" style="--i:${i}">
+            <div class="food-photo"><img src="${esc(f.img)}" alt="${esc(f.name)}" loading="lazy"><span>${icon('fork', 8)}</span></div>
+            <div class="food-copy"><b>${esc(f.name)}</b><small>${esc(f.place)} · ${esc(f.note)}</small></div>
+          </div>`).join('')}
+        </div>
+        <div class="food-extra">
+          <span class="r-kicker">Also eaten</span>
+          ${r.extraFoods.map((f) => `<span class="food-chip">${esc(f)}</span>`).join('')}
+        </div>
+        <div class="r-note">${icon('heart', 9)} Every one within a 12-minute walk of the route.</div>
+      </div>
+    </section>`;
+  }
+
+  if (index === 6) {
+    return `<section class="rslide r-distance${active}" data-slide="6">
+      <div class="rslide-scroll">
+        ${head('MILES IN YOUR SHOES', `<span class="r-count">${String(index + 1).padStart(2, '0')} / 08</span>`)}
+        <div class="km-line"><b>${r.km}</b><span>km<br>on foot</span></div>
+        <div class="distance-rule">
+          <span class="dr-start">START</span>
+          <i></i><i></i><i></i><i></i>
+          <span class="dr-end">${esc(r.dates.split('–')[1].trim())}</span>
+        </div>
+        <div class="distance-stats">
+          <div><b>${r.steps}</b><span>steps</span></div>
+          <div><b>${r.onFeet}</b><span>on your feet</span></div>
+          <div><b>${r.days}</b><span>days out</span></div>
+        </div>
+        <p class="rblurb big">About three-quarters of a marathon — in one pair of shoes, with coffee stops.</p>
+        <div class="distance-note">${icon('walk', 10)} More than 82% of RoamChina travelers walk on a ${r.days}-day trip.</div>
+      </div>
+    </section>`;
+  }
+
+  return `<section class="rslide r-final${active}" data-slide="7">
+    <div class="rslide-scroll">
+      <div class="final-badge">${icon('check', 9)} TRIP COMPLETE</div>
+      <h2 class="final-title">The city<br><em>remembers.</em></h2>
+      <p class="rblurb">This one is archived in Journey reports, with the title, the rare places and every meal attached.</p>
+      <div class="final-card">
+        <span class="fc-kicker">${esc(recapCity(r.city))} · ${esc(r.dates)}</span>
+        <b class="fc-title">${esc(r.title)}</b>
+        <div class="fc-stats">
+          <div><b>${r.newPlaces}</b><span>new places</span></div>
+          <div><b>${r.km}</b><span>km walked</span></div>
+          <div><b>Top ${r.rank}%</b><span>explorers</span></div>
+        </div>
+      </div>
+      <div class="final-actions">
+        <button class="r-primary" data-act="recap-share">${icon('share', 12)} Share recap</button>
+        <button class="r-ghost" data-act="recap-close">Back to your trip ${icon('arrowr', 10)}</button>
+      </div>
+      <div class="r-note">${icon('lock', 9)} Kept on your device · nothing shared unless you tap share.</div>
     </div>
-    <div class="sheet-cta">
-      <button class="ghost" data-act="toast" data-text="Report saved to your archive" data-icon="download">Save</button>
-      <button class="primary" data-act="toast" data-text="Report link copied · ${esc(j.title)}" data-icon="share">Share report</button>
+  </section>`;
+}
+
+function renderRecap() {
+  const layer = $('#recapLayer');
+  if (!layer) return;
+  if (!S.recap) { layer.classList.remove('show'); return; }
+  const r = recapData();
+  const total = recapTotal();
+  S.recapSlide = clamp(S.recapSlide, 0, total - 1);
+  layer.innerHTML = `<div class="recap" style="--rc:var(--${r.color})">
+    <div class="recap-grain" aria-hidden="true"></div>
+    <header class="recap-head">
+      <button class="recap-close" data-act="recap-close" aria-label="Close recap">${icon('x', 11)}</button>
+      <span class="recap-label">TRIP WRAP-UP</span>
+      <span class="recap-count">${String(S.recapSlide + 1).padStart(2, '0')} <i>/</i> ${String(total).padStart(2, '0')}</span>
+    </header>
+    <div class="recap-slides" id="recapSlides">
+      ${Array.from({ length: total }, (_, i) => recapSlideHTML(r, i)).join('')}
     </div>
+    <footer class="recap-foot">
+      <div class="recap-dots">${Array.from({ length: total }, (_, i) => `<button class="${i === S.recapSlide ? 'on' : ''}" data-act="recap-dot" data-index="${i}" aria-label="Slide ${i + 1}"></button>`).join('')}</div>
+      <button class="recap-next" data-act="recap-next">
+        <span>${S.recapSlide === total - 1 ? 'Finish' : 'Next'}</span>${icon(S.recapSlide === total - 1 ? 'check' : 'arrowr', 11)}
+      </button>
+    </footer>
   </div>`;
+  layer.classList.add('show');
+  zhify(layer);
+  initRecapSwipe();
+}
+
+function initRecapSwipe() {
+  const deck = $('#recapSlides');
+  if (!deck) return;
+  let startX = 0; let startY = 0; let moved = false;
+  deck.addEventListener('pointerdown', (e) => {
+    startX = e.clientX; startY = e.clientY; moved = false;
+  });
+  deck.addEventListener('pointerup', (e) => {
+    if (!startX) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    startX = 0;
+    if (Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(dy) * 1.3) {
+      moved = true;
+      recapGo(dx < 0 ? 1 : -1);
+    }
+  });
 }
 
 /* ---------- assistant ---------- */
@@ -2125,8 +2897,8 @@ function planSummaryHTML() {
       <span class="quiz-badge">${icon('check', 9)} Plan ready</span>
       <span class="pr-days">${days} days</span>
     </div>
-    <div class="pr-title">${esc(persona ? persona.title : 'Your Beijing plan')}</div>
-    <div class="pr-meta">${esc(S.quiz.days)} · ${esc(S.quiz.style)} · ${esc(S.quiz.theme)}</div>
+    <div class="pr-title">${esc(tr(persona ? persona.title : 'Your Beijing plan'))}</div>
+    <div class="pr-meta">${[S.quiz.days, S.quiz.style, S.quiz.theme].map((v) => esc(tr(v))).join(' · ')}</div>
     <div class="pr-stats">
       <div><b>${days}</b><span>days</span></div>
       <div><b>${days * 4}</b><span>stops</span></div>
@@ -2142,6 +2914,17 @@ function planSummaryHTML() {
 
 function planNarrative(persona) {
   const style = S.quiz.style;
+  const who = persona ? tr(persona.title) : tr('you');
+  if (S.lang === 'zh') {
+    const zhDetail = style === 'Food first'
+      ? '午饭是 11:30 排队前的烤鸭，景点之间还留了咖啡空档。'
+      : style === 'Outdoors'
+        ? '上午都在户外——日出时的景山、长城山脊、北海划船。'
+        : style === 'Night owl'
+          ? '17:00 前看完景点，之后鼓楼和后海接着带你过夜。'
+          : '两段长长的博物馆时间和一个茶馆下午，每天走路不超过 4 公里。';
+    return `搞定。我给${who}排了 ${planLength()} 天的路线，第一天留给故宫。${zhDetail}想改什么直接说。`;
+  }
   const detail = style === 'Food first'
     ? 'Lunch is a duck stop before the 11:30 queue, and there are coffee gaps between sights.'
     : style === 'Outdoors'
@@ -2149,7 +2932,7 @@ function planNarrative(persona) {
       : style === 'Night owl'
         ? 'Sights finish by 17:00, then the Drum Tower and Houhai carry you into the evening.'
         : 'Two long museum stops and a teahouse afternoon, never more than 4 km of walking a day.';
-  return `Done. I built a ${planLength()}-day route for ${persona ? persona.title : 'you'}, keeping the palace on day one. ${detail} Adjust anything by just asking.`;
+  return `Done. I built a ${planLength()}-day route for ${who}, keeping the palace on day one. ${detail} Adjust anything by just asking.`;
 }
 
 function generatePlan() {
@@ -2177,16 +2960,24 @@ function generatePlan() {
   S.tripDirty = false;
   S.tripLive = false;
   S.liveStop = 0;
-  S.assistantContext = `Plan · ${persona ? persona.fit : 'Beijing'} · ${days} days`;
-  S.routeName = `${persona ? persona.fit : 'Central Axis'} · New plan`;
+  S.assistantContext = `Plan · ${persona ? tr(persona.fit) : tr('Beijing')} · ${days} days`;
+  S.routeName = `${persona ? tr(persona.fit) : tr('Central Axis')} · ${tr('New plan')}`;
   S.messages.push({ role: 'user', text: `${S.quiz.days} · ${S.quiz.style} · ${S.quiz.theme}` });
   S.thinking = true;
   renderSheet();
+  if (S.welcome) renderWelcome();
   clearTimeout(S.chatTimer);
   S.chatTimer = setTimeout(() => {
     S.thinking = false;
     S.messages.push({ role: 'assistant', text: planNarrative(persona), plan: true });
-    if (S.sheet === 'assistant') {
+    if (S.welcome) {
+      S.welcome = false;
+      renderWelcome();
+      S.tab = 'trip';
+      S.tripDay = 0;
+      render(true);
+      toast(`Plan ready · ${days} days on your trip`, 'sparkle');
+    } else if (S.sheet === 'assistant') {
       refreshChat();
       closeSheet();
       S.tab = 'trip';
@@ -2196,6 +2987,38 @@ function generatePlan() {
       toast('Plan ready · open Trip to see it', 'sparkle');
     }
   }, 1250);
+}
+
+function renderWelcome() {
+  const layer = $('#welcomeLayer');
+  if (!layer) return;
+  if (!S.welcome) {
+    layer.classList.remove('show');
+    setTimeout(() => { if (!S.welcome) layer.innerHTML = ''; }, 280);
+    return;
+  }
+  layer.innerHTML = `<div class="welcome">
+    <div class="w-grain" aria-hidden="true"></div>
+    <div class="w-scroll">
+      <div class="w-top">
+        <div class="w-brand"><span class="brand-mark">R</span><span>ROAMCHINA</span><i></i></div>
+        <span class="w-step">FIRST TRIP · BEIJING</span>      </div>
+      <h1 class="w-title">Beijing,<br><em>at your pace.</em></h1>
+      <p class="w-lede">A city is better on foot. Pico knows the gates, the queues and the side doors — answer three questions and your first plan is ready.</p>
+      <div class="w-pico">
+        <span class="orb-mini">${sparkleIcon(18)}</span>
+        <div class="grow">
+          <b>Pico</b>
+          <p>Hi, I'm Pico. Tell me what kind of trip you like and I'll build your first Beijing plan — route order, timing and all.</p>
+        </div>
+      </div>
+      <div class="w-builder">${planBuilderHTML()}</div>
+      ${S.thinking ? `<div class="w-thinking"><span class="thinking"><i></i><i></i><i></i></span><b>Pico is laying out your days…</b></div>` : ''}
+      <div class="w-foot">${icon('hand', 10)} Choose one answer per question — there is no skip. Your plan is saved on this device.</div>
+    </div>
+  </div>`;
+  layer.classList.add('show');
+  zhify(layer);
 }
 
 function assistantSheet() {
@@ -2552,7 +3375,7 @@ function checklistSheet() {
       ${phaseNames.map((phase) => {
         const items = S.checklist.filter((c) => c.phase === phase && (S.checklistCat === 'All' || c.cat === S.checklistCat));
         if (!items.length) return '';
-        return `<div class="phase-title">${phase} · ${items.length}</div>${items.map(checkRowHTML).join('')}`;
+        return `<div class="phase-title">${tr(phase)} · ${items.length}</div>${items.map(checkRowHTML).join('')}`;
       }).join('')}
       <div class="empty-note">Ticking items updates your progress on the Trip tab.</div>
     </div>
@@ -3063,7 +3886,13 @@ document.addEventListener('click', (e) => {
       S.liveStop = 0;
       S.tripDay = clamp(S.tripDay + 1, 0, tripDays().length - 1);
       render(true);
-      toast(atEnd ? 'Trip complete · plan saved' : `Day done · Day ${S.tripDay + 1} loaded`, 'check');
+      if (atEnd) {
+        S.tripWrapped = true;
+        render();
+        openRecap('beijing');
+      } else {
+        toast(`Day done · Day ${S.tripDay + 1} loaded`, 'check');
+      }
       break;
     }
     case 'quiz-reset':
@@ -3080,8 +3909,24 @@ document.addEventListener('click', (e) => {
       if (track) track.scrollTo({ left: track.clientWidth * i, behavior: 'smooth' });
       break;
     }
+    case 'recap-close':
+      closeRecap();
+      break;
+    case 'recap-next':
+      if (S.recapSlide >= recapTotal() - 1) closeRecap();
+      else recapGo(1);
+      break;
+    case 'recap-prev':
+      recapGo(-1);
+      break;
+    case 'recap-dot':
+      recapJump(el.dataset.index);
+      break;
+    case 'recap-share':
+      toast(`Recap link copied · ${recapData().title}`, 'share');
+      break;
     case 'report':
-      openSheet('report', el.dataset.id);
+      openRecap(el.dataset.id);
       break;
     case 'save-post': {
       const id = el.dataset.id;
@@ -3334,6 +4179,11 @@ document.addEventListener('input', (e) => {
 });
 
 document.addEventListener('keydown', (e) => {
+  if (S.recap) {
+    if (e.key === 'Escape') { closeRecap(); return; }
+    if (e.key === 'ArrowRight') { e.preventDefault(); recapGo(1); return; }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); recapGo(-1); return; }
+  }
   if (e.key === 'Escape' && S.sheet) { closeSheet(); return; }
   if (e.key === 'Enter' && e.target && e.target.id === 'chatInput') {
     e.preventDefault();
@@ -3378,13 +4228,13 @@ function boot() {
     S.tab = raw;
   }
   if (!S.planBuilt) {
-    S.sheet = 'assistant';
+    S.welcome = true;
     S.assistantContext = 'New trip · Planning with Pico';
   }
   render(true);
   setTimeout(() => {
     try {
-      if (!S.sheet && !sessionStorage.getItem('roamchina-hint')) {
+      if (!S.sheet && !S.welcome && !S.recap && !sessionStorage.getItem('roamchina-hint')) {
         sessionStorage.setItem('roamchina-hint', '1');
         toast('Try Adjust stops on the Plan tab, then drag a numbered dot', 'hand');
       }
@@ -3392,5 +4242,15 @@ function boot() {
   }, 1100);
 }
 
-boot();
+bootstrap();
+
+function bootstrap() {
+  const langSwitch = $('#langSwitch');
+  if (langSwitch) {
+    langSwitch.addEventListener('click', () => setLang(S.lang === 'zh' ? 'en' : 'zh'));
+  }
+  renderLangSwitch();
+  boot();
+  window.RC = { S, openRecap, closeRecap, recapGo, recapJump, setLang, render, toast };
+}
 })();

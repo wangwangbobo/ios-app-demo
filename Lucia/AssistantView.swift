@@ -45,9 +45,12 @@ struct AssistantView: View {
                 }
             }
 
-            composer
+            if !model.showPlanBuilder {
+                composer
+            }
         }
         .background(Palette.bg.ignoresSafeArea())
+        .interactiveDismissDisabled(model.showPlanBuilder || model.chatThinking)
         .onAppear {
             if model.chatMessages.isEmpty {
                 model.seedAssistant()
@@ -59,10 +62,12 @@ struct AssistantView: View {
 
     private var header: some View {
         VStack(spacing: 10) {
-            Capsule()
-                .fill(Palette.line)
-                .frame(width: 36, height: 4)
-                .padding(.top, 8)
+            if !model.showPlanBuilder {
+                Capsule()
+                    .fill(Palette.line)
+                    .frame(width: 36, height: 4)
+                    .padding(.top, 8)
+            }
 
             HStack(spacing: 10) {
                 ZStack {
@@ -88,34 +93,40 @@ struct AssistantView: View {
                     }
                 }
                 Spacer()
-                Button {
-                    model.resetChat()
-                } label: {
-                    Image(systemName: "arrow.counterclockwise")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(Palette.ink)
-                        .frame(width: 33, height: 33)
-                        .background(Circle().fill(Palette.paper))
-                        .overlay(Circle().strokeBorder(Palette.ink, lineWidth: 1.1))
-                }
-                .buttonStyle(PressableButtonStyle())
 
-                Button {
-                    Haptics.tap()
-                    model.assistantOpen = false
-                } label: {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 11, weight: .black))
-                        .foregroundStyle(Palette.ink)
-                        .frame(width: 36, height: 36)
-                        .background(Circle().fill(Palette.paper))
-                        .overlay(Circle().strokeBorder(Palette.ink, lineWidth: 1.1))
-                        .contentShape(Circle())
+                LanguagePill()
+
+                if !model.showPlanBuilder {
+                    Button {
+                        model.resetChat()
+                    } label: {
+                        Image(systemName: "arrow.counterclockwise")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(Palette.ink)
+                            .frame(width: 33, height: 33)
+                            .background(Circle().fill(Palette.paper))
+                            .overlay(Circle().strokeBorder(Palette.ink, lineWidth: 1.1))
+                    }
+                    .buttonStyle(PressableButtonStyle())
+
+                    Button {
+                        Haptics.tap()
+                        model.assistantOpen = false
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 11, weight: .black))
+                            .foregroundStyle(Palette.ink)
+                            .frame(width: 36, height: 36)
+                            .background(Circle().fill(Palette.paper))
+                            .overlay(Circle().strokeBorder(Palette.ink, lineWidth: 1.1))
+                            .contentShape(Circle())
+                    }
+                    .buttonStyle(PressableButtonStyle())
                 }
-                .buttonStyle(PressableButtonStyle())
             }
             .padding(.horizontal, 16)
         }
+        .padding(.top, model.showPlanBuilder ? 8 : 0)
         .padding(.bottom, 10)
         .background(Palette.bg)
         .overlay(alignment: .bottom) {
@@ -139,7 +150,7 @@ struct AssistantView: View {
                     .overlay(Circle().strokeBorder(Palette.ink, lineWidth: 1))
 
                     VStack(alignment: .leading, spacing: 9) {
-                        Text(message.text)
+                        Text(verbatim: L10n.text(message.text, model.lang))
                             .font(.system(size: 12))
                             .foregroundStyle(Palette.ink2)
                             .lineSpacing(3)
@@ -159,7 +170,7 @@ struct AssistantView: View {
             } else {
                 HStack(alignment: .top, spacing: 8) {
                     Spacer(minLength: 46)
-                    Text(message.text)
+                    Text(verbatim: L10n.text(message.text, model.lang))
                         .font(.system(size: 12))
                         .foregroundStyle(Palette.paper)
                         .lineSpacing(2)
@@ -585,7 +596,7 @@ struct AssistantView: View {
                         )
                     )
 
-                Text(label)
+                Text(LocalizedStringKey(label))
                     .font(.system(size: 10, weight: .bold))
                     .foregroundStyle(Palette.ink)
 
@@ -611,7 +622,7 @@ struct AssistantView: View {
                             select(option)
                         }
                     } label: {
-                        Text(option)
+                        Text(LocalizedStringKey(option))
                             .font(.system(size: 9.5, weight: .bold))
                             .lineLimit(1)
                             .minimumScaleFactor(0.66)

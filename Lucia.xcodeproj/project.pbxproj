@@ -22,7 +22,9 @@
 		C0000000000000000000000D /* AssistantView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000000D /* AssistantView.swift */; };
 		C0000000000000000000000E /* Extras.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000000E /* Extras.swift */; };
 		C0000000000000000000000F /* ForumChannels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000000F /* ForumChannels.swift */; };
+		C00000000000000000000012 /* TripRecapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000012 /* TripRecapView.swift */; };
 		C00000000000000000000010 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000010 /* Assets.xcassets */; };
+		C00000000000000000000011 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000011 /* Localizable.strings */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -42,7 +44,9 @@
 		B0000000000000000000000D /* AssistantView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantView.swift; sourceTree = "<group>"; };
 		B0000000000000000000000E /* Extras.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extras.swift; sourceTree = "<group>"; };
 		B0000000000000000000000F /* ForumChannels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForumChannels.swift; sourceTree = "<group>"; };
+		B00000000000000000000012 /* TripRecapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TripRecapView.swift; sourceTree = "<group>"; };
 		B00000000000000000000010 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		B00000000000000000000011 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/Localizable.strings"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -82,7 +86,9 @@
 				B0000000000000000000000D /* AssistantView.swift */,
 				B0000000000000000000000E /* Extras.swift */,
 				B0000000000000000000000F /* ForumChannels.swift */,
+				B00000000000000000000012 /* TripRecapView.swift */,
 				B00000000000000000000010 /* Assets.xcassets */,
+				AA0000000000000000000011 /* Localizable.strings */,
 			);
 			path = Lucia;
 			sourceTree = "<group>";
@@ -96,6 +102,17 @@
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
+
+/* Begin PBXVariantGroup section */
+		AA0000000000000000000011 /* Localizable.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				B00000000000000000000011 /* zh-Hans */,
+			);
+			name = Localizable.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
 
 /* Begin PBXNativeTarget section */
 		AA0000000000000000000005 /* Lucia */ = {
@@ -155,6 +172,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				C00000000000000000000010 /* Assets.xcassets in Resources */,
+				C00000000000000000000011 /* Localizable.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -180,6 +198,7 @@
 				C0000000000000000000000D /* AssistantView.swift in Sources */,
 				C0000000000000000000000E /* Extras.swift in Sources */,
 				C0000000000000000000000F /* ForumChannels.swift in Sources */,
+				C00000000000000000000012 /* TripRecapView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

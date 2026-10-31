@@ -1332,13 +1332,15 @@ private struct LiveTripView: View {
                 Image(systemName: "checkmark.seal.fill")
                     .font(.system(size: 18, weight: .bold))
                     .foregroundStyle(Palette.ok)
-                Text("Day complete")
+                Text(model.tripDay < model.tripDayCount - 1 ? "Day complete" : "Trip complete")
                     .font(.system(size: 20, weight: .black))
                     .tracking(-0.3)
                     .foregroundStyle(Palette.ink)
                 Spacer()
             }
-            Text("Every stop on this day is checked off. Load tomorrow's route, or end the live trip and keep the saved plan.")
+            Text(model.tripDay < model.tripDayCount - 1
+                 ? "Every stop on this day is checked off. Load tomorrow's route, or end the live trip and keep the saved plan."
+                 : "Every stop is checked off. Wrap up the journey and see your Beijing recap.")
                 .font(.system(size: 10.5, weight: .medium))
                 .foregroundStyle(Palette.ink2)
                 .lineSpacing(2)
@@ -1398,9 +1400,9 @@ private struct LiveTripView: View {
                 }
             } label: {
                 HStack(spacing: 4) {
-                    Text(done ? (model.tripDay < model.tripDayCount - 1 ? "Next day" : "Back to plan") : "Next stop")
+                    Text(done ? (model.tripDay < model.tripDayCount - 1 ? "Next day" : "Trip wrap-up") : "Next stop")
                         .font(.system(size: 11.5, weight: .bold))
-                    Image(systemName: done ? "map" : "arrow.right")
+                    Image(systemName: done ? (model.tripDay < model.tripDayCount - 1 ? "map" : "sparkles") : "arrow.right")
                         .font(.system(size: 9, weight: .black))
                 }
                 .foregroundStyle(Palette.ink)
