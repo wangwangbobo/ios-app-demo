@@ -2318,10 +2318,17 @@ document.addEventListener('click', (e) => {
     case 'post':
       openSheet('post', el.dataset.id);
       break;
-    case 'quiz':
+    case 'quiz': {
+      const wasComplete = !!quizPersona();
       S.quiz[el.dataset.key] = el.dataset.val;
       render();
+      if (!wasComplete && quizPersona()) {
+        requestAnimationFrame(() => {
+          document.querySelector('.quiz-result')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+      }
       break;
+    }
     case 'report':
       openSheet('report', el.dataset.id);
       break;

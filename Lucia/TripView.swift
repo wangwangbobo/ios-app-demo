@@ -15,16 +15,26 @@ struct TripView: View {
     @State private var quizTheme: String? = nil
 
     var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 20) {
-                header
-                todaySection
-                quizSection
-                plansSection
+        ScrollViewReader { proxy in
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 20) {
+                    header
+                    todaySection
+                    quizSection
+                    plansSection
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 10)
+                .padding(.bottom, 130)
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 10)
-            .padding(.bottom, 130)
+            .onChange(of: answeredCount) { _, count in
+                guard count == 3 else { return }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+                    withAnimation(.easeInOut(duration: 0.35)) {
+                        proxy.scrollTo("quiz-result", anchor: .center)
+                    }
+                }
+            }
         }
         #if DEBUG
         .onAppear {
@@ -307,6 +317,7 @@ struct TripView: View {
                             .strokeBorder(Palette.ink.opacity(0.35), style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
                     )
                     .transition(.opacity.combined(with: .move(edge: .bottom)))
+                    .id("quiz-result")
                 } else {
                     HStack(spacing: 5) {
                         Image(systemName: "info.circle")
