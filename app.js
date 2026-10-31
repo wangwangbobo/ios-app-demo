@@ -114,6 +114,46 @@ const ATTRACTIONS = [
   { id: 'a4', name: '国家博物馆', date: '10/17', week: '周五', time: '14:00', people: '2 人', price: '免费', booked: false, note: '需提前实名预约' }
 ];
 
+const TRIP_PLANS = [
+  {
+    date: '10/15', week: '周三', day: 1, title: '中轴线 · 故宫与胡同',
+    meta: '6 站 · 4.2 km · 约 5 小时', tag: '今天', tagStyle: 'coral',
+    stops: [
+      { name: '天安门广场', time: '09:00' }, { name: '故宫博物院', time: '09:40' },
+      { name: '景山万春亭', time: '12:30' }, { name: '什刹海', time: '15:00' },
+      { name: '南锣鼓巷', time: '16:30' }, { name: '钟鼓楼', time: '17:30' }
+    ],
+    note: '故宫 09:00 已预约 · 午门进，神武门出'
+  },
+  {
+    date: '10/16', week: '周四', day: 2, title: '长城一日 · 八达岭',
+    meta: '3 站 · 包车往返 · 约全天', tag: '已约车', tagStyle: 'blue',
+    stops: [
+      { name: '酒店出发', time: '07:30' }, { name: '八达岭长城', time: '09:00' },
+      { name: '奥森公园', time: '16:30' }
+    ],
+    note: '带身份证 · 山上风大，加一件外套'
+  },
+  {
+    date: '10/17', week: '周五', day: 3, title: '皇家园林 · 颐和园与国博',
+    meta: '4 站 · 地铁 4 号线 · 约 8 小时', tag: '门票待约', tagStyle: 'soft',
+    stops: [
+      { name: '颐和园', time: '09:00' }, { name: '五道口午餐', time: '12:30' },
+      { name: '国家博物馆', time: '14:00' }, { name: '前门大街', time: '18:00' }
+    ],
+    note: '国博需提前实名预约，记得带身份证'
+  },
+  {
+    date: '10/18', week: '周六', day: 4, title: '胡同慢走 · 返程',
+    meta: '4 站 · 步行 3.1 km · 约 4 小时', tag: '返程', tagStyle: 'ok',
+    stops: [
+      { name: '南锣鼓巷', time: '09:30' }, { name: '钟鼓楼', time: '11:00' },
+      { name: '稻香村采购', time: '13:00' }, { name: '首都机场', time: '16:00' }
+    ],
+    note: '航班 18:40 · 提前 2.5 小时到机场'
+  }
+];
+
 
 const PHRASES = [
   { zh: '请问最近的地铁站怎么走？', en: 'Where is the nearest subway station?', scenario: 'route' },
@@ -174,7 +214,7 @@ const S = {
   layer: 'mine',
   routeName: '北京中轴线 · 草稿',
   aiVisible: true,
-  reminderDismissed: false,
+  expandedPlan: 0,
   applied: false,
   forumChannel: null,
   forumFilter: 'all',
@@ -390,7 +430,6 @@ function go(tab, channel = null) {
 
 /* ================= TRIP ================= */
 function tripView() {
-  const progress = doneCount() / S.checklist.length;
   return `
     <header class="top">
       <div>
@@ -403,16 +442,21 @@ function tripView() {
           <button class="icon-btn" data-act="assistant" data-ctx="行程 · 通知与提醒" aria-label="通知">${icon('bell', 15)}</button>
           <div class="avatar">W</div>
         </div>
-        <div class="meta">3 天后出发</div>
+        <div class="meta">今天 · 第 1 天</div>
       </div>
     </header>
 
-    <article class="card" style="margin-top:12px;overflow:hidden">
+    <div class="section-title" style="margin-top:18px">
+      <div class="st-left"><span class="idx">01</span><h2>当日信息</h2></div>
+      <span class="today-date">10/15 · 周三</span>
+    </div>
+
+    <article class="card today-card">
       <div class="cityscape">
         ${cityscape()}
         <div class="scene-chips">
-          <span class="weather">${icon('sun', 12)}22° <small>多云转晴</small></span>
-          ${tag('第 2 天 / 4', 'dark')}
+          <span class="weather">${icon('sun', 12)}22° <small>晴 · 11–22°</small></span>
+          ${tag('今天 · 第 1 天 / 4', 'dark')}
         </div>
       </div>
       <div class="hero-foot">
@@ -426,102 +470,51 @@ function tripView() {
         </div>
         <button class="round-lime" data-act="tab" data-tab="plan" aria-label="打开地图">${icon('arrowur', 14)}</button>
       </div>
+      <div class="today-facts">
+        <button class="fact" data-act="assistant" data-ctx="门票 · 故宫 10/15 09:00">
+          ${icon('ticket', 11)}<span><b>故宫 09:00</b><small>已预约 · 午门进</small></span>
+        </button>
+        <button class="fact" data-act="assistant" data-ctx="天气 · 北京 10/15">
+          ${icon('sun', 11)}<span><b>11° – 22°</b><small>早晚温差 11℃</small></span>
+        </button>
+        <button class="fact" data-act="assistant" data-ctx="行程 · 今日日落 17:18">
+          ${icon('clock', 11)}<span><b>日落 17:18</b><small>景山万春亭</small></span>
+        </button>
+      </div>
     </article>
 
-    ${S.reminderDismissed ? '' : `
-    <div class="reminder">
-      <div class="ai-dot">${sparkleIcon(13)}</div>
-      <div class="body">
-        <div class="head"><b>LUCIA 提醒</b><button data-act="dismiss-reminder" aria-label="关闭提醒" style="opacity:.6">${icon('x', 9)}</button></div>
-        <p>10/15–17 白天 22℃，早晚 11℃。故宫周一闭馆，建议改到 15 号上午。</p>
-        <div class="foot">${tag('已排进清单')}${tag('温差 11℃', 'pink')}
-          <button class="ghost-pill" data-act="apply-from-trip" style="margin-left:auto">调整路线 ${icon('arrowr', 8)}</button>
-        </div>
-      </div>
-    </div>`}
-
-    <div class="stats">
-      <button class="stat progress" data-act="checklist" aria-label="打开行前清单">
-        ${ring(progress, 42, 3.6, 'var(--ink)', 'rgba(255,252,242,.75)', `${Math.round(progress * 100)}%`)}
-        <div><div class="stat-label">行前清单</div><b>${doneCount()} / ${S.checklist.length}</b></div>
-      </button>
-      <button class="stat peri" data-act="tab" data-tab="plan">
-        <div class="stat-top"><span class="dot" style="background:var(--peri)">${icon('map', 11)}</span>${icon('arrowur', 9)}</div>
-        <div class="stat-val"><b>6</b><span>站</span></div>
-        <div class="stat-label">今日路线</div>
-      </button>
-      <button class="stat pink" data-act="assistant" data-ctx="行程 · 门票预约">
-        <div class="stat-top"><span class="dot" style="background:var(--pink)">${icon('ticket', 11)}</span>${icon('arrowur', 9)}</div>
-        <div class="stat-val"><b>2</b><span>/ 4</span></div>
-        <div class="stat-label">门票已约</div>
-      </button>
-      <button class="stat mint" data-act="tab" data-tab="plan">
-        <div class="stat-top"><span class="dot" style="background:var(--mint)">${icon('walk', 11)}</span>${icon('arrowur', 9)}</div>
-        <div class="stat-val"><b>4.2</b><span>km</span></div>
-        <div class="stat-label">步行距离</div>
-      </button>
-    </div>
-
     <div class="section-title">
-      <div class="st-left"><span class="idx">01</span><h2>今天的路线</h2></div>
-      <button class="link" data-act="tab" data-tab="plan">打开地图 ${icon('arrowur', 8)}</button>
-    </div>
-    <button class="card route-card" data-act="tab" data-tab="plan" style="width:100%;text-align:left">
-      <div class="mini-map">${miniMap()}</div>
-      <div class="grow">
-        <div class="tags">${tag('草稿')}${tag('3 人协作', 'blue')}</div>
-        <h4>天安门 → 故宫 → 什刹海</h4>
-        <div class="meta">09:00 出发 · 日落前到钟鼓楼</div>
-        <div class="who"><div class="avatar-stack"><div class="avatar sm">林</div><div class="avatar sm pink">周</div></div><span>+1 正在编辑</span></div>
-      </div>
-    </button>
-
-    <div class="section-title">
-      <div class="st-left"><span class="idx">02</span><h2>行前情报</h2></div>
-      <button class="link" data-act="assistant" data-ctx="行程 · 行前情报">问 Lucia</button>
-    </div>
-    <div class="intel">
-      <button class="intel-card" data-act="assistant" data-ctx="天气 · 北京 10/15–18">
-        <div class="ico" style="background:var(--sky)">${icon('sun', 12)}</div>
-        <div class="lab">天气</div><div class="val">11° – 22°</div><div class="det">昼夜温差大，带薄外套</div>
-      </button>
-      <button class="intel-card" data-act="assistant" data-ctx="客流 · 故宫上午">
-        <div class="ico" style="background:var(--mint)">${icon('users', 12)}</div>
-        <div class="lab">客流</div><div class="val">上午 · 低</div><div class="det">故宫 14 点后明显变挤</div>
-      </button>
-      <button class="intel-card" data-act="assistant" data-ctx="门票 · 故宫余票">
-        <div class="ico" style="background:var(--pink)">${icon('ticket', 12)}</div>
-        <div class="lab">余票</div><div class="val">812 张</div><div class="det">故宫 10/15 09:00</div>
-      </button>
-      <button class="intel-card" data-act="assistant" data-ctx="住宿 · 王府井">
-        <div class="ico" style="background:var(--mustard)">${icon('bed', 12)}</div>
-        <div class="lab">住宿</div><div class="val">王府井</div><div class="det">步行 12 分到故宫</div>
-      </button>
+      <div class="st-left"><span class="idx">02</span><h2>旅行计划</h2></div>
+      <button class="link" data-act="assistant" data-ctx="行程 · 调整旅行计划">问 Lucia ${icon('arrowur', 8)}</button>
     </div>
 
-    <div class="section-title">
-      <div class="st-left"><span class="idx">03</span><h2>社区灵感</h2></div>
-      <button class="link" data-act="tab" data-tab="forum">去社区 ${icon('arrowur', 8)}</button>
-    </div>
-    <div class="rail">
-      <button class="mini-card" data-act="forum" data-channel="route">
-        <div class="art" style="background:var(--sky-soft)">${miniMap([{x:.2,y:.8},{x:.4,y:.6},{x:.6,y:.4},{x:.8,y:.2}], 'var(--peri)')}<span class="sticker">WALK 08</span></div>
-        <div class="lab">路线 · Lina</div><h4>2 天胡同慢走 · 8 站</h4><p>4.8 分 · 收藏 1.2k</p>
-      </button>
-      <button class="mini-card" data-act="forum" data-channel="restaurant">
-        <div class="art" style="background:var(--pink-soft)">${foodArt('var(--pink)')}<span class="sticker">EAT</span></div>
-        <div class="lab">餐厅 · 本地人常去</div><h4>四季民福 · 故宫店</h4><p>11:00 前到不排队</p>
-      </button>
-      <button class="mini-card" data-act="forum" data-channel="spot">
-        <div class="art" style="background:var(--mustard-soft)">${sunsetArt()}<span class="sticker">GOLDEN</span></div>
-        <div class="lab">景点 · 日落</div><h4>景山看日落</h4><p>17:00 前上山 · 万春亭</p>
-      </button>
-    </div>
-
-    <div class="quote">
-      <svg viewBox="0 0 40 10" fill="none" stroke="var(--ink2)" stroke-width="1.3"><path d="M1 6c3-4 6-4 9 0s6 4 9 0 6-4 9 0 6 4 9 0"/></svg>
-      <span>慢一点，才看得见北京。</span>
+    <div class="trip-plans">
+      ${TRIP_PLANS.map((p, i) => tripPlanCard(p, i)).join('')}
     </div>`;
+}
+
+function tripPlanCard(p, index) {
+  const open = S.expandedPlan === index;
+  return `<article class="trip-plan ${open ? 'open' : ''}">
+    <button class="tp-head" data-act="toggle-trip-plan" data-index="${index}" aria-expanded="${open}">
+      <span class="tp-date"><b>${p.date}</b><small>${p.week}</small></span>
+      <span class="tp-main">
+        <span class="rowline"><span class="day">DAY ${String(p.day).padStart(2, '0')}</span>${tag(p.tag, p.tagStyle)}</span>
+        <span class="tp-title">${esc(p.title)}</span>
+        <span class="meta">${esc(p.meta)}</span>
+      </span>
+      <span class="tp-chev">${icon('right', 8)}</span>
+    </button>
+    ${open ? `<div class="tp-body">
+      <div class="tp-stops">${p.stops.map((s) => `<div class="tp-stop"><i></i><b>${esc(s.name)}</b><span>${esc(s.time)}</span></div>`).join('')}</div>
+      <div class="tp-note">${esc(p.note)}</div>
+      <div class="tp-foot">
+        <button class="tp-open" data-act="tab" data-tab="plan">打开地图 ${icon('arrowur', 8)}</button>
+        <button class="tp-open ghost" data-act="assistant" data-ctx="行程 · ${esc(p.title)}">问 Lucia ${sparkleIcon(8)}</button>
+        <span class="tp-hint">${p.stops.length} 个停留点</span>
+      </div>
+    </div>` : ''}
+  </article>`;
 }
 
 function foodArt(bg) {
@@ -577,9 +570,12 @@ function planView() {
           <div class="name">${esc(S.routeName)}</div>
           <div class="meta">${stops.length} 站 · 4.2 km · 约 5 小时</div>
         </div>
-        <div class="row" style="padding-top:2px">
-          <div class="avatar-stack"><div class="avatar sm">林</div><div class="avatar sm pink">周</div></div>
-          <button class="icon-btn" data-act="share-route" aria-label="分享路线">${icon('share', 14)}</button>
+        <div class="plan-head-right">
+          <button class="plan-note" data-act="notes">${icon('doc', 10)}生成笔记</button>
+          <div class="row" style="justify-content:flex-end;gap:6px">
+            <div class="avatar-stack"><div class="avatar sm">林</div><div class="avatar sm pink">周</div></div>
+            <button class="icon-btn" data-act="share-route" aria-label="分享路线" style="width:31px;height:31px">${icon('share', 13)}</button>
+          </div>
         </div>
       </div>
       <div class="chips">
@@ -611,25 +607,13 @@ function planView() {
         <button data-act="apply-ai">应用</button>
       </div>` : ''}
 
-      ${!S.editMode ? `
-      <div class="sim-row">
-        <div class="sim-label"><b>${icon('layers', 8)}相似路线</b><span>${SIMILAR.length} 条 · 最高 94%</span></div>
-        <div class="sim-scroll">
-          ${SIMILAR.map((r, i) => `<button class="sim-card" data-act="similar" aria-label="${esc(r.title)}">
-            <span class="pct ${r.match >= 90 ? '' : 'mid'}">${r.match}%</span>
-            <span style="min-width:0"><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(r.title)}</b><small>${esc(r.author)} · ${r.stops} 站</small></span>
-          </button>`).join('')}
-        </div>
-        <button class="sim-more" data-act="similar" aria-label="查看相似路线">${icon('right', 8)}</button>
-      </div>` : ''}
-
       <div class="stops" id="stopList">
         ${stops.map((s, i) => stopRowHTML(s, i)).join('')}
       </div>
 
       <div class="panel-actions">
         <button class="pa dashed" data-act="assistant" data-ctx="计划 · 添加地点">${icon('plus', 10)}加地点</button>
-        <button class="pa lime" data-act="notes">${icon('doc', 10)}生成笔记</button>
+        <button class="pa lime" data-act="similar">${icon('layers', 10)}相似路线</button>
         <button class="pa coral" data-act="assistant" data-ctx="计划 · ${esc(S.routeName)}"><span class="sp">${sparkleIcon(9)}</span>问问 Lucia</button>
       </div>
     </div>
@@ -2246,19 +2230,15 @@ document.addEventListener('click', (e) => {
       S.search = '';
       render();
       break;
-    case 'dismiss-reminder':
-      S.reminderDismissed = true;
+    case 'toggle-trip-plan': {
+      const index = Number(el.dataset.index);
+      S.expandedPlan = S.expandedPlan === index ? -1 : index;
       render();
       break;
+    }
     case 'apply-ai':
       closeSheet();
       applyRouteSuggestion();
-      break;
-    case 'apply-from-trip':
-      applyRouteSuggestion(true);
-      S.tab = 'plan';
-      render(true);
-      toast('已调整路线 · 什刹海挪到 13:00', 'sparkle');
       break;
     case 'apply-similar':
       applySimilar(Number(el.dataset.index || 0));

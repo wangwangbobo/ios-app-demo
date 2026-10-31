@@ -81,13 +81,36 @@ struct PlanView: View {
                         .foregroundStyle(Palette.ink2)
                 }
                 Spacer()
-                HStack(spacing: 8) {
-                    AvatarStack(names: ["林", "周"], size: 28)
-                    IconCircleButton(icon: "square.and.arrow.up", size: 36) {
-                        model.shareRoute()
+                VStack(alignment: .trailing, spacing: 8) {
+                    Button {
+                        Haptics.tap()
+                        model.notesOpen = true
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "doc.text.image")
+                                .font(.system(size: 9, weight: .bold))
+                            Text("生成笔记")
+                                .font(.system(size: 10, weight: .bold))
+                        }
+                        .foregroundStyle(Palette.ink)
+                        .padding(.horizontal, 11)
+                        .frame(height: 31)
+                        .background(Capsule().fill(Palette.lime))
+                        .overlay(Capsule().strokeBorder(Palette.ink, lineWidth: 1.2))
+                        .compositingGroup()
+                        .shadow(color: Palette.ink.opacity(0.16), radius: 0, x: 0, y: 2)
+                    }
+                    .buttonStyle(PressableButtonStyle(scale: 0.96))
+                    .accessibilityLabel("生成行程笔记")
+
+                    HStack(spacing: 6) {
+                        AvatarStack(names: ["林", "周"], size: 27)
+                        IconCircleButton(icon: "square.and.arrow.up", size: 31) {
+                            model.shareRoute()
+                        }
                     }
                 }
-                .padding(.top, 2)
+                .padding(.top, 1)
             }
 
             HStack(spacing: 6) {
@@ -229,55 +252,6 @@ struct PlanView: View {
                 .transition(.opacity.combined(with: .move(edge: .top)))
             }
 
-            if !model.mapEditMode {
-                HStack(spacing: 7) {
-                    VStack(alignment: .leading, spacing: 1) {
-                        HStack(spacing: 3) {
-                            Image(systemName: "square.stack.3d.up.fill")
-                                .font(.system(size: 8, weight: .bold))
-                            Text("相似路线")
-                                .font(.system(size: 9.5, weight: .bold))
-                        }
-                        .foregroundStyle(Palette.ink)
-                        Text("\(model.similarRoutes.count) 条 · 最高 \(model.similarRoutes.map(\.match).max() ?? 0)%")
-                            .font(.system(size: 6.8, weight: .medium, design: .monospaced))
-                            .foregroundStyle(Palette.ink3)
-                            .lineLimit(1)
-                    }
-                    .frame(width: 72, alignment: .leading)
-
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 6) {
-                            ForEach(model.similarRoutes) { route in
-                                Button {
-                                    Haptics.tap()
-                                    showSimilar = true
-                                } label: {
-                                    similarRouteCard(route)
-                                }
-                                .buttonStyle(PressableButtonStyle(scale: 0.97))
-                            }
-                        }
-                    }
-                    .frame(height: 44)
-
-                    Button {
-                        Haptics.tap()
-                        showSimilar = true
-                    } label: {
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 8, weight: .black))
-                            .foregroundStyle(Palette.ink)
-                            .frame(width: 26, height: 26)
-                            .background(Circle().fill(Palette.paperWarm))
-                            .overlay(Circle().strokeBorder(Palette.ink, lineWidth: 1))
-                    }
-                    .buttonStyle(PressableButtonStyle(scale: 0.94))
-                }
-                .padding(.horizontal, 14)
-                .transition(.opacity.combined(with: .move(edge: .bottom)))
-            }
-
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(spacing: 3) {
                     ForEach(model.stops.indices, id: \.self) { index in
@@ -317,12 +291,12 @@ struct PlanView: View {
 
                 Button {
                     Haptics.tap()
-                    model.notesOpen = true
+                    showSimilar = true
                 } label: {
                     HStack(spacing: 4) {
-                        Image(systemName: "doc.text.image")
+                        Image(systemName: "square.stack.3d.up.fill")
                             .font(.system(size: 9.5, weight: .bold))
-                        Text("生成笔记")
+                        Text("相似路线")
                             .font(.system(size: 10, weight: .bold))
                     }
                     .foregroundStyle(Palette.ink)
@@ -332,6 +306,7 @@ struct PlanView: View {
                     .overlay(Capsule().strokeBorder(Palette.ink, lineWidth: 1.2))
                 }
                 .buttonStyle(PressableButtonStyle())
+                .accessibilityLabel("查看相似路线")
 
                 Button {
                     Haptics.tap()
@@ -371,34 +346,6 @@ struct PlanView: View {
         .shadow(color: Palette.ink.opacity(0.08), radius: 24, x: 0, y: 10)
         .padding(.horizontal, 10)
         .padding(.bottom, 84)
-    }
-
-    private func similarRouteCard(_ route: SimilarRoute) -> some View {
-        HStack(spacing: 6) {
-            Text("\(route.match)%")
-                .font(.system(size: 9.5, weight: .black, design: .rounded))
-                .foregroundStyle(Palette.ink)
-                .padding(.horizontal, 5)
-                .frame(height: 22)
-                .background(Capsule().fill(route.match >= 90 ? Palette.lime : Palette.mustardSoft))
-                .overlay(Capsule().strokeBorder(Palette.ink.opacity(0.7), lineWidth: 0.8))
-
-            VStack(alignment: .leading, spacing: 1) {
-                Text(route.title)
-                    .font(.system(size: 9.5, weight: .bold))
-                    .foregroundStyle(Palette.ink)
-                    .lineLimit(1)
-                Text("\(route.author) · \(route.stops) 站")
-                    .font(.system(size: 7.5, weight: .medium, design: .monospaced))
-                    .foregroundStyle(Palette.ink3)
-                    .lineLimit(1)
-            }
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, 7)
-        .frame(width: 168, height: 42)
-        .background(RoundedRectangle(cornerRadius: 13, style: .continuous).fill(Palette.paperWarm))
-        .overlay(RoundedRectangle(cornerRadius: 13, style: .continuous).strokeBorder(Palette.ink, lineWidth: 1))
     }
 
     private var stopChipColors: [Color] {
