@@ -77,7 +77,7 @@ const STOPS = [
   { id: 's1', name: 'Tiananmen Square', time: '09:00', duration: '30 min', x: 0.49, y: 0.86, tag: 'Photo' },
   { id: 's2', name: 'Forbidden City', time: '09:40', duration: '3 hr', x: 0.52, y: 0.67, tag: 'Booked', tagStyle: 'ok' },
   { id: 's3', name: 'Jingshan Park', time: '13:00', duration: '1 hr', x: 0.57, y: 0.56, tag: 'Hilltop' },
-  { id: 's4', name: 'Shichahai', time: '15:00', duration: '1.5 hr', x: 0.37, y: 0.38, tag: 'Lucia pick', tagStyle: 'coral' },
+  { id: 's4', name: 'Shichahai', time: '15:00', duration: '1.5 hr', x: 0.37, y: 0.38, tag: 'Pico pick', tagStyle: 'coral' },
   { id: 's5', name: 'Nanluoguxiang', time: '16:30', duration: '45 min', x: 0.61, y: 0.31, tag: 'Coffee' },
   { id: 's6', name: 'Drum & Bell Towers', time: '17:30', duration: '45 min', x: 0.50, y: 0.20, tag: 'Sunset' }
 ];
@@ -391,7 +391,7 @@ function renderDock() {
       ${icon(t.icon, 18)}<span>${t.label}</span>
       ${t.badge ? '<i class="badge" aria-hidden="true"></i>' : ''}
     </button>`).join('') + `
-    <button class="orb" data-act="assistant" data-ctx="${TAB_CTX[S.tab]}" aria-label="Ask Lucia">${sparkleIcon(21)}</button>`;
+    <button class="orb" data-act="assistant" data-ctx="${TAB_CTX[S.tab]}" aria-label="Ask Pico">${sparkleIcon(21)}</button>`;
 }
 
 const screens = {
@@ -485,7 +485,7 @@ function tripView() {
 
     <div class="section-title">
       <div class="st-left"><span class="idx">02</span><h2>Your days</h2></div>
-      <button class="link" data-act="assistant" data-ctx="Trip · Adjust the plan">Ask Lucia ${icon('arrowur', 8)}</button>
+      <button class="link" data-act="assistant" data-ctx="Trip · Adjust the plan">Ask Pico ${icon('arrowur', 8)}</button>
     </div>
 
     <div class="trip-plans">
@@ -510,7 +510,7 @@ function tripPlanCard(p, index) {
       <div class="tp-note">${esc(p.note)}</div>
       <div class="tp-foot">
         <button class="tp-open" data-act="tab" data-tab="plan">Open map ${icon('arrowur', 8)}</button>
-        <button class="tp-open ghost" data-act="assistant" data-ctx="Trip · ${esc(p.title)}">Ask Lucia ${sparkleIcon(8)}</button>
+        <button class="tp-open ghost" data-act="assistant" data-ctx="Trip · ${esc(p.title)}">Ask Pico ${sparkleIcon(8)}</button>
         <span class="tp-hint">${p.stops.length} stops</span>
       </div>
     </div>` : ''}
@@ -602,7 +602,7 @@ function planView() {
       ${S.aiVisible && !S.editMode ? `
       <div class="ai-bar">
         <span class="spark">${sparkleIcon(10)}</span>
-        <span>Lucia: move Shichahai to 13:00</span>
+        <span>Pico: move Shichahai to 13:00</span>
         <span class="note">1.2 km less</span>
         <button data-act="apply-ai">Apply</button>
       </div>` : ''}
@@ -614,7 +614,7 @@ function planView() {
       <div class="panel-actions">
         <button class="pa dashed" data-act="assistant" data-ctx="Plan · Add a place">${icon('plus', 10)}Add place</button>
         <button class="pa lime" data-act="similar">${icon('layers', 10)}Similar routes</button>
-        <button class="pa coral" data-act="assistant" data-ctx="Plan · ${esc(S.routeName)}"><span class="sp">${sparkleIcon(9)}</span>Ask Lucia</button>
+        <button class="pa coral" data-act="assistant" data-ctx="Plan · ${esc(S.routeName)}"><span class="sp">${sparkleIcon(9)}</span>Ask Pico</button>
       </div>
     </div>
   </div>`;
@@ -738,67 +738,78 @@ const POST_KIND_LABEL = { restaurant: 'EAT', spot: 'SEE', route: 'WALK', gift: '
 /* platform user posts — the primary forum content */
 const POSTS = [
   {
-    id: 'n1', author: 'Lin Xiaoman', avatar: 'LX', tint: 'lime', time: '2 hr ago', kind: 'spot',
-    title: 'Sunset from Wanchun Pavilion beats any photo', body: 'Up at 17:00 is just right — the palace roofs turn gold. The shot is along the east railing, so claim a spot early.',
+    id: 'n1',
+    photo: 'img/posts/post-n1.jpg', credit: 'EditQ / CC BY-SA 4.0', author: 'Lin Xiaoman', avatar: 'LX', tint: 'lime', time: '2 hr ago', kind: 'spot',
+    title: 'Sunset from Wanchun Pavilion beats any photo', body: 'Climb up before 17:00 for the last light — the roofs burn gold from here. Take the east railing, the whole axis lines up.',
     tags: ['Jingshan', 'Sunset', 'Viewpoint'], likes: '3.4k', saves: '862', art: 'sunset', h: 174, placeId: 'p8',
     comment: '@Zhe: Went on Wednesday — at 17:10 the sun landed right on the ridge.'
   },
   {
-    id: 'n2', author: 'Ken', avatar: 'K', tint: 'peri', time: '4 hr ago', kind: 'route',
+    id: 'n2',
+    photo: 'img/posts/post-n2.jpg', credit: 'xiquinhosilva / CC BY 4.0', author: 'Ken', avatar: 'K', tint: 'peri', time: '4 hr ago', kind: 'route',
     title: 'The Central Axis in a day: Yongdingmen to the Drum Tower', body: 'Six stops, 4.2 km. Start at three and you reach Jingshan for sunset. There is a metro exit near every leg.',
     tags: ['Central Axis', 'Walking', 'Route'], likes: '2.1k', saves: '1.2k', art: 'route', h: 120, routeIndex: 1,
     comment: '@Lina: Walked the whole thing — feet held up, topped up with coffee twice.'
   },
   {
-    id: 'n3', author: 'Zhe', avatar: 'Z', tint: 'mustard', time: '5 hr ago', kind: 'restaurant',
+    id: 'n3',
+    photo: 'img/posts/post-n3.jpg', credit: 'Mr Wabu / CC BY-SA 2.0', author: 'Zhe', avatar: 'Z', tint: 'mustard', time: '5 hr ago', kind: 'restaurant',
     title: 'Siji Minfu before 11 really is queue-free', body: 'Eat the skin with sugar first, and half a duck is plenty for two. After three, tables free up on their own.',
     tags: ['Peking duck', 'Forbidden City', 'Queues'], likes: '2.3k', saves: '708', art: 'food', h: 146, placeId: 'p1',
     comment: '@Zhou: Confirmed — arrived at 10:40 and walked straight in.'
   },
   {
-    id: 'n4', author: 'Lina', avatar: 'L', tint: 'pink', time: 'Yesterday', kind: 'restaurant',
+    id: 'n4',
+    photo: 'img/posts/post-n4.jpg', credit: 'Arisepeter / CC BY-SA 4.0', author: 'Lina', avatar: 'L', tint: 'pink', time: 'Yesterday', kind: 'restaurant',
     title: 'A Qianmen hutong café, best light at three', body: 'Metal Hands hides in a back alley; the two window tables are the quietest. The pour-over runs bright — order a croissant with it.',
     tags: ['Coffee', 'Hutongs', 'Afternoon'], likes: '1.1k', saves: '433', art: 'coffee', h: 162, placeId: 'p4',
     comment: '@Xiaobei: Sat there two hours on Sunday. Nobody hurried us out.'
   },
   {
-    id: 'n5', author: 'Zhou', avatar: 'Z', tint: 'mint', time: 'Yesterday', kind: 'spot',
+    id: 'n5',
+    photo: 'img/posts/post-n5.jpg', credit: 'Balon Greyjoy / CC0', author: 'Zhou', avatar: 'Z', tint: 'mint', time: 'Yesterday', kind: 'spot',
     title: 'Early morning at the Temple of Heaven, almost empty', body: 'Come in by the south gate; the Echo Wall is quietest before nine. Cypress shadows on the red wall — every frame works.',
     tags: ['Temple of Heaven', 'Morning', 'Architecture'], likes: '2.8k', saves: '610', art: 'temple', h: 130, placeId: 'p9',
     comment: '@Hutong Archive: That is when locals do their morning practice. Keep voices low.'
   },
   {
-    id: 'n6', author: 'Hutong Archive', avatar: 'HA', tint: 'coral', time: '2 days ago', kind: 'event',
+    id: 'n6',
+    photo: 'img/posts/post-n6.jpg', credit: 'Marek Śliwecki / CC BY-SA 4.0', author: 'Hutong Archive', avatar: 'HA', tint: 'coral', time: '2 days ago', kind: 'event',
     title: 'Saturday night market at the Drum Tower: stall list updated', body: 'Handmade goods, vinyl and mulled wine. Busiest after 19:00. Metro Line 8, Shichahai station, exit A.',
     tags: ['Night market', 'Drum Tower', 'Weekend'], likes: '986', saves: '241', art: 'night', h: 154, eventId: 'e1',
     comment: '@Ken: Signed up — see you there.'
   },
   {
-    id: 'n7', author: 'Lao Zhao', avatar: 'LZ', tint: 'sky', time: '2 days ago', kind: 'gift',
+    id: 'n7',
+    photo: 'img/posts/post-n7.jpg', credit: 'Zicheng zic / CC BY 4.0', author: 'Lao Zhao', avatar: 'LZ', tint: 'sky', time: '2 days ago', kind: 'gift',
     title: 'Daoxiangcun: loose pastries or gift boxes?', body: 'Loose sweets are sold by weight, fresher, and you can mix flavors. Boxes are for giving — no need for your own snack stash.',
     tags: ['Gifts', 'Daoxiangcun', 'Save money'], likes: '1.7k', saves: '529', art: 'gift', h: 138, placeId: 'p5',
     comment: '@Lin Xiaoman: Date paste and ox-tongue pastries, every time.'
   },
   {
-    id: 'n8', author: 'Zhe', avatar: 'Z', tint: 'mustard', time: '3 days ago', kind: 'route',
+    id: 'n8',
+    photo: 'img/posts/post-n8.jpg', credit: 'Morio / CC BY-SA 4.0', author: 'Zhe', avatar: 'Z', tint: 'mustard', time: '3 days ago', kind: 'route',
     title: 'Shichahai after dark: 5 stops, 3 bars on the way', body: 'Begin at Yinding Bridge and follow the north shore to the Drum Tower. After nine it thins out; bring a jacket for the wind.',
     tags: ['Night', 'Shichahai', 'Bars'], likes: '860', saves: '377', art: 'hutong', h: 126, routeIndex: 2,
     comment: '@Lina: The craft beer spot by Yinding Bridge is solid.'
   },
   {
-    id: 'n9', author: 'Xiaobei', avatar: 'XB', tint: 'pink', time: '3 days ago', kind: 'gift',
+    id: 'n9',
+    photo: 'img/posts/post-n9.jpg', credit: 'Morio / CC BY-SA 4.0', author: 'Xiaobei', avatar: 'XB', tint: 'pink', time: '3 days ago', kind: 'gift',
     title: 'Corner-tower magnets are back — buy on your way in', body: 'The Shenwu Gate shop restocks in the morning and the corner-tower series goes fast. Two per person, so do not wait for closing.',
     tags: ['Palace shop', 'Magnets', 'Limited'], likes: '604', saves: '188', art: 'gift2', h: 112, placeId: 'p6',
     comment: '@Zhou: They still had the sunset color yesterday. Go.'
   },
   {
-    id: 'n10', author: 'May', avatar: 'M', tint: 'lime', time: '4 days ago', kind: 'restaurant',
+    id: 'n10',
+    photo: 'img/posts/post-n10.jpg', credit: 'ZhengZhou / CC BY-SA 4.0', author: 'May', avatar: 'M', tint: 'lime', time: '4 days ago', kind: 'restaurant',
     title: 'Forty minutes in line at Manhengji — worth it?', body: 'Hand-cut lamb, sesame dip, and a copper pot that settles the question the moment it boils. Take a number before 17:00 and halve the wait.',
     tags: ['Hotpot', 'Niujie', 'Queues'], likes: '1.9k', saves: '522', art: 'hotpot', h: 140, placeId: 'p2',
     comment: '@Lao Zhao: Worth it. Order the sweet garlic.'
   },
   {
-    id: 'n11', author: 'Lina', avatar: 'L', tint: 'pink', time: '5 days ago', kind: 'spot',
+    id: 'n11',
+    photo: 'img/posts/post-n11.jpg', credit: 'Daniel Case / CC BY-SA 3.0', author: 'Lina', avatar: 'L', tint: 'pink', time: '5 days ago', kind: 'spot',
     title: 'Boating at Beihai, the White Dagoba from the water', body: 'After four the sun softens; an hour in a pedal boat is just right. Rentals stop when the wind picks up.',
     tags: ['Beihai', 'Boating', 'Family'], likes: '2.1k', saves: '498', art: 'boat', h: 148, placeId: 'p10',
     comment: '@Xiaobei: With kids, choose an electric boat.'
@@ -898,7 +909,7 @@ function postCardHTML(p) {
   const saved = S.savedPosts.has(p.id);
   return `<article class="post-card" data-act="post" data-id="${p.id}" role="button" tabindex="0" aria-label="${esc(p.title)}">
     <span class="post-cover" style="height:${p.h}px">
-      ${postArt(p.art)}
+      ${postCover(p)}
       <span class="post-kind">${esc(POST_KIND_LABEL[p.kind])}</span>
       <button class="post-save ${saved ? 'saved' : ''}" data-act="save-post" data-id="${p.id}" aria-label="${saved ? 'Remove from saved' : 'Save note'}">${icon(saved ? 'bookmark' : 'heart', 9)}</button>
     </span>
@@ -934,7 +945,7 @@ function forumChannelView(id) {
   const c = channelMeta(id);
   const action = id === 'event'
     ? `<button class="link" style="font-size:9px" data-act="compose">${icon('plus', 9)}Start an event</button>`
-    : `<button class="link" style="font-size:9px" data-act="assistant" data-ctx="Community · ${esc(c.title)}">Ask Lucia</button>`;
+    : `<button class="link" style="font-size:9px" data-act="assistant" data-ctx="Community · ${esc(c.title)}">Ask Pico</button>`;
   return `<div class="back-row">
       <button class="icon-btn" data-act="back-forum" aria-label="Back to community">${icon('back', 13)}</button>
       <span class="channel-name">${esc(c.lab)} · ${esc(c.title)}</span>
@@ -985,6 +996,13 @@ function eventAdminHTML() {
 }
 
 /* ---------- post cover art ---------- */
+function postCover(p) {
+  if (p.photo) {
+    return `<img class="post-photo" src="${p.photo}" alt="${esc(p.title)}" loading="lazy" decoding="async">`;
+  }
+  return postArt(p.art);
+}
+
 function postArt(kind) {
   switch (kind) {
     case 'sunset': return sunsetArt();
@@ -1232,7 +1250,7 @@ function photoSection() {
       <button class="shutter ${S.photoScanning ? 'scanning' : ''}" data-act="shutter" aria-label="Scan and translate"></button>
     </div>
   </div>
-  ${S.photoScanned ? photoResultHTML() : `<div class="photo-hint"><b>Point at a sign or a menu</b><br>Press the shutter and Lucia will frame the text and translate it into English. You can play it aloud or copy it.</div>`}`;
+  ${S.photoScanned ? photoResultHTML() : `<div class="photo-hint"><b>Point at a sign or a menu</b><br>Press the shutter and Pico will frame the text and translate it into English. You can play it aloud or copy it.</div>`}`;
 }
 
 function menuScene() {
@@ -1509,8 +1527,9 @@ function postSheet() {
     </div>
     <div class="sheet-body">
       <div class="post-hero">
-        ${postArt(p.art)}
+        ${postCover(p)}
         <span class="post-kind">${esc(c.lab)}</span>
+        ${p.credit ? `<span class="post-credit">Photo · ${esc(p.credit)} · Wikimedia Commons</span>` : ''}
       </div>
       <div class="post-author-row">
         <span class="pa-avatar" style="background:var(--${p.tint})">${esc(p.avatar)}</span>
@@ -1532,7 +1551,7 @@ function postSheet() {
         ${p.routeIndex !== undefined ? `<button class="post-action" data-act="apply-forum-route" data-index="${p.routeIndex}">${icon('route', 10)}Use this route</button>` : ''}
         ${p.eventId ? `<button class="post-action" data-act="forum" data-channel="event">${icon('calendar', 10)}See event</button>` : ''}
       </div>
-      <button class="post-action dark" style="width:100%;margin-top:7px" data-act="assistant" data-ctx="Community · ${esc(p.title)}">${icon('sparkle', 10)}Ask Lucia if it is worth it</button>
+      <button class="post-action dark" style="width:100%;margin-top:7px" data-act="assistant" data-ctx="Community · ${esc(p.title)}">${icon('sparkle', 10)}Ask Pico if it is worth it</button>
       <div class="post-detail-foot">Posted in the RoamChina Community · content from members</div>
     </div>
   </div>`;
@@ -1544,7 +1563,7 @@ function assistantSheet() {
     <div class="assistant-head">
       <span class="orb-mini">${sparkleIcon(16)}</span>
       <div class="grow">
-        <h3>Lucia</h3>
+        <h3>Pico</h3>
         <div class="ctx">${esc(S.assistantContext)}</div>
       </div>
       <button class="sheet-close" data-act="close-sheet" aria-label="Close">${icon('x', 10)}</button>
@@ -1554,7 +1573,7 @@ function assistantSheet() {
       ${QUICK.map((q) => `<button data-act="quick" data-text="${esc(q)}">${esc(q)}</button>`).join('')}
     </div>
     <div class="chat-input">
-      <input id="chatInput" placeholder="Ask Lucia about routes, tickets, translation…" aria-label="Ask Lucia a question" autocomplete="off">
+      <input id="chatInput" placeholder="Ask Pico about routes, tickets, translation…" aria-label="Ask Pico a question" autocomplete="off">
       <button data-act="send-chat" aria-label="Send">${icon('arrowr', 14)}</button>
     </div>
   </div>`;
@@ -1789,7 +1808,7 @@ function checklistSheet() {
     </div>
     <div class="sheet-cta">
       <button class="ghost" data-act="close-sheet">Close</button>
-      <button class="primary" data-act="checklist-assistant">Ask Lucia what is missing</button>
+      <button class="primary" data-act="checklist-assistant">Ask Pico what is missing</button>
     </div>
   </div>`;
 }
@@ -1839,7 +1858,7 @@ function placeSheet() {
         <div class="place-fact"><span>Best time</span><b>${esc(p.bestTime)}</b></div>
         <div class="place-fact"><span>Where</span><b>${esc(p.area)}</b></div>
       </div>
-      <button class="full-btn" style="margin-top:9px;width:100%" data-act="place-assistant" data-id="${p.id}">${icon('sparkles', 11)}Ask Lucia how to fit it in</button>
+      <button class="full-btn" style="margin-top:9px;width:100%" data-act="place-assistant" data-id="${p.id}">${icon('sparkles', 11)}Ask Pico how to fit it in</button>
     </div>
     <div class="sheet-cta">
       <button class="ghost" data-act="save-place" data-id="${p.id}">${icon(saved ? 'check' : 'heart', 10)}${saved ? 'Saved' : 'Save'}</button>
@@ -1943,7 +1962,7 @@ function applyRouteSuggestion(silent) {
   S.applied = true;
   S.routeName = 'Central Axis · Tuned';
   render();
-  if (!silent) toast("Lucia's suggestion applied · 1.2 km shorter", 'sparkle');
+  if (!silent) toast("Pico's suggestion applied · 1.2 km shorter", 'sparkle');
 }
 
 function applySimilar(index) {

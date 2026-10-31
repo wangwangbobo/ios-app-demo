@@ -205,7 +205,7 @@ struct TripView: View {
 
     private var plansSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            SectionHeading(title: "Your days", index: "02", trailing: "Ask Lucia") {
+            SectionHeading(title: "Your days", index: "02", trailing: "Ask Pico") {
                 model.openAssistant("Trip · Adjust the plan")
             }
 
@@ -338,7 +338,7 @@ struct TripView: View {
                             model.openAssistant("Trip · \(plan.title)")
                         } label: {
                             HStack(spacing: 3) {
-                                Text("Ask Lucia")
+                                Text("Ask Pico")
                                 Image(systemName: "sparkles")
                                     .font(.system(size: 8, weight: .black))
                             }

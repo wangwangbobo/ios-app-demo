@@ -287,7 +287,7 @@ final class AppModel: ObservableObject {
         let lines = checklist.map { item -> String in
             "\(item.status == .done ? "✓" : "○") \(item.title) — \(item.meta)"
         }
-        return "Lucia · Beijing 4 days, 3 nights · Pre-trip checklist\nProgress \(doneCount)/\(totalCount)\n\n" + lines.joined(separator: "\n")
+        return "Pico · Beijing 4 days, 3 nights · Pre-trip checklist\nProgress \(doneCount)/\(totalCount)\n\n" + lines.joined(separator: "\n")
     }
 
     private func persistChecklist() {
@@ -391,7 +391,7 @@ final class AppModel: ObservableObject {
         let lines = stops.enumerated().map { index, stop in
             "\(index + 1). \(stop.name) · \(stop.time) · \(stop.duration)"
         }
-        return "\(routeName)\n6 stops · 4.2 km · ~5 hr\n\n" + lines.joined(separator: "\n") + "\n\nFrom Lucia · Beijing trip plan"
+        return "\(routeName)\n6 stops · 4.2 km · ~5 hr\n\n" + lines.joined(separator: "\n") + "\n\nFrom Pico · Beijing trip plan"
     }
 
     // MARK: Forum
@@ -724,7 +724,7 @@ final class AppModel: ObservableObject {
             RouteStop(name: "Tiananmen Square", time: "09:00", duration: "30 min", x: 0.49, y: 0.86, tag: "Photo"),
             RouteStop(name: "Forbidden City", time: "09:40", duration: "3 hr", x: 0.52, y: 0.67, tag: "Booked", tagStyle: .ok),
             RouteStop(name: "Jingshan Park", time: "13:00", duration: "1 hr", x: 0.57, y: 0.56, tag: "Views"),
-            RouteStop(name: "Shichahai", time: "15:00", duration: "1.5 hr", x: 0.37, y: 0.38, tag: "Lucia pick", tagStyle: .accent),
+            RouteStop(name: "Shichahai", time: "15:00", duration: "1.5 hr", x: 0.37, y: 0.38, tag: "Pico pick", tagStyle: .accent),
             RouteStop(name: "Nanluoguxiang", time: "16:30", duration: "45 min", x: 0.61, y: 0.31, tag: "Coffee"),
             RouteStop(name: "Drum & Bell Towers", time: "17:30", duration: "45 min", x: 0.50, y: 0.20, tag: "Sunset")
         ]
@@ -736,67 +736,67 @@ final class AppModel: ObservableObject {
                       title: "Sunset at Jingshan's Wanchun Pavilion beats the photos",
                       body: "Get up there by 17:00 and the palace roofs turn gold. The east railing is the shot — claim it early.",
                       tags: ["Jingshan", "Sunset", "Viewpoint"], likes: "3.4k", saves: "862",
-                      symbol: "sun.horizon.fill", artTint: 3, height: 174,
+                      symbol: "sun.horizon.fill", artTint: 3, height: 174, photo: "post-n1", credit: "EditQ / CC BY-SA 4.0",
                       placeTitle: "Sunset at Jingshan", comment: "@Zhe: Went on Wednesday — the sun hit the ridge at 17:10."),
             ForumPost(author: "Ken", avatar: "K", tint: 4, time: "4 hr ago", kind: .route,
                       title: "The Central Axis in a day: Yongdingmen to the Drum Tower",
                       body: "6 stops, 4.2 km. Start at 3pm and you land at Jingshan for sunset. The metro is a backup the whole way.",
                       tags: ["Central Axis", "Walk", "Route"], likes: "2.1k", saves: "1.2k",
-                      symbol: "point.topleft.down.to.point.bottomright.curvepath", artTint: 4, height: 120,
+                      symbol: "point.topleft.down.to.point.bottomright.curvepath", artTint: 4, height: 120, photo: "post-n2", credit: "xiquinhosilva / CC BY 4.0",
                       routeIndex: 1, comment: "@Lina: Finished it — feet survived, two coffee stops helped."),
             ForumPost(author: "Zhe", avatar: "Z", tint: 3, time: "5 hr ago", kind: .restaurant,
                       title: "Siji Minfu before 11 — no queue, really",
                       body: "Dip the duck skin in sugar first; half a bird feeds two. After 3pm you rarely wait at all.",
                       tags: ["Duck", "Forbidden City", "Queue"], likes: "2.3k", saves: "708",
-                      symbol: "fork.knife", artTint: 0, height: 146,
+                      symbol: "fork.knife", artTint: 0, height: 146, photo: "post-n3", credit: "Mr Wabu / CC BY-SA 2.0",
                       placeTitle: "Siji Minfu · Forbidden City", comment: "@Zhou: Got there at 10:40 and walked straight in."),
             ForumPost(author: "Lina", avatar: "L", tint: 0, time: "Yesterday", kind: .restaurant,
                       title: "Qianmen hutong coffee, best light at 3pm",
                       body: "Metal Hands hides in a back lane; the two window tables are the quietest. The pour-over runs bright — pair it with a croissant.",
                       tags: ["Coffee", "Hutong", "Afternoon"], likes: "1.1k", saves: "433",
-                      symbol: "cup.and.saucer.fill", artTint: 1, height: 162,
+                      symbol: "cup.and.saucer.fill", artTint: 1, height: 162, photo: "post-n4", credit: "Arisepeter / CC BY-SA 4.0",
                       placeTitle: "Metal Hands · Qianmen", comment: "@Bei: Sat there two hours on Sunday, nobody rushed us."),
             ForumPost(author: "Zhou", avatar: "Z", tint: 2, time: "Yesterday", kind: .spot,
                       title: "Early morning at the Temple of Heaven, almost empty",
                       body: "Enter from the south gate; the Echo Wall is quietest before nine. Cypress shadows fall on red walls — every shot works.",
                       tags: ["Temple of Heaven", "Morning", "Architecture"], likes: "2.8k", saves: "610",
-                      symbol: "building.columns.fill", artTint: 2, height: 130,
+                      symbol: "building.columns.fill", artTint: 2, height: 130, photo: "post-n5", credit: "Balon Greyjoy / CC0",
                       placeTitle: "Temple of Heaven", comment: "@Hutong Files: Locals do tai chi then — keep your voice down."),
             ForumPost(author: "Hutong Files", avatar: "H", tint: 3, time: "2 days ago", kind: .event,
                       title: "Saturday night market at the Drum Tower: stall list updated",
                       body: "Handmade goods, vinyl and mulled wine; busiest after 19:00. Metro Line 8, Shichahai exit A.",
                       tags: ["Night market", "Drum & Bell Towers", "Weekend"], likes: "986", saves: "241",
-                      symbol: "moon.stars.fill", artTint: 3, height: 154,
+                      symbol: "moon.stars.fill", artTint: 3, height: 154, photo: "post-n6", credit: "Marek Śliwecki / CC BY-SA 4.0",
                       eventTitle: "Hutong Night Market · Free entry", comment: "@Ken: Signed up — see you there."),
             ForumPost(author: "Zhao", avatar: "Z", tint: 1, time: "2 days ago", kind: .gift,
                       title: "Daoxiangcun loose pastries vs gift boxes: how locals buy",
                       body: "Loose pastries are sold by weight — fresher, and you can mix flavors. Boxes are for giving; no need for yourself.",
                       tags: ["Gifts", "Daoxiangcun", "Save money"], likes: "1.7k", saves: "529",
-                      symbol: "gift.fill", artTint: 5, height: 138,
+                      symbol: "gift.fill", artTint: 5, height: 138, photo: "post-n7", credit: "Zicheng zic / CC BY 4.0",
                       placeTitle: "Daoxiangcun · Local gifts", comment: "@Xiaoman: Get the date paste and ox-tongue pastry."),
             ForumPost(author: "Zhe", avatar: "Z", tint: 3, time: "3 days ago", kind: .route,
                       title: "Shichahai after dark: 5 stops, 3 small bars",
                       body: "Start at Yinding Bridge and follow the north shore to the Drum Tower. Quieter after nine; bring a jacket, it's windy.",
                       tags: ["Night", "Shichahai", "Bars"], likes: "860", saves: "377",
-                      symbol: "figure.walk", artTint: 2, height: 126,
+                      symbol: "figure.walk", artTint: 2, height: 126, photo: "post-n8", credit: "Morio / CC BY-SA 4.0",
                       routeIndex: 2, comment: "@Lina: The brewpub by Yinding Bridge is solid."),
             ForumPost(author: "Bei", avatar: "B", tint: 0, time: "3 days ago", kind: .gift,
                       title: "Corner-tower magnets are back — buy on the way in",
                       body: "The Shenwu Gate shop restocks in the morning and the corner-tower series sells out. Two per person — don't wait for closing.",
                       tags: ["Palace shop", "Magnets", "Limited"], likes: "604", saves: "188",
-                      symbol: "sparkles", artTint: 0, height: 112,
+                      symbol: "sparkles", artTint: 0, height: 112, photo: "post-n9", credit: "Morio / CC BY-SA 4.0",
                       placeTitle: "Palace Museum Shop · Magnets", comment: "@Zhou: They had the sunset color yesterday. Go."),
             ForumPost(author: "May", avatar: "M", tint: 5, time: "4 days ago", kind: .restaurant,
                       title: "40 minutes in line at Man Heng Ji — worth it?",
                       body: "Hand-cut lamb with sesame dip; once the copper pot boils you know the wait paid off. Take a number before 17:00 and halve it.",
                       tags: ["Hotpot", "Niujie", "Queue"], likes: "1.9k", saves: "522",
-                      symbol: "flame.fill", artTint: 3, height: 140,
+                      symbol: "flame.fill", artTint: 3, height: 140, photo: "post-n10", credit: "ZhengZhou / CC BY-SA 4.0",
                       placeTitle: "Man Heng Ji · Niujie", comment: "@Zhao: Worth it. Order extra sweet garlic."),
             ForumPost(author: "Lina", avatar: "L", tint: 0, time: "5 days ago", kind: .spot,
                       title: "Boating at Beihai: the White Dagoba from the water",
                       body: "After 4pm the sun softens; a pedal boat for an hour is just right. They stop rentals when it's windy.",
                       tags: ["Beihai", "Boating", "Family"], likes: "2.1k", saves: "498",
-                      symbol: "sailboat.fill", artTint: 1, height: 148,
+                      symbol: "sailboat.fill", artTint: 1, height: 148, photo: "post-n11", credit: "Daniel Case / CC BY-SA 3.0",
                       placeTitle: "Beihai Park", comment: "@Bei: With kids, take the electric boat.")
         ]
     }
@@ -831,7 +831,7 @@ final class AppModel: ObservableObject {
                 date: "10/18 Sat",
                 time: "18:00 – 22:00",
                 place: "Drum & Bell Towers square · 35 min from hotel",
-                host: "@Lucia Community",
+                host: "@Pico Community",
                 fee: "Free",
                 attendees: 128,
                 tint: 0

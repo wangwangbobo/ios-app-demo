@@ -22,6 +22,7 @@
 		C0000000000000000000000D /* AssistantView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000000D /* AssistantView.swift */; };
 		C0000000000000000000000E /* Extras.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000000E /* Extras.swift */; };
 		C0000000000000000000000F /* ForumChannels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0000000000000000000000F /* ForumChannels.swift */; };
+		C00000000000000000000010 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B00000000000000000000010 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -41,6 +42,7 @@
 		B0000000000000000000000D /* AssistantView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssistantView.swift; sourceTree = "<group>"; };
 		B0000000000000000000000E /* Extras.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extras.swift; sourceTree = "<group>"; };
 		B0000000000000000000000F /* ForumChannels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForumChannels.swift; sourceTree = "<group>"; };
+		B00000000000000000000010 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -80,6 +82,7 @@
 				B0000000000000000000000D /* AssistantView.swift */,
 				B0000000000000000000000E /* Extras.swift */,
 				B0000000000000000000000F /* ForumChannels.swift */,
+				B00000000000000000000010 /* Assets.xcassets */,
 			);
 			path = Lucia;
 			sourceTree = "<group>";
@@ -151,6 +154,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C00000000000000000000010 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

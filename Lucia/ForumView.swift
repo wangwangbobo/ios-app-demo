@@ -99,6 +99,9 @@ struct ForumView: View {
             if args.contains("-compose") {
                 showCompose = true
             }
+            if args.contains("-postdetail"), let post = feedPosts.first {
+                selectedPost = post
+            }
             guard !launchChannelApplied else { return }
             launchChannelApplied = true
             if args.contains("-restaurant") { path.append(ForumFilter.restaurant) }
@@ -243,7 +246,7 @@ struct ForumView: View {
         let saved = model.savedPostIDs.contains(post.id)
         return VStack(alignment: .leading, spacing: 0) {
             ZStack(alignment: .topTrailing) {
-                PhotoTile(symbol: post.symbol, tint: post.artTint, height: post.height)
+                PostCoverView(post: post, height: post.height)
                     .overlay(alignment: .topLeading) {
                         Text(post.kind.label)
                             .font(.system(size: 7.5, weight: .bold, design: .monospaced))
@@ -340,7 +343,7 @@ struct ForumView: View {
             Text("Try another category, or start a citywalk under Events.")
                 .font(.system(size: 10, weight: .medium))
                 .foregroundStyle(Palette.ink3)
-            LuciaLimeButton(title: "Ask Lucia", icon: "sparkles") {
+            LuciaLimeButton(title: "Ask Pico", icon: "sparkles") {
                 model.openAssistant("Community · Find inspiration")
             }
             .padding(.top, 2)
@@ -377,7 +380,7 @@ struct PostDetailSheet: View {
                 header
 
                 ZStack(alignment: .topLeading) {
-                    PhotoTile(symbol: post.symbol, tint: post.artTint, height: 208)
+                    PostCoverView(post: post, height: 208)
                     Text(post.kind.label)
                         .font(.system(size: 8, weight: .bold, design: .monospaced))
                         .tracking(0.5)
@@ -387,6 +390,17 @@ struct PostDetailSheet: View {
                         .background(Capsule().fill(Palette.paper))
                         .overlay(Capsule().strokeBorder(Palette.ink, lineWidth: 1))
                         .padding(9)
+                }
+                .overlay(alignment: .bottomTrailing) {
+                    if let credit = post.credit {
+                        Text("Photo · \(credit) · Wikimedia Commons")
+                            .font(.system(size: 7, weight: .semibold, design: .monospaced))
+                            .foregroundStyle(Palette.paper)
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 4)
+                            .background(Capsule().fill(Palette.ink.opacity(0.62)))
+                            .padding(9)
+                    }
                 }
 
                 HStack(spacing: 9) {
@@ -496,12 +510,12 @@ struct PostDetailSheet: View {
                 }
 
                 Button {
-                    askLucia()
+                    askPico()
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "sparkles")
                             .font(.system(size: 10, weight: .bold))
-                        Text("Ask Lucia if it's worth it")
+                        Text("Ask Pico if it's worth it")
                             .font(.system(size: 11.5, weight: .bold))
                     }
                     .foregroundStyle(Palette.paper)
@@ -599,7 +613,7 @@ struct PostDetailSheet: View {
         }
     }
 
-    private func askLucia() {
+    private func askPico() {
         Haptics.tap()
         Task { @MainActor in
             dismiss()

@@ -791,7 +791,7 @@ struct TranslateView: View {
                 Text("Menus, street signs, handwritten notes")
                     .font(.system(size: 11.5, weight: .bold))
                     .foregroundStyle(Palette.ink)
-                Text("Tap the shutter — Lucia highlights the text and pairs it with English.")
+                Text("Tap the shutter — Pico highlights the text and pairs it with English.")
                     .font(.system(size: 9.5, weight: .medium))
                     .foregroundStyle(Palette.ink2)
             }
@@ -916,7 +916,7 @@ struct TranslateView: View {
         HStack(spacing: 10) {
             IconBadge(icon: "sparkles", tint: Palette.ink, background: Palette.lime, size: 36)
             VStack(alignment: .leading, spacing: 2) {
-                Text("Stuck for words? Let Lucia build the sentence")
+                Text("Stuck for words? Let Pico build the sentence")
                     .font(.system(size: 11.5, weight: .bold))
                     .foregroundStyle(Palette.ink)
                 Text("Describe the moment — she'll give you both languages and how to say it.")

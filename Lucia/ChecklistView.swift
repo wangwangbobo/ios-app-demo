@@ -53,7 +53,7 @@ struct ChecklistView: View {
                     .overlay(Circle().strokeBorder(Palette.ink, lineWidth: 1.2))
             }
             .buttonStyle(PressableButtonStyle())
-            .accessibilityLabel("Ask Lucia")
+            .accessibilityLabel("Ask Pico")
             ShareLink(item: model.checklistSummary) {
                 Image(systemName: "square.and.arrow.up")
                     .font(.system(size: 13, weight: .bold))
@@ -299,7 +299,7 @@ struct ChecklistView: View {
             .overlay(Circle().strokeBorder(Palette.ink, lineWidth: 1.1))
 
             VStack(alignment: .leading, spacing: 3) {
-                Text("Have Lucia check again")
+                Text("Have Pico check again")
                     .font(.system(size: 12.5, weight: .bold))
                     .foregroundStyle(Palette.ink)
                 Text("She reorders tasks around weather, closing days and tickets left.")

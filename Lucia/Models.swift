@@ -343,6 +343,8 @@ struct ForumPost: Identifiable {
     var symbol: String
     var artTint: Int
     var height: CGFloat
+    var photo: String?
+    var credit: String?
     var placeTitle: String?
     var routeIndex: Int?
     var eventTitle: String?
@@ -365,6 +367,8 @@ struct ForumPost: Identifiable {
         symbol: String,
         artTint: Int,
         height: CGFloat,
+        photo: String? = nil,
+        credit: String? = nil,
         placeTitle: String? = nil,
         routeIndex: Int? = nil,
         eventTitle: String? = nil,
@@ -386,6 +390,8 @@ struct ForumPost: Identifiable {
         self.symbol = symbol
         self.artTint = artTint
         self.height = height
+        self.photo = photo
+        self.credit = credit
         self.placeTitle = placeTitle
         self.routeIndex = routeIndex
         self.eventTitle = eventTitle

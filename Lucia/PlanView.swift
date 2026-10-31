@@ -216,7 +216,7 @@ struct PlanView: View {
                         .frame(width: 23, height: 23)
                         .background(Circle().fill(Palette.lime))
                         .overlay(Circle().strokeBorder(Palette.ink, lineWidth: 0.9))
-                    Text("Lucia: move Shichahai to 13:00")
+                    Text("Pico: move Shichahai to 13:00")
                         .font(.system(size: 10, weight: .bold))
                         .foregroundStyle(Palette.ink)
                         .lineLimit(1)
@@ -319,7 +319,7 @@ struct PlanView: View {
                             .frame(width: 21, height: 21)
                             .background(Circle().fill(Palette.lime))
                             .overlay(Circle().strokeBorder(Palette.ink.opacity(0.8), lineWidth: 0.8))
-                        Text("Ask Lucia")
+                        Text("Ask Pico")
                             .font(.system(size: 10.5, weight: .black))
                             .foregroundStyle(Palette.paper)
                     }
@@ -331,7 +331,7 @@ struct PlanView: View {
                     .shadow(color: Palette.ink.opacity(0.2), radius: 0, x: 0, y: 3)
                 }
                 .buttonStyle(PressableButtonStyle(scale: 0.96))
-                .accessibilityLabel("Ask Lucia assistant")
+                .accessibilityLabel("Ask Pico assistant")
             }
             .padding(.horizontal, 12)
         }

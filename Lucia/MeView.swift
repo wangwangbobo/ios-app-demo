@@ -373,7 +373,7 @@ struct MeView: View {
                     }
                 }
                 SoftDivider().padding(.leading, 50)
-                serviceRow(icon: "questionmark.bubble", tint: Palette.mustard, title: "Help & feedback", detail: "FAQs · Chat with Lucia") {
+                serviceRow(icon: "questionmark.bubble", tint: Palette.mustard, title: "Help & feedback", detail: "FAQs · Chat with Pico") {
                     model.openAssistant("Me · Help & feedback")
                 }
             }

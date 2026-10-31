@@ -99,7 +99,7 @@ struct AssistantOrb: View {
             .shadow(color: Palette.ink.opacity(0.18), radius: 0, x: 0, y: 3)
         }
         .buttonStyle(PressableButtonStyle(scale: 0.92))
-        .accessibilityLabel("Open Lucia assistant")
+        .accessibilityLabel("Open Pico assistant")
         .onAppear {
             withAnimation(.easeOut(duration: 2.6).repeatForever(autoreverses: false)) {
                 breathe = true
@@ -560,6 +560,41 @@ struct PhotoTile: View {
                     .background(Capsule().fill(Palette.paper))
                     .overlay(Capsule().strokeBorder(Palette.ink, lineWidth: 1))
                     .padding(8)
+            }
+        }
+        .frame(height: height)
+        .clipShape(RoundedRectangle(cornerRadius: 15, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 15, style: .continuous)
+                .strokeBorder(Palette.ink, lineWidth: 1.2)
+        )
+    }
+}
+
+/// A community post cover: real photo when the seed provides one, drawn tile otherwise.
+struct PostCoverView: View {
+    var post: ForumPost
+    var height: CGFloat
+
+    var body: some View {
+        Group {
+            if let photo = post.photo, UIImage(named: photo) != nil {
+                GeometryReader { geo in
+                    Image(photo)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: geo.size.width, height: height)
+                        .clipped()
+                }
+                .frame(height: height)
+                .overlay(
+                    LinearGradient(
+                        colors: [.clear, Palette.ink.opacity(0.16)],
+                        startPoint: .center, endPoint: .bottom
+                    )
+                )
+            } else {
+                PhotoTile(symbol: post.symbol, tint: post.artTint, height: height)
             }
         }
         .frame(height: height)

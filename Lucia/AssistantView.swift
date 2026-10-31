@@ -29,7 +29,7 @@ struct AssistantView: View {
                                         .font(.system(size: 23, weight: .semibold))
                                         .foregroundStyle(Palette.ink.opacity(0.7))
                                 }
-                                Text("Lucia has read your trip, the weather\nand 4,208 community routes")
+                                Text("Pico has read your trip, the weather\nand 4,208 community routes")
                                     .font(.system(size: 10.5, weight: .medium, design: .monospaced))
                                     .foregroundStyle(Palette.ink3)
                                     .multilineTextAlignment(.center)
@@ -92,7 +92,7 @@ struct AssistantView: View {
                 .overlay(Circle().strokeBorder(Palette.ink, lineWidth: 1.2))
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Lucia")
+                    Text("Pico")
                         .font(.system(size: 18, weight: .semibold, design: .serif))
                         .foregroundStyle(Palette.ink)
                     HStack(spacing: 4) {
@@ -475,7 +475,7 @@ struct AssistantView: View {
                     Image(systemName: "sparkles")
                         .font(.system(size: 11, weight: .bold))
                         .foregroundStyle(Palette.ink2)
-                    TextField("Ask Lucia, e.g. “Any breakfast spots nearby?”", text: $model.chatDraft)
+                    TextField("Ask Pico, e.g. “Any breakfast spots nearby?”", text: $model.chatDraft)
                         .font(.system(size: 12))
                         .textFieldStyle(.plain)
                         .focused($composerFocused)

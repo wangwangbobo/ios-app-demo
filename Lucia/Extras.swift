@@ -361,13 +361,13 @@ struct LegalSheet: View {
         if kind == .privacy {
             return [
                 ("What we store", "Your trip, checklist ticks and offline phrase pack stay on this device. Community browsing isn't linked to your identity."),
-                ("What we never upload", "Passport numbers, phone numbers and payment details never pass through Lucia. Ticket bookings open the official channel instead."),
+                ("What we never upload", "Passport numbers, phone numbers and payment details never pass through Pico. Ticket bookings open the official channel instead."),
                 ("Offline use", "Maps, translation and emergency phrases work offline. Offline mode never uploads your location; a link is created only when you choose to share."),
                 ("Your choices", "Turn off notifications under Me, or long-press a checklist item to delete your own additions.")
             ]
         }
         return [
-            ("What Lucia covers", "Lucia offers trip planning, prep, translation and community browsing. Tickets, hotels and transport come from official third-party channels."),
+            ("What Pico covers", "Pico offers trip planning, prep, translation and community browsing. Tickets, hotels and transport come from official third-party channels."),
             ("Content & advice", "AI suggestions draw on public information and your preferences. Check official sources for opening hours, prices and weather."),
             ("Community rules", "Share real experiences. No infringing, promotional or unfriendly content — it will be hidden."),
             ("Cost", "Core features are free. Some offline packs and extras may be paid, always shown before you buy.")
@@ -512,7 +512,7 @@ struct PlaceSheet: View {
                         Image(systemName: "sparkles")
                             .font(.system(size: 11, weight: .bold))
                             .foregroundStyle(Palette.ink)
-                        Text("Ask Lucia: which day should I come?")
+                        Text("Ask Pico: which day should I come?")
                             .font(.system(size: 11, weight: .semibold))
                             .foregroundStyle(Palette.ink)
                         Spacer()

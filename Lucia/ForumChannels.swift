@@ -553,7 +553,7 @@ private struct SpotChannel: View {
                 Text("Fit 3 sights into one day?")
                     .font(.system(size: 11.5, weight: .bold))
                     .foregroundStyle(Palette.ink)
-                Text("Lucia plans around sunset, closing days and transit.")
+                Text("Pico plans around sunset, closing days and transit.")
                     .font(.system(size: 9.5, weight: .medium))
                     .foregroundStyle(Palette.ink2)
             }
