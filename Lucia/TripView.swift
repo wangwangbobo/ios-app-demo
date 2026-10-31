@@ -99,8 +99,28 @@ struct TripView: View {
 
             VStack(spacing: 0) {
                 ZStack(alignment: .topLeading) {
-                    CityScape()
-                        .frame(height: 196)
+                    GeometryReader { geo in
+                        Image("today-hero")
+                            .resizable()
+                            .scaledToFill()
+                            .frame(width: geo.size.width, height: 196)
+                            .clipped()
+                    }
+                    .frame(height: 196)
+
+                    LinearGradient(
+                        colors: [
+                            Palette.ink.opacity(0.24),
+                            .clear,
+                            .clear,
+                            Palette.ink.opacity(0.42)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .frame(height: 196)
+                    .allowsHitTesting(false)
+
                     HStack(alignment: .top) {
                         HStack(spacing: 5) {
                             Image(systemName: "sun.max.fill")
@@ -123,6 +143,22 @@ struct TripView: View {
                         TagView(text: "Day 1 of 4", style: .dark)
                     }
                     .padding(12)
+
+                    VStack {
+                        Spacer()
+                        HStack {
+                            Text("HALL OF SUPREME HARMONY · PHOTO N509FZ / CC BY-SA 4.0")
+                                .font(.system(size: 7, weight: .semibold, design: .monospaced))
+                                .tracking(0.4)
+                                .foregroundStyle(Palette.paper.opacity(0.86))
+                                .shadow(color: Palette.ink.opacity(0.5), radius: 2, y: 1)
+                            Spacer()
+                        }
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.bottom, 9)
+                    .frame(height: 196, alignment: .bottom)
+                    .allowsHitTesting(false)
                 }
                 .frame(height: 196)
                 .clipped()

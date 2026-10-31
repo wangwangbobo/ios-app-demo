@@ -1,9 +1,10 @@
 # Community cover photos
 
-All covers are real photographs from Wikimedia Commons, resized to 1000 px wide and re-encoded as JPEG. They are used under the licenses below.
+All covers are real photographs from Wikimedia Commons, resized to 1000 px wide and re-encoded as JPEG. They are used under the licenses below. The Trip hero photo (`img/trip/today-hero.jpg`) is credited in the same table and shown with an on-card credit line.
 
 | File | Post | Source image | Author | License |
 | --- | --- | --- | --- | --- |
+| ../trip/today-hero.jpg | Trip · Today at a glance hero | [Hall of Supreme Harmony (20220218131450)](https://commons.wikimedia.org/wiki/File:Hall_of_Supreme_Harmony_(20220218131450).jpg) | N509FZ | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) |
 | post-n1.jpg | Sunset from Wanchun Pavilion | [Views of the Forbidden City from Jingshan Park 1](https://commons.wikimedia.org/wiki/File:Views_of_the_Forbidden_City_from_Jingshan_Park_1.jpg) | EditQ | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) |
 | post-n2.jpg | The Central Axis in a day | [永定门 2024-10-11](https://commons.wikimedia.org/wiki/File:%E6%B0%B8%E5%AE%9A%E9%97%A8_2024-10-11.jpg) | xiquinhosilva | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
 | post-n3.jpg | Siji Minfu before 11 | [Peking duck by Mr Wabu in Beijing](https://commons.wikimedia.org/wiki/File:Peking_duck_by_Mr_Wabu_in_Beijing.jpg) | Mr Wabu | [CC BY-SA 2.0](https://creativecommons.org/licenses/by-sa/2.0/) |
@@ -16,4 +17,4 @@ All covers are real photographs from Wikimedia Commons, resized to 1000 px wide 
 | post-n10.jpg | Forty minutes in line at Manhengji | [Hand-cut lamb slices for hotpot](https://commons.wikimedia.org/wiki/File:Hand-cut_lamb_slices_for_hotpot.jpg) | ZhengZhou | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) |
 | post-n11.jpg | Boating at Beihai | [Boats and duck in Beihai Park lake, Beijing](https://commons.wikimedia.org/wiki/File:Boats_and_duck_in_Beihai_Park_lake,_Beijing.jpg) | Daniel Case | [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/) |
 
-Modifications: resized and JPEG re-encoded only. No other edits.
+Modifications: resized and JPEG re-encoded only, except `today-hero.jpg`, which was also center-cropped to 1000 × 560.

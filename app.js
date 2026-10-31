@@ -507,11 +507,12 @@ function tripView() {
 
     <article class="card today-card">
       <div class="cityscape">
-        ${cityscape()}
+        <img class="today-photo" src="img/trip/today-hero.jpg" alt="Hall of Supreme Harmony at the Forbidden City, Beijing" loading="lazy">
         <div class="scene-chips">
           <span class="weather">${icon('sun', 12)}22° <small>Clear · 11–22°</small></span>
           ${tag('Today · Day 1 of 4', 'dark')}
         </div>
+        <span class="photo-credit">Hall of Supreme Harmony · Photo N509FZ / CC BY-SA 4.0</span>
       </div>
       <div class="hero-foot">
         <div class="grow">
