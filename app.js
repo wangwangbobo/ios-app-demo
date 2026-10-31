@@ -546,7 +546,6 @@ function tripView() {
       </div>
       <div class="top-right">
         <div class="row">
-          <button class="icon-btn" data-act="assistant" data-ctx="Trip · Notifications and reminders" aria-label="Notifications">${icon('bell', 15)}</button>
           <div class="avatar">W</div>
         </div>
         <div class="meta">Today · Day 1</div>

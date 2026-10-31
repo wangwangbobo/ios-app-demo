@@ -107,19 +107,7 @@ struct TripView: View {
             }
             Spacer()
             VStack(alignment: .trailing, spacing: 8) {
-                HStack(spacing: 7) {
-                    IconCircleButton(icon: "bell", size: 36) {
-                        model.openAssistant("Trip · Alerts & reminders")
-                    }
-                    .overlay(alignment: .topTrailing) {
-                        Circle()
-                            .fill(Palette.accent)
-                            .frame(width: 8, height: 8)
-                            .overlay(Circle().strokeBorder(Palette.paper, lineWidth: 1))
-                            .offset(x: -3, y: 2)
-                    }
-                    AvatarView(name: "W", size: 36, fill: Palette.lime)
-                }
+                AvatarView(name: "W", size: 36, fill: Palette.lime)
                 Text("Today · Day 1")
                     .font(.system(size: 9, weight: .bold, design: .monospaced))
                     .foregroundStyle(Palette.ink2)
