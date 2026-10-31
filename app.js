@@ -39,6 +39,8 @@ const ICONS = {
   doc: '<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 15.5h6"/>',
   calendar: '<rect x="3.5" y="5.5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v5M16 3v5"/>',
   heart: '<path d="M12 20.5S4 15.5 4 9.8A4.3 4.3 0 0 1 12 7a4.3 4.3 0 0 1 8 2.8c0 5.7-8 10.7-8 10.7z"/>',
+  bookmark: '<path d="M6.5 3.5h11v17l-5.5-3.8-5.5 3.8z"/>',
+  comment: '<path d="M4 5h16v11h-9l-4.5 4v-4H4z"/><path d="M8.5 10.5h7"/>',
   gift: '<rect x="4" y="9.5" width="16" height="11" rx="1.5"/><path d="M3 9.5h18M12 9.5V20.5"/><path d="M12 9.5S8.5 9 7.4 7.2C6 4.8 8.2 3.4 9.7 4.6c1.6 1.2 2.3 4.9 2.3 4.9zM12 9.5s3.5-.5 4.6-2.3c1.4-2.4-.8-3.8-2.3-2.6C12.7 5.8 12 9.5 12 9.5z"/>',
   sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M18.7 5.3l-1.6 1.6M6.9 17.1l-1.6 1.6"/>',
   flame: '<path d="M12 21c3.6 0 6-2.2 6-5.4 0-4-3-5.4-3.6-9.6-.2-1.4-2-2.2-2.8-.6C9.6 9 11 10.4 10 12c-.6 1-1.4.6-1.8-.6-.3-1-1.8-1.2-2.2.2C5.5 13.4 6 21 12 21z"/>',
@@ -105,6 +107,14 @@ const EVENTS = [
   { id: 'e3', title: '中轴线夜骑 · 自备车', subtitle: '从永定门骑到钟鼓楼，领队讲城楼故事', date: '11/02 周日', time: '19:00', place: '永定门公园北门', host: '@Ken', fee: '¥20', attendees: 37, tint: 'peri' }
 ];
 
+const ATTRACTIONS = [
+  { id: 'a1', name: '故宫博物院', date: '10/15', week: '周三', time: '09:00', people: '2 人', price: '¥120', booked: true, code: 'LUCIA-8821', note: '午门进 · 神武门出' },
+  { id: 'a2', name: '八达岭长城', date: '10/16', week: '周四', time: '08:30', people: '2 人', price: '¥80', booked: false, note: '需实名 · 缆车另计' },
+  { id: 'a3', name: '颐和园', date: '10/17', week: '周五', time: '09:00', people: '2 人', price: '¥60', booked: false, note: '联票 · 建议东宫门进' },
+  { id: 'a4', name: '国家博物馆', date: '10/17', week: '周五', time: '14:00', people: '2 人', price: '免费', booked: false, note: '需提前实名预约' }
+];
+
+
 const PHRASES = [
   { zh: '请问最近的地铁站怎么走？', en: 'Where is the nearest subway station?', scenario: 'route' },
   { zh: '我迷路了，能帮我看看地图吗？', en: "I'm lost. Could you help me read the map?", scenario: 'route' },
@@ -167,10 +177,15 @@ const S = {
   reminderDismissed: false,
   applied: false,
   forumChannel: null,
+  forumFilter: 'all',
   search: '',
+  userPosts: [],
+  savedPosts: new Set(),
   events: EVENTS.map((e) => ({ ...e })),
   joined: new Set(['e1']),
   saved: new Set(),
+  attractions: ATTRACTIONS.map((a) => ({ ...a })),
+  showBookings: false,
   translateMode: 'live',
   scenario: 'medical',
   live: LIVE.map((m) => ({ ...m })),
@@ -725,6 +740,88 @@ const CHANNELS = [
   { id: 'event', lab: 'EVENT', title: '本地活动', sub: '本周 · 3 场', icon: 'calendar', fill: 'sky' }
 ];
 
+const POST_KINDS = [
+  { id: 'all', lab: '全部' },
+  { id: 'restaurant', lab: '餐厅' },
+  { id: 'spot', lab: '景点' },
+  { id: 'route', lab: '路线' },
+  { id: 'gift', lab: '伴手礼' },
+  { id: 'event', lab: '活动' }
+];
+
+const POST_KIND_LABEL = { restaurant: 'EAT', spot: 'SEE', route: 'WALK', gift: 'GIFT', event: 'EVENT' };
+
+/* platform user posts — the primary forum content */
+const POSTS = [
+  {
+    id: 'n1', author: '林小满', avatar: '林', tint: 'lime', time: '2 小时前', kind: 'spot',
+    title: '景山万春亭的落日，比照片还好看', body: '17:00 上山刚好，故宫金顶被夕阳点亮。机位在东侧栏杆，记得早点占。',
+    tags: ['景山', '日落', '机位'], likes: '3.4k', saves: '862', art: 'sunset', h: 174, placeId: 'p8',
+    comment: '@阿哲：周三去的，17:10 太阳刚好落到屋脊上。'
+  },
+  {
+    id: 'n2', author: 'Ken', avatar: 'K', tint: 'peri', time: '4 小时前', kind: 'route',
+    title: '中轴线一日：从永定门走到钟鼓楼', body: '6 站 4.2 km，下午三点出发正好赶上景山日落。沿途都有地铁备份。',
+    tags: ['中轴线', '步行', '路线'], likes: '2.1k', saves: '1.2k', art: 'route', h: 120, routeIndex: 1,
+    comment: '@Lina：按这条走完，脚还行，咖啡补了两次。'
+  },
+  {
+    id: 'n3', author: '阿哲', avatar: '哲', tint: 'mustard', time: '5 小时前', kind: 'restaurant',
+    title: '四季民福 11 点前到，真的不排队', body: '鸭皮蘸白糖先吃，点半只就够两个人。下午三点以后基本不用等位。',
+    tags: ['烤鸭', '故宫', '排队'], likes: '2.3k', saves: '708', art: 'food', h: 146, placeId: 'p1',
+    comment: '@周周：亲测 10:40 到，直接进。'
+  },
+  {
+    id: 'n4', author: 'Lina', avatar: 'L', tint: 'pink', time: '昨天', kind: 'restaurant',
+    title: '前门胡同咖啡，下午三点光线最好', body: 'Metal Hands 藏在后巷，窗边两张桌子最安静。手冲偏酸，配可颂刚好。',
+    tags: ['咖啡', '胡同', '下午'], likes: '1.1k', saves: '433', art: 'coffee', h: 162, placeId: 'p4',
+    comment: '@小北：周日去坐了俩小时，没人赶。'
+  },
+  {
+    id: 'n5', author: '周周', avatar: '周', tint: 'mint', time: '昨天', kind: 'spot',
+    title: '天坛的清晨，几乎没有游客', body: '从南门进，回音壁九点前最空。古柏树影落在红墙上，随便拍都好看。',
+    tags: ['天坛', '清晨', '建筑'], likes: '2.8k', saves: '610', art: 'temple', h: 130, placeId: 'p9',
+    comment: '@胡同档案：本地人晨练时段，别大声。'
+  },
+  {
+    id: 'n6', author: '胡同档案', avatar: '胡', tint: 'coral', time: '2 天前', kind: 'event',
+    title: '周六钟鼓楼夜市，摊主名单更新', body: '手作、黑胶和热红酒，19:00 后人最多。地铁 8 号线什刹海站 A 口。',
+    tags: ['夜市', '钟鼓楼', '周末'], likes: '986', saves: '241', art: 'night', h: 154, eventId: 'e1',
+    comment: '@Ken：报名了，到时候一起逛。'
+  },
+  {
+    id: 'n7', author: '老赵', avatar: '赵', tint: 'sky', time: '2 天前', kind: 'gift',
+    title: '稻香村散装 vs 礼盒，本地人这么买', body: '散装点心按斤称，日期新、能拼口味。礼盒适合送人，自己吃没必要。',
+    tags: ['伴手礼', '稻香村', '省钱'], likes: '1.7k', saves: '529', art: 'gift', h: 138, placeId: 'p5',
+    comment: '@林小满：枣泥和牛舌饼必买。'
+  },
+  {
+    id: 'n8', author: '阿哲', avatar: '哲', tint: 'mustard', time: '3 天前', kind: 'route',
+    title: '什刹海夜走 5 站，沿途 3 家小酒馆', body: '银锭桥开始，沿后海北沿走到鼓楼。九点以后人少，风大记得带外套。',
+    tags: ['夜游', '什刹海', '小酒馆'], likes: '860', saves: '377', art: 'hutong', h: 126, routeIndex: 2,
+    comment: '@Lina：银锭桥边上那家精酿不错。'
+  },
+  {
+    id: 'n9', author: '小北', avatar: '北', tint: 'pink', time: '3 天前', kind: 'gift',
+    title: '角楼冰箱贴补货了，进门先买', body: '神武门文创店上午补货，角楼系列经常断。限购两个，别等到闭馆。',
+    tags: ['故宫文创', '冰箱贴', '限定'], likes: '604', saves: '188', art: 'gift2', h: 112, placeId: 'p6',
+    comment: '@周周：昨天还有日落色，冲。'
+  },
+  {
+    id: 'n10', author: '阿May', avatar: 'M', tint: 'lime', time: '4 天前', kind: 'restaurant',
+    title: '满恒记排队 40 分钟，值不值？', body: '手切羊肉配麻酱，铜锅一开就知道没白等。17:00 前取号能少排一半。',
+    tags: ['涮肉', '牛街', '排队'], likes: '1.9k', saves: '522', art: 'hotpot', h: 140, placeId: 'p2',
+    comment: '@老赵：值。糖蒜记得加一份。'
+  },
+  {
+    id: 'n11', author: 'Lina', avatar: 'L', tint: 'pink', time: '5 天前', kind: 'spot',
+    title: '北海划船，从湖上看白塔最舒服', body: '下午四点后太阳不晒，租一条脚踏船一小时刚好。风大时会停船。',
+    tags: ['北海', '划船', '亲子'], likes: '2.1k', saves: '498', art: 'boat', h: 148, placeId: 'p10',
+    comment: '@小北：带小孩的话选电动船。'
+  }
+];
+
+
 const SCENARIOS = [
   { id: 'route', title: '找路', icon: 'pin' },
   { id: 'dining', title: '就餐', icon: 'fork' },
@@ -744,6 +841,17 @@ const QUICK = ['帮我调路线', '故宫还有票吗', '附近吃什么', '翻�
 
 /* ================= FORUM ================= */
 function channelMeta(id) { return CHANNELS.find((c) => c.id === id) || CHANNELS[0]; }
+function allPosts() { return S.userPosts.concat(POSTS); }
+function postById(id) { return allPosts().find((p) => p.id === id); }
+
+function filteredPosts(kind = 'all') {
+  const q = S.search.trim().toLowerCase();
+  return allPosts().filter((p) => {
+    if (kind !== 'all' && p.kind !== kind) return false;
+    if (!q) return true;
+    return [p.title, p.body, p.author, ...p.tags].join(' ').toLowerCase().includes(q);
+  });
+}
 
 function forumView() {
   if (S.forumChannel) return forumChannelView(S.forumChannel);
@@ -752,15 +860,15 @@ function forumView() {
         <div>
           <div class="eyebrow"><span class="eyebrow-line"></span>社区 / BEIJING ${sparkleIcon(8)}</div>
           <div class="forum-title">大家的北京</div>
-          <div class="meta">4,208 条路线 · 1,286 家餐厅 · 本地人也在看</div>
+          <div class="meta">4,208 条笔记 · 今天新增 126 条 · 本地人也在发</div>
         </div>
         <button class="icon-btn" style="background:var(--ink);color:var(--paper);width:42px;height:42px" data-act="compose" aria-label="发起活动">${icon('pencil', 15)}</button>
       </header>
     </div>
 
-    <div class="forum-search" style="margin-top:12px">
+    <div class="forum-search">
       ${icon('search', 13)}
-      <input type="search" placeholder="搜餐厅、路线、伴手礼" data-role="search" value="${esc(S.search)}" aria-label="搜索社区">
+      <input type="search" placeholder="搜笔记、地点、作者" data-role="search" value="${esc(S.search)}" aria-label="搜索社区笔记">
       ${S.search ? `<button class="clear" data-act="search-clear" aria-label="清空搜索">${icon('x', 8)}</button>` : ''}
     </div>
 
@@ -769,211 +877,115 @@ function forumView() {
 
 function forumBodyHTML() {
   if (S.search.trim()) return searchHTML();
-  return `${channelRailHTML()}${eventFeatureHTML()}${forumRoutesHTML()}${forumPlacesHTML()}`;
+  return `${feedFiltersHTML(S.forumFilter)}${feedIntroHTML()}${postFeedHTML(filteredPosts(S.forumFilter))}${feedEndHTML()}`;
 }
 
-function channelRailHTML() {
-  return `<div class="channel-rail" style="margin-top:10px">
-    ${CHANNELS.map((c) => `<button class="channel ${c.fill}" data-act="forum" data-channel="${c.id}">
-      <span class="art">${icon(c.icon, 34)}</span>
-      <span class="lab">${c.lab}</span>
-      <b>${c.title}</b>
-      <small>${c.sub}</small>
-    </button>`).join('')}
+function feedFiltersHTML(active) {
+  return `<div class="feed-filters">
+    ${POST_KINDS.map((k) => `<button class="feed-filter ${k.id === active ? 'active' : ''}" data-act="feed-filter" data-key="${k.id}">${k.lab}</button>`).join('')}
   </div>`;
 }
 
-function eventFeatureHTML() {
-  const e = S.events[0];
-  if (!e) return '';
-  const joined = S.joined.has(e.id);
-  return `<div class="event-feature" style="margin-top:6px">
-    <div class="date"><span>${tag('本地活动', 'dark')}</span><span>${esc(e.date)} · ${esc(e.time)}</span></div>
-    <h3>${esc(e.title)}</h3>
-    <p>${esc(e.subtitle)}</p>
-    <div class="foot">
-      <div class="avatar-stack"><div class="avatar sm">林</div><div class="avatar sm pink">周</div><div class="avatar sm peri">K</div></div>
-      <span class="meta">${e.attendees + (joined ? 1 : 0)} 人已报名</span>
-      <button class="join ${joined ? 'done' : ''}" data-act="join-event" data-id="${e.id}">${icon(joined ? 'check' : 'plus', 9)}${joined ? '已报名' : '报名'}</button>
-    </div>
-    <div class="foot" style="margin-top:10px">
-      <span class="meta">${esc(e.place)}</span>
-      <button class="join" style="background:transparent;color:var(--paper);border-color:rgba(255,252,242,.55);height:23px;font-size:8px" data-act="forum" data-channel="event">活动频道 ${icon('arrowr', 7)}</button>
-    </div>
+function feedIntroHTML() {
+  const k = POST_KINDS.find((x) => x.id === S.forumFilter) || POST_KINDS[0];
+  const n = filteredPosts(S.forumFilter).length;
+  return `<div class="feed-intro">
+    <div class="st-left"><span class="live-dot"></span><b>${k.id === 'all' ? '最新笔记' : k.lab + ' 笔记'}</b></div>
+    <span class="meta">${n} 篇 · 按发布时间</span>
   </div>`;
 }
 
-function forumRoutesHTML() {
-  return `<div class="section-title">
-      <div class="st-left"><span class="idx">01</span><h2>社区路线</h2></div>
-      <button class="link" data-act="forum" data-channel="route">全部路线 ${icon('arrowur', 8)}</button>
-    </div>
-    ${FORUM_ROUTES.map((r, i) => routeFeedCard(r, i)).join('')}`;
+function feedEndHTML() {
+  return `<div class="feed-end"><span>已经到底了</span><small>4,208 条笔记 · 下拉刷新试试</small></div>`;
 }
 
-function routeFeedCard(r, i) {
-  const paths = [
-    [{ x: .16, y: .82 }, { x: .30, y: .62 }, { x: .28, y: .40 }, { x: .52, y: .34 }, { x: .70, y: .52 }, { x: .86, y: .26 }],
-    [{ x: .48, y: .86 }, { x: .52, y: .66 }, { x: .58, y: .50 }, { x: .38, y: .38 }, { x: .62, y: .22 }],
-    [{ x: .20, y: .78 }, { x: .36, y: .60 }, { x: .40, y: .40 }, { x: .66, y: .30 }, { x: .80, y: .14 }]
-  ];
-  return `<button class="card route-feed-card" data-act="forum" data-channel="route" style="width:100%;text-align:left">
-    <span class="mini-map">${miniMap(paths[i % paths.length], i === 0 ? 'var(--peri)' : 'var(--coral)')}</span>
-    <span class="grow">
-      <h4>${esc(r.title)}</h4>
-      <span class="by">${esc(r.author)} · ${esc(r.meta)}</span>
-      <span class="tags">${r.tags.map((t) => tag(t)).join('')}</span>
+function postFeedHTML(list) {
+  if (!list.length) {
+    return `<div class="feed-empty">
+      <span class="doodle">${sparkleIcon(18)}</span>
+      <b>这里还没有笔记</b>
+      <small>换个分类，或者去「活动」发起一次 Citywalk。</small>
+    </div>`;
+  }
+  return `<div class="post-feed">${list.map(postCardHTML).join('')}</div>`;
+}
+
+function postCardHTML(p) {
+  const saved = S.savedPosts.has(p.id);
+  return `<article class="post-card" data-act="post" data-id="${p.id}" role="button" tabindex="0" aria-label="${esc(p.title)}">
+    <span class="post-cover" style="height:${p.h}px">
+      ${postArt(p.art)}
+      <span class="post-kind">${esc(POST_KIND_LABEL[p.kind])}</span>
+      <button class="post-save ${saved ? 'saved' : ''}" data-act="save-post" data-id="${p.id}" aria-label="${saved ? '取消收藏' : '收藏笔记'}">${icon(saved ? 'bookmark' : 'heart', 9)}</button>
     </span>
-    ${icon('right', 10)}
-  </button>`;
-}
-
-function forumPlacesHTML() {
-  return `<div class="section-title">
-      <div class="st-left"><span class="idx">02</span><h2>本地人推荐</h2></div>
-      <span class="meta">${PLACES.length} 处</span>
-    </div>
-    ${PLACES.slice(0, 5).map(placeRowHTML).join('')}`;
-}
-
-function placeRowHTML(p) {
-  return `<div class="card place-row" data-act="place" data-id="${p.id}" role="button" tabindex="0">
-    <span class="thumb" style="background:var(--${p.tint})">${icon(p.symbol, 24)}</span>
-    <span class="grow">
-      <h4>${esc(p.title)}</h4>
-      <span class="sub">${esc(p.subtitle)}</span>
-      <span class="price">${esc(p.price)} · ${esc(p.area)}</span>
+    <span class="post-body">
+      <b>${esc(p.title)}</b>
+      <small class="post-sub">${esc(p.body)}</small>
+      <span class="post-meta">
+        <span class="mini-avatar" style="background:var(--${p.tint})">${esc(p.avatar)}</span>
+        <span class="post-author">${esc(p.author)}</span>
+        <span class="post-stats">${icon('heart', 7)}${esc(p.likes)}</span>
+      </span>
     </span>
-    <span class="like">${icon('heart', 9)}${esc(p.likes)}</span>
-  </div>`;
+  </article>`;
 }
 
 function searchHTML() {
-  const q = S.search.trim().toLowerCase();
-  const places = PLACES.filter((p) => [p.title, p.subtitle, p.area, ...p.tags].join(' ').toLowerCase().includes(q));
-  const routes = FORUM_ROUTES.filter((r) => [r.title, r.author, r.meta, ...r.tags].join(' ').toLowerCase().includes(q));
-  const total = places.length + routes.length;
+  const q = S.search.trim();
+  const list = filteredPosts('all');
   return `<div class="search-results">
-    <div class="spread" style="margin:8px 0 4px">
-      <b style="font-size:13px">搜索 “${esc(S.search)}”</b>
-      <span class="meta">${total} 条</span>
+    <div class="spread" style="margin:8px 0 2px">
+      <b style="font-size:13px">搜索 “${esc(q)}”</b>
+      <span class="meta">${list.length} 条笔记</span>
     </div>
-    ${total === 0 ? `<div class="search-empty">没有找到「${esc(S.search)}」<br>试试 “烤鸭” “胡同” “伴手礼”</div>` : ''}
-    ${routes.map((r) => `<button class="search-item" data-act="forum" data-channel="route">
-      <span class="thumb" style="background:var(--peri-soft)">${icon('route', 16)}</span>
-      <span class="grow"><b>${esc(r.title)}</b><small>${esc(r.author)} · ${esc(r.meta)}</small></span>
-      ${icon('right', 9)}
-    </button>`).join('')}
-    ${places.map((p) => `<button class="search-item" data-act="place" data-id="${p.id}">
-      <span class="thumb" style="background:var(--${p.tint})">${icon(p.symbol, 16)}</span>
-      <span class="grow"><b>${esc(p.title)}</b><small>${esc(p.subtitle)}</small></span>
-      ${icon('right', 9)}
-    </button>`).join('')}
+    ${list.length ? postFeedHTML(list) : `<div class="feed-empty">
+      <span class="doodle">${sparkleIcon(18)}</span>
+      <b>没有找到「${esc(q)}」</b>
+      <small>试试 “烤鸭” “胡同” “日落” “伴手礼”</small>
+    </div>`}
   </div>`;
 }
 
 function forumChannelView(id) {
   const c = channelMeta(id);
+  const action = id === 'event'
+    ? `<button class="link" style="font-size:9px" data-act="compose">${icon('plus', 9)}发起活动</button>`
+    : `<button class="link" style="font-size:9px" data-act="assistant" data-ctx="社区 · ${esc(c.title)}">问 Lucia</button>`;
   return `<div class="back-row">
       <button class="icon-btn" data-act="back-forum" aria-label="返回社区">${icon('back', 13)}</button>
       <span class="channel-name">${esc(c.lab)} · ${esc(c.title)}</span>
       <span class="spacer"></span>
-      <button class="link" style="font-size:9px" data-act="compose">${icon('plus', 9)}发起</button>
+      ${action}
     </div>
-    ${channelHero(id)}
-    ${channelBody(id)}`;
+    ${channelBanner(id)}
+    ${id === 'event' ? eventAdminHTML() : ''}
+    ${feedFiltersHTML(id)}
+    ${postFeedHTML(filteredPosts(id))}`;
 }
 
-function channelHero(id) {
-  if (id === 'restaurant') return `<div class="channel-hero" style="background:var(--mustard-soft)">
-    <span class="sticker">EAT · 04</span>
-    <button class="hero-action" data-act="assistant" data-ctx="社区 · 餐厅热度">问 Lucia ${icon('arrowr', 8)}</button>
-    <h2>本地人排队<br>的那几家</h2>
-    <p>按实时热度排序，避开 12:00–13:30 的午市高峰。点开任意一家看招牌菜与排队时间。</p>
-  </div>`;
-  if (id === 'spot') return `<div class="channel-hero" style="background:var(--mint-soft)">
-    <span class="sticker">SEE · 03</span>
-    <button class="hero-action" data-act="assistant" data-ctx="社区 · 景点日落">问 Lucia ${icon('arrowr', 8)}</button>
-    <h2>这周最值得<br>去的三处</h2>
-    <p>都适合下午出发，日落前能到机位。故宫周一闭馆，记得避开。</p>
-  </div>`;
-  if (id === 'gift') return `<div class="channel-hero" style="background:var(--pink-soft)">
-    <span class="sticker">GIFT · 03</span>
-    <button class="hero-action" data-act="assistant" data-ctx="社区 · 伴手礼">问 Lucia ${icon('arrowr', 8)}</button>
-    <h2>带得走、<br>不踩雷的手信</h2>
-    <p>本地人自己会买的三样，都能托运。散装点心比礼盒更值得。</p>
-  </div>`;
-  if (id === 'route') return `<div class="channel-hero" style="background:var(--peri-soft)">
-    <span class="sticker">WALK · 03</span>
-    <button class="hero-action" data-act="assistant" data-ctx="社区 · 城市漫步">问 Lucia ${icon('arrowr', 8)}</button>
-    <h2>可以整套抄<br>的城市漫步</h2>
-    <p>每条都标好了站点顺序与步行距离，一键套用到你的计划。</p>
-  </div>`;
-  return `<div class="channel-hero" style="background:var(--coral-soft)">
-    <span class="sticker">EVENT · 本周</span>
-    <button class="hero-action" data-act="compose">发布 ${icon('plus', 8)}</button>
-    <h2>周末去认识<br>几个本地人</h2>
-    <p>市集、夜骑、旧物交换。免费的多，报名就能去，位置都在地铁沿线。</p>
+function channelBanner(id) {
+  const c = channelMeta(id);
+  const count = filteredPosts(id).length;
+  const desc = {
+    restaurant: '本地人吃什么 · 排队时间与招牌菜',
+    spot: '机位、日落和避开人流的时段',
+    gift: '带得走、不踩雷的手信',
+    route: '可以整套抄的城市漫步',
+    event: '市集、夜骑、旧物交换'
+  }[id] || '';
+  return `<div class="channel-banner ${c.fill}">
+    <span class="cb-sticker">${esc(c.lab)}</span>
+    <div class="grow">
+      <h2>${esc(c.title)}</h2>
+      <p>${esc(desc)}</p>
+    </div>
+    <span class="cb-count">${count} 篇笔记</span>
   </div>`;
 }
 
-function channelBody(id) {
-  if (id === 'restaurant') {
-    const list = PLACES.filter((p) => p.kind === 'restaurant').sort((a, b) => b.heat - a.heat);
-    return `<div class="card ranking">
-      <div class="rank-head"><b style="font-size:12px">实时热度榜</b><span class="mono">每小时更新 · 满分 100</span></div>
-      ${list.map((p, i) => `<button class="rank-row" data-act="place" data-id="${p.id}">
-        <span class="rank-no ${i === 0 ? 'top' : ''}">0${i + 1}</span>
-        <span class="rank-thumb" style="background:var(--${p.tint})">${icon(p.symbol, 17)}</span>
-        <span class="rank-info"><b>${esc(p.title)}</b><small>${esc(p.subtitle)}</small></span>
-        <span class="rank-right"><span class="heat">${icon('flame', 8)}${p.heat}</span><span class="heat-bar" style="display:block"><i style="width:${p.heat}%"></i></span></span>
-      </button>`).join('')}
-      <div class="quote-card"><p>“${esc(list[0].note)}”</p><div class="who">— @林 · 本地人 · 3 天前</div></div>
-    </div>
-    <div class="tip-strip" style="margin-top:8px">${icon('info', 12)}<span>热度来自近 7 天的排队时长与打卡量，仅供参考。</span></div>`;
-  }
-  if (id === 'spot') {
-    const list = PLACES.filter((p) => p.kind === 'spot');
-    return `<div class="spot-grid">
-      ${list.map((p) => `<button class="spot-card" data-act="place" data-id="${p.id}">
-        <span class="art" style="display:block">${p.title.includes('景山') ? sunsetArt() : p.title.includes('北海') ? waveArt() : templeArt()}</span>
-        <span class="body" style="display:block"><b>${esc(p.title)}</b><small>${esc(p.area)} · ${esc(p.price)}</small></span>
-      </button>`).join('')}
-    </div>
-    <div class="tip-strip" style="margin-top:8px">${icon('sun', 12)}<span>景山 17:00 前上万春亭，能同时拍到故宫与落日。</span></div>`;
-  }
-  if (id === 'gift') {
-    const list = PLACES.filter((p) => p.kind === 'gift');
-    return `<div class="compare">
-      <div class="compare-col local"><div class="lab">本地人买</div><ul><li>稻香村散装点心</li><li>同仁堂酸梅汤原料</li><li>故宫角楼冰箱贴</li></ul></div>
-      <div class="compare-col tourist"><div class="lab">游客常买</div><ul><li>景区门口礼盒</li><li>真空烤鸭</li><li>同质化钥匙扣</li></ul></div>
-    </div>
-    <div class="card ranking" style="margin-top:9px">
-      ${list.map((p) => `<div class="gift-row" data-act="place" data-id="${p.id}" role="button" tabindex="0">
-        <span class="rank-thumb" style="background:var(--${p.tint})">${icon(p.symbol, 17)}</span>
-        <span class="grow"><b>${esc(p.title)}</b><small>${esc(p.subtitle)}</small></span>
-        <span class="price">${esc(p.price)}</span>
-      </div>`).join('')}
-    </div>
-    <button class="full-btn" style="margin-top:9px" data-act="assistant" data-ctx="社区 · 伴手礼清单">${icon('sparkles', 11)}让 Lucia 帮我排购买顺序</button>`;
-  }
-  if (id === 'route') {
-    return `<div class="draft-dark">
-      <div class="meta">LUCIA 生成 · 基于你的 6 个点位</div>
-      <h3>${esc(S.routeName)}</h3>
-      <div class="meta">${S.stops.length} 站 · 4.2 km · 约 5 小时</div>
-      <div class="tags">${['经典', '步行', '日落'].map((t) => tag(t)).join('')}</div>
-      <button class="apply" data-act="apply-ai">套用到我的路线 ${icon('arrowr', 9)}</button>
-    </div>
-    <div class="section-title" style="margin-top:14px"><div class="st-left"><span class="idx">01</span><h2>社区路线</h2></div><span class="meta">${FORUM_ROUTES.length} 条</span></div>
-    ${FORUM_ROUTES.map((r, i) => `<div class="card route-share-card">
-      <span class="mini-map">${miniMap([{ x: .2, y: .8 }, { x: .42, y: .56 }, { x: .64, y: .34 }, { x: .8, y: .18 }], i === 1 ? 'var(--coral)' : 'var(--peri)')}</span>
-      <span class="grow"><b>${esc(r.title)}</b><small>${esc(r.author)} · ${esc(r.meta)}</small></span>
-      <button class="mini-apply" data-act="apply-forum-route" data-index="${i}">套用</button>
-    </div>`).join('')}`;
-  }
-  return `<div class="card ranking">
-    <div class="rank-head"><b style="font-size:12px">本周活动</b><span class="mono">${S.events.length} 场 · 都可报名</span></div>
+function eventAdminHTML() {
+  return `<div class="card event-admin">
+    <div class="rank-head"><b style="font-size:11.5px">本周活动</b><span class="mono">${S.events.length} 场 · 可报名</span></div>
     ${S.events.map((e) => {
       const joined = S.joined.has(e.id);
       const [d, w] = e.date.split(' ');
@@ -983,9 +995,123 @@ function channelBody(id) {
         <button class="check-action" style="background:${joined ? 'var(--lime)' : 'var(--paper)'};border-color:var(--ink);color:var(--ink)" data-act="join-event" data-id="${e.id}">${joined ? '已报名' : '报名'}</button>
       </div>`;
     }).join('')}
+    <button class="full-btn coral" style="margin-top:10px" data-act="compose">${icon('plus', 11)}发布我的活动</button>
   </div>
-  <div class="tip-strip" style="margin-top:8px">${icon('users', 12)}<span>报名后会在「我的 → 行前清单」里生成提醒，出发前 2 小时推送。</span></div>
-  <button class="full-btn coral" style="margin-top:10px" data-act="compose">${icon('plus', 11)}发布我的活动</button>`;
+  <div class="tip-strip">${icon('users', 12)}<span>报名后会在「我的 → 行前清单」里生成提醒，出发前 2 小时推送。</span></div>`;
+}
+
+/* ---------- post cover art ---------- */
+function postArt(kind) {
+  switch (kind) {
+    case 'sunset': return sunsetArt();
+    case 'temple': return templeArt();
+    case 'food': return foodArt('var(--mustard-soft)');
+    case 'coffee': return coffeeArt();
+    case 'gift': return giftArt('var(--pink-soft)', 'var(--coral)');
+    case 'gift2': return giftArt('var(--mustard-soft)', 'var(--peri)');
+    case 'night': return nightArt();
+    case 'hutong': return nightArt(true);
+    case 'route': return routeArt();
+    case 'hotpot': return hotpotArt();
+    case 'boat': return boatArt();
+    default: return sunsetArt();
+  }
+}
+
+function coffeeArt() {
+  return `<svg viewBox="0 0 160 110" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <rect width="160" height="110" fill="var(--peri-soft)"/>
+    <rect x="92" y="8" width="56" height="66" rx="3" fill="var(--sky-soft)" stroke="var(--ink)" stroke-width="1.3"/>
+    <path d="M92 8v66M112 8v66M132 8v66" stroke="var(--ink)" stroke-width="1" opacity=".55"/>
+    <path d="M0 78h160v32H0z" fill="var(--paper-warm)" stroke="var(--ink)" stroke-width="1.2"/>
+    <path d="M46 76c-3-7 3-9 0-16M60 76c-3-7 3-9 0-16" fill="none" stroke="var(--ink2)" stroke-width="1.3" stroke-linecap="round"/>
+    <path d="M34 48h42v18a8 8 0 0 1-8 8H42a8 8 0 0 1-8-8z" fill="var(--paper)" stroke="var(--ink)" stroke-width="1.4"/>
+    <path d="M76 52h6a6 6 0 0 1 0 12h-6" fill="none" stroke="var(--ink)" stroke-width="1.4"/>
+    <path d="M36 58h34" stroke="var(--ink)" stroke-width="1.2" opacity=".5"/>
+    <circle cx="55" cy="46" r="2" fill="var(--coral)"/>
+  </svg>`;
+}
+
+function giftArt(bg, ribbon) {
+  return `<svg viewBox="0 0 160 110" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <rect width="160" height="110" fill="${bg}"/>
+    <circle cx="128" cy="24" r="16" fill="var(--paper)" stroke="var(--ink)" stroke-width="1.2" opacity=".75"/>
+    <path d="M0 86h160v24H0z" fill="var(--paper-warm)" stroke="var(--ink)" stroke-width="1.1"/>
+    <rect x="34" y="44" width="58" height="42" rx="4" fill="var(--paper)" stroke="var(--ink)" stroke-width="1.4"/>
+    <path d="M63 44v42M34 60h58" stroke="${ribbon}" stroke-width="5"/>
+    <path d="M63 44c-10 0-16-4-16-10 0-4 6-6 9-2 4 4 7 12 7 12zM63 44c10 0 16-4 16-10 0-4-6-6-9-2-4 4-7 12-7 12z" fill="${ribbon}" stroke="var(--ink)" stroke-width="1.2"/>
+    <rect x="100" y="62" width="30" height="24" rx="3" fill="var(--mustard)" stroke="var(--ink)" stroke-width="1.2"/>
+    <path d="M115 62v24" stroke="var(--ink)" stroke-width="1"/>
+    <path d="M22 100h-8M148 100h-6" stroke="var(--ink)" stroke-width="1.2"/>
+  </svg>`;
+}
+
+function nightArt(wide) {
+  return `<svg viewBox="0 0 160 110" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <rect width="160" height="110" fill="var(--ink)"/>
+    <circle cx="126" cy="24" r="14" fill="var(--lime)" opacity=".9"/>
+    <circle cx="132" cy="20" r="3" fill="var(--paper)" opacity=".5"/>
+    <path d="M0 74l22-18 20 18M34 74l24-24 24 24M76 74l20-16 20 16M112 74l18-14 18 14" fill="none" stroke="var(--paper)" stroke-width="1.3" opacity=".55"/>
+    <path d="M0 74h160v36H0z" fill="#2A261D"/>
+    <path d="M14 90V78h30v12M52 90V82h26v8" fill="none" stroke="var(--paper)" stroke-width="1.2" opacity=".7"/>
+    ${wide ? `<path d="M104 84v-8h14v8M122 84v-10h12v10" fill="none" stroke="var(--paper)" stroke-width="1.1" opacity=".6"/>` : ''}
+    <g stroke="var(--ink)" stroke-width="1.1">
+      <path d="M74 18v10M70 18h8" />
+      <rect x="66" y="28" width="16" height="19" rx="5" fill="var(--coral)"/>
+      <path d="M74 47v6" />
+      <rect x="96" y="40" width="13" height="16" rx="4" fill="var(--mustard)"/>
+      <path d="M102.5 56v5" />
+    </g>
+    <circle cx="74" cy="37" r="3" fill="var(--paper)" opacity=".7"/>
+    <path d="M42 96h76" stroke="var(--mustard)" stroke-width="1" stroke-dasharray="3 4" opacity=".7"/>
+  </svg>`;
+}
+
+function routeArt() {
+  return `<svg viewBox="0 0 160 110" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <rect width="160" height="110" fill="var(--paper-warm)"/>
+    <g stroke="var(--ink)" stroke-width=".7" opacity=".16">
+      <path d="M0 30h160M0 62h160M0 92h160M28 0v110M70 0v110M112 0v110M146 0v110"/>
+    </g>
+    <path d="M22 92c18-6 22-28 38-32s14-22 30-24 22-14 40-10" fill="none" stroke="var(--coral)" stroke-width="2.6" stroke-dasharray="5 4" stroke-linecap="round"/>
+    <g stroke="var(--ink)" stroke-width="1.2">
+      <circle cx="22" cy="92" r="6" fill="var(--lime)"/><circle cx="60" cy="60" r="6" fill="var(--paper)"/>
+      <circle cx="90" cy="36" r="6" fill="var(--paper)"/><circle cx="130" cy="26" r="6" fill="var(--mustard)"/>
+    </g>
+    <path d="M22 92v-9M60 60v-9M90 36v-9" stroke="var(--ink)" stroke-width="1" opacity=".5"/>
+    <path d="M8 14h38l-6 8 6 8H8z" fill="var(--paper)" stroke="var(--ink)" stroke-width="1.1"/>
+    <path d="M18 22h18" stroke="var(--ink)" stroke-width="1.1"/>
+    <path d="M118 84c8-4 16 2 26-2" fill="none" stroke="var(--peri)" stroke-width="2.4" stroke-linecap="round" opacity=".8"/>
+  </svg>`;
+}
+
+function hotpotArt() {
+  return `<svg viewBox="0 0 160 110" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <rect width="160" height="110" fill="var(--mustard-soft)"/>
+    <circle cx="30" cy="24" r="13" fill="var(--coral)" stroke="var(--ink)" stroke-width="1.2" opacity=".9"/>
+    <path d="M0 80h160v30H0z" fill="var(--paper-warm)" stroke="var(--ink)" stroke-width="1.1"/>
+    <path d="M40 72c-3-8 3-10 0-18M58 72c-3-8 3-10 0-18M76 72c-3-8 3-10 0-18" fill="none" stroke="var(--ink2)" stroke-width="1.2" stroke-linecap="round"/>
+    <path d="M52 42h48l-6 30a10 10 0 0 1-10 8H68a10 10 0 0 1-10-8z" fill="var(--coral)" stroke="var(--ink)" stroke-width="1.4"/>
+    <path d="M52 42h48" stroke="var(--ink)" stroke-width="1.4"/>
+    <path d="M48 50h56M62 82h28" stroke="var(--ink)" stroke-width="1.2"/>
+    <ellipse cx="76" cy="44" rx="22" ry="4" fill="var(--paper)" stroke="var(--ink)" stroke-width="1.1"/>
+    <path d="M118 62h18v14h-18zM124 56v6M130 56v6" fill="var(--paper)" stroke="var(--ink)" stroke-width="1.1"/>
+    <path d="M116 88h22" stroke="var(--ink)" stroke-width="1.2"/>
+  </svg>`;
+}
+
+function boatArt() {
+  return `<svg viewBox="0 0 160 110" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <rect width="160" height="110" fill="var(--sky-soft)"/>
+    <circle cx="126" cy="24" r="13" fill="var(--paper)" stroke="var(--ink)" stroke-width="1.2"/>
+    <path d="M0 52c20-8 34 6 52 0s30-8 48 0 32 4 60-4v62H0z" fill="var(--sky)" stroke="var(--ink)" stroke-width="1.2"/>
+    <path d="M0 72c24-6 40 6 58 2s32-6 48 0 30 2 54-4" fill="none" stroke="var(--paper)" stroke-width="2"/>
+    <path d="M34 64h56l-10 16H44z" fill="var(--paper)" stroke="var(--ink)" stroke-width="1.4"/>
+    <path d="M58 64V38l20 10-20 10z" fill="var(--coral)" stroke="var(--ink)" stroke-width="1.2"/>
+    <path d="M76 70l-6 8M52 70l-4 8" stroke="var(--ink)" stroke-width="1.2"/>
+    <path d="M106 34c6-4 10-4 16 0" fill="none" stroke="var(--ink)" stroke-width="1.2" stroke-linecap="round"/>
+    <path d="M92 86h44" stroke="var(--paper)" stroke-width="2" stroke-linecap="round"/>
+  </svg>`;
 }
 
 function waveArt() {
@@ -1172,6 +1298,9 @@ function photoResultHTML() {
 
 /* ================= ME ================= */
 function meView() {
+  const bookedCount = S.attractions.filter((a) => a.booked).length;
+  const attractionTotal = S.attractions.length;
+  const bookedPct = Math.round((bookedCount / attractionTotal) * 100);
   return `<div class="me-head">
       <div class="me-avatar">W</div>
       <div class="grow">
@@ -1207,18 +1336,26 @@ function meView() {
       </div>
     </div>
 
-    <div class="section-title"><div class="st-left"><span class="idx">01</span><h2>订单与预订</h2></div><span class="meta">2 笔</span></div>
-    <div class="card" style="padding:2px 13px">
-      <div class="order-row" data-act="toast" data-text="已打开机票详情" data-icon="plane" role="button" tabindex="0">
-        <span class="ico" style="background:var(--peri-soft)">${icon('plane', 15)}</span>
-        <span class="grow"><b>国航 CA182</b><small>10/15 08:45 → 11:20 · 首都 T3</small></span>
-        <span class="status">${tag('已出票', 'ok')}</span>
+    <div class="section-title"><div class="st-left"><span class="idx">01</span><h2>景点预约</h2></div><span class="meta">${bookedCount} / ${attractionTotal} 已预约</span></div>
+    <div class="resv-card">
+      <div class="resv-head">
+        <div class="grow">
+          <div class="spread"><b>北京 · 4 天 3 晚</b><span class="resv-count">${bookedPct}%</span></div>
+          <small>门票由景区直连出票，入园刷身份证</small>
+          <div class="resv-progress"><i style="width:${bookedPct}%"></i></div>
+        </div>
+        <button class="resv-all" data-act="book-all" ${bookedCount === attractionTotal ? 'disabled' : ''}>${bookedCount === attractionTotal ? '已全部预约' : '一键预约'}</button>
       </div>
-      <div class="order-row" data-act="toast" data-text="已打开酒店确认单" data-icon="bed" role="button" tabindex="0">
-        <span class="ico" style="background:var(--mustard-soft)">${icon('bed', 15)}</span>
-        <span class="grow"><b>王府井文华东方</b><small>10/15 – 10/18 · 3 晚 · 大床房</small></span>
-        <span class="status">${tag('已确认', 'ok')}</span>
+      <div class="resv-list">
+        ${S.attractions.map((a) => `<div class="resv-row" data-act="resv-info" data-id="${a.id}" role="button" tabindex="0">
+          <span class="resv-date"><b>${esc(a.date)}</b><small>${esc(a.week)}</small></span>
+          <span class="grow resv-info"><b>${esc(a.name)}</b><small>${esc(a.time)} · ${esc(a.people)} · ${esc(a.price)}</small></span>
+          ${a.booked
+            ? `<span class="resv-status ok">${icon('check', 8)}已预约</span>`
+            : `<button class="resv-book" data-act="book-attraction" data-id="${a.id}">预约</button>`}
+        </div>`).join('')}
       </div>
+      <div class="resv-tip">${icon('info', 10)}<span>故宫周一闭馆；10/15 周三开放，预约凭证会长期保存在这里。</span></div>
     </div>
 
     <div class="section-title"><div class="st-left"><span class="idx">02</span><h2>旅行服务</h2></div></div>
@@ -1241,7 +1378,22 @@ function meView() {
       </button>
     </div>
 
-    <div class="section-title"><div class="st-left"><span class="idx">03</span><h2>偏好设置</h2></div></div>
+    <div class="section-title"><div class="st-left"><span class="idx">03</span><h2>外部信息</h2></div><span class="meta">可选</span></div>
+    <div class="ext-card">
+      <button class="ext-head" data-act="toggle-bookings" aria-expanded="${S.showBookings}">
+        <span class="ico">${icon('layers', 13)}</span>
+        <span class="grow"><b>机票与酒店</b><small>航司 / 酒店直连同步 · 不必在 Lucia 里管理</small></span>
+        <span class="tag soft">2 项</span>
+        <span class="chev ${S.showBookings ? 'open' : ''}">${icon('down', 9)}</span>
+      </button>
+      ${S.showBookings ? `<div class="ext-body">
+        <div class="ext-row">${icon('plane', 11)}<span class="grow"><b>国航 CA182</b><small>10/15 08:45 → 11:20 · 首都 T3 · 已出票</small></span></div>
+        <div class="ext-row">${icon('bed', 11)}<span class="grow"><b>王府井文华东方</b><small>10/15 – 10/18 · 3 晚 · 已确认</small></span></div>
+        <div class="ext-foot">仅作外部信息展示，不影响景点预约、路线与行前清单。</div>
+      </div>` : ''}
+    </div>
+
+    <div class="section-title"><div class="st-left"><span class="idx">04</span><h2>偏好设置</h2></div></div>
     <div class="card" style="padding:2px 13px">
       <div class="setting-row">
         <span class="ico">${icon('bell', 12)}</span>
@@ -1260,7 +1412,7 @@ function meView() {
       </div>
     </div>
 
-    <div class="section-title"><div class="st-left"><span class="idx">04</span><h2>关于</h2></div></div>
+    <div class="section-title"><div class="st-left"><span class="idx">05</span><h2>关于</h2></div></div>
     <div class="card" style="padding:2px 13px">
       <div class="setting-row" data-act="toast" data-text="隐私政策 · 所有语音只在设备端处理" data-icon="lock" role="button" tabindex="0">
         <span class="ico">${icon('lock', 12)}</span>
@@ -1291,7 +1443,8 @@ const sheetBuilders = {
   checklist: checklistSheet,
   place: placeSheet,
   compose: composeSheet,
-  phrase: phraseSheet
+  phrase: phraseSheet,
+  post: postSheet
 };
 
 function openSheet(name, data = null) {
@@ -1351,6 +1504,54 @@ function refreshChat() {
   }
   const input = $('#chatInput');
   if (input) input.value = '';
+}
+
+/* ---------- post detail ---------- */
+function postSheet() {
+  const p = postById(S.sheetData) || allPosts()[0];
+  if (!p) return '';
+  const saved = S.savedPosts.has(p.id);
+  const c = channelMeta(p.kind);
+  return `<div class="sheet tall">
+    <div class="sheet-head">
+      <div class="grab"></div>
+      <div class="row">
+        <div>
+          <div class="eyebrow" style="margin-bottom:2px">${esc(c.lab)} · 平台笔记</div>
+          <h3>${esc(p.author)} 的笔记</h3>
+        </div>
+        <button class="sheet-close" data-act="close-sheet" aria-label="关闭">${icon('x', 10)}</button>
+      </div>
+    </div>
+    <div class="sheet-body">
+      <div class="post-hero">
+        ${postArt(p.art)}
+        <span class="post-kind">${esc(c.lab)}</span>
+      </div>
+      <div class="post-author-row">
+        <span class="pa-avatar" style="background:var(--${p.tint})">${esc(p.avatar)}</span>
+        <div class="grow"><b>${esc(p.author)}</b><small>${esc(p.time)} · 在北京</small></div>
+        <span class="tag soft">${esc(p.tags[0] || '笔记')}</span>
+      </div>
+      <h2 class="post-detail-title">${esc(p.title)}</h2>
+      <p class="post-detail-body">${esc(p.body)}</p>
+      <div class="tags">${p.tags.map((t) => tag(t)).join('')}</div>
+      <div class="post-detail-stats">
+        <span>${icon('heart', 9)} ${esc(p.likes)} 喜欢</span>
+        <span>${icon('bookmark', 9)} ${esc(p.saves)} 收藏</span>
+        <span>${icon('comment', 9)} ${p.comments === 0 ? '还没有评论' : (p.comments || 28) + ' 条评论'}</span>
+      </div>
+      ${p.comment ? `<div class="post-comment"><b>${p.comments === 0 ? '作者留言' : '评论 · ' + (p.comments || 28)}</b>${esc(p.comment)}</div>` : ''}
+      <div class="post-actions">
+        <button class="post-action primary" data-act="save-post" data-id="${p.id}">${icon(saved ? 'bookmark' : 'heart', 10)}${saved ? '已收藏' : '收藏'}</button>
+        ${p.placeId ? `<button class="post-action" data-act="post-place" data-id="${p.placeId}">${icon('pin', 10)}地点详情</button>` : ''}
+        ${p.routeIndex !== undefined ? `<button class="post-action" data-act="apply-forum-route" data-index="${p.routeIndex}">${icon('route', 10)}套用路线</button>` : ''}
+        ${p.eventId ? `<button class="post-action" data-act="forum" data-channel="event">${icon('calendar', 10)}看活动</button>` : ''}
+      </div>
+      <button class="post-action dark" style="width:100%;margin-top:7px" data-act="assistant" data-ctx="社区 · ${esc(p.title)}">${icon('sparkle', 10)}问 Lucia 这条值不值得去</button>
+      <div class="post-detail-foot">发布于 Lucia 社区 · 内容来自平台用户</div>
+    </div>
+  </div>`;
 }
 
 /* ---------- assistant ---------- */
@@ -1935,6 +2136,14 @@ function publishEvent() {
   };
   S.events.unshift(event);
   S.joined.add(event.id);
+  S.userPosts.unshift({
+    id: 'n' + Date.now(),
+    author: '王博', avatar: 'W', tint: 'lime', time: '刚刚', kind: 'event',
+    title: event.title, body: event.subtitle,
+    tags: [event.date, event.fee], likes: '0', saves: '0', comments: 0,
+    art: 'sunset', h: 148, eventId: event.id,
+    comment: '由你发起 · 欢迎同行'
+  });
   S.draft = { title: '', date: '11/08 周六', time: '14:00 – 18:00', place: '', fee: '免费', note: '' };
   closeSheet();
   S.forumChannel = 'event';
@@ -1956,6 +2165,51 @@ document.addEventListener('click', (e) => {
     case 'forum':
       closeSheet();
       go('forum', el.dataset.channel || null);
+      break;
+    case 'feed-filter': {
+      const key = el.dataset.key || 'all';
+      if (S.forumChannel) go('forum', key === 'all' ? null : key);
+      else { S.forumFilter = key; render(); }
+      break;
+    }
+    case 'post':
+      openSheet('post', el.dataset.id);
+      break;
+    case 'save-post': {
+      const id = el.dataset.id;
+      if (S.savedPosts.has(id)) { S.savedPosts.delete(id); toast('已取消收藏'); } else { S.savedPosts.add(id); toast('已收藏笔记 · 可在「我的」查看', 'bookmark'); }
+      if (S.sheet === 'post') renderSheet(); else render();
+      break;
+    }
+    case 'post-place':
+      openSheet('place', el.dataset.id);
+      break;
+    case 'book-attraction': {
+      const a = S.attractions.find((x) => x.id === el.dataset.id);
+      if (!a || a.booked) return;
+      a.booked = true;
+      a.code = 'LUCIA-' + (3000 + Math.floor(Math.random() * 6000));
+      render();
+      toast(`${a.name} 预约成功 · 凭证已保存`, 'check');
+      break;
+    }
+    case 'book-all': {
+      const pending = S.attractions.filter((a) => !a.booked);
+      if (!pending.length) { toast('所有景点都已预约', 'check'); return; }
+      pending.forEach((a) => { a.booked = true; a.code = 'LUCIA-' + (3000 + Math.floor(Math.random() * 6000)); });
+      render();
+      toast(`已预约 ${pending.length} 个景点 · 凭证已保存`, 'check');
+      break;
+    }
+    case 'resv-info': {
+      const a = S.attractions.find((x) => x.id === el.dataset.id);
+      if (!a) return;
+      toast(a.booked ? `${a.name} · 凭证 ${a.code}` : `${a.name} · ${a.note || '可在开放时段预约'}`, a.booked ? 'ticket' : 'info');
+      break;
+    }
+    case 'toggle-bookings':
+      S.showBookings = !S.showBookings;
+      render();
       break;
     case 'assistant':
       openAssistant(el.dataset.ctx || null);

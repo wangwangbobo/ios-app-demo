@@ -9,6 +9,7 @@ enum LegalKind: String, Identifiable {
 struct MeView: View {
     @EnvironmentObject private var model: AppModel
     @State private var legal: LegalKind? = nil
+    @State private var externalOpen = false
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
@@ -16,8 +17,9 @@ struct MeView: View {
                 header
                 statsCard
                 tripCard
-                ordersSection
+                reservationsSection
                 servicesSection
+                externalSection
                 settingsSection
                 legalSection
                 footer
@@ -201,18 +203,84 @@ struct MeView: View {
         .shadow(color: Palette.ink.opacity(0.16), radius: 0, x: 0, y: 4)
     }
 
-    // MARK: Orders
+    // MARK: Attraction reservations
 
-    private var ordersSection: some View {
+    private var reservationsSection: some View {
         VStack(alignment: .leading, spacing: 9) {
-            SectionHeading(title: "订单与预订", index: "01")
+            SectionHeading(
+                title: "景点预约",
+                index: "01",
+                trailing: "\(model.bookedAttractionCount)/\(model.attractions.count) 已约"
+            )
+
             VStack(spacing: 0) {
-                orderRow(icon: "airplane", tint: Palette.periwinkle, title: "国航 CA182", detail: "10/15 08:45 → 11:20 · 首都 T3", status: "已出票", statusStyle: .ok) {
-                    model.toast("已打开机票详情", icon: "airplane")
+                VStack(alignment: .leading, spacing: 7) {
+                    HStack(alignment: .firstTextBaseline) {
+                        Text("\(model.bookedAttractionCount) / \(model.attractions.count)")
+                            .font(.system(size: 25, weight: .black).width(.condensed))
+                            .foregroundStyle(Palette.ink)
+                        Text("个景点已预约")
+                            .font(.system(size: 9.5, weight: .semibold))
+                            .foregroundStyle(Palette.ink2)
+                        Spacer()
+                        Text("\(Int(model.attractionProgress * 100))%")
+                            .font(.system(size: 10, weight: .bold, design: .monospaced))
+                            .foregroundStyle(Palette.ink2)
+                    }
+                    GeometryReader { geo in
+                        ZStack(alignment: .leading) {
+                            Capsule().fill(Palette.cream)
+                            Capsule()
+                                .fill(Palette.lime)
+                                .frame(width: max(6, geo.size.width * CGFloat(model.attractionProgress)))
+                        }
+                    }
+                    .frame(height: 8)
+                    .overlay(Capsule().strokeBorder(Palette.ink.opacity(0.25), lineWidth: 0.8))
                 }
-                SoftDivider().padding(.leading, 50)
-                orderRow(icon: "building.2", tint: Palette.mustard, title: "王府井文华东方", detail: "10/15 – 10/18 · 3 晚 · 大床房", status: "已确认", statusStyle: .ok) {
-                    model.toast("已打开酒店确认单", icon: "building.2.fill")
+                .padding(.top, 10)
+                .padding(.bottom, 7)
+
+                SoftDivider()
+
+                ForEach(Array(model.attractions.enumerated()), id: \.element.id) { index, attraction in
+                    attractionRow(attraction)
+                    if index != model.attractions.count - 1 {
+                        SoftDivider().padding(.leading, 50)
+                    }
+                }
+
+                Button {
+                    if model.pendingAttractions.isEmpty {
+                        model.toast("所有景点都已预约 · 凭证已生成", icon: "checkmark.seal.fill")
+                    } else {
+                        model.bookAllAttractions()
+                    }
+                } label: {
+                    HStack(spacing: 5) {
+                        Image(systemName: model.pendingAttractions.isEmpty ? "checkmark.seal.fill" : "ticket.fill")
+                            .font(.system(size: 10, weight: .bold))
+                        Text(model.pendingAttractions.isEmpty
+                             ? "全部景点已预约 · 查看凭证"
+                             : "一键预约剩余 \(model.pendingAttractions.count) 个景点")
+                            .font(.system(size: 11.5, weight: .bold))
+                    }
+                    .foregroundStyle(model.pendingAttractions.isEmpty ? Palette.ink2 : Palette.ink)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 40)
+                    .background(Capsule().fill(model.pendingAttractions.isEmpty ? Palette.paperWarm : Palette.lime))
+                    .overlay(Capsule().strokeBorder(Palette.ink, lineWidth: 1.1))
+                }
+                .buttonStyle(PressableButtonStyle())
+                .padding(.vertical, 10)
+
+                HStack(spacing: 5) {
+                    Image(systemName: "info.circle")
+                        .font(.system(size: 9, weight: .bold))
+                    Text("预约凭证在入场时出示，刷身份证即可入园。")
+                        .font(.system(size: 9, weight: .medium))
+                        .foregroundStyle(Palette.ink3)
+                    Spacer(minLength: 0)
                 }
             }
             .padding(.horizontal, 13)
@@ -224,25 +292,58 @@ struct MeView: View {
         }
     }
 
-    private func orderRow(icon: String, tint: Color, title: String, detail: String, status: String, statusStyle: TagStyle, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
+    private func attractionRow(_ attraction: AttractionBooking) -> some View {
+        Button {
+            if attraction.booked {
+                model.toast("凭证 \(attraction.code ?? "已生成") · 刷身份证入园", icon: "ticket.fill")
+            } else {
+                model.bookAttraction(attraction)
+            }
+        } label: {
             HStack(spacing: 10) {
-                IconBadge(icon: icon, tint: Palette.ink, background: tint, size: 37)
+                IconBadge(icon: attraction.symbol, tint: Palette.ink, background: attractionFill(attraction.tint), size: 37)
+
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(title)
-                        .font(.system(size: 12.5, weight: .bold))
-                        .foregroundStyle(Palette.ink)
-                    Text(detail)
-                        .font(.system(size: 9.5, weight: .medium))
+                    HStack(spacing: 5) {
+                        Text(attraction.title)
+                            .font(.system(size: 12.5, weight: .bold))
+                            .foregroundStyle(Palette.ink)
+                        if attraction.booked {
+                            Image(systemName: "checkmark.seal.fill")
+                                .font(.system(size: 9, weight: .bold))
+                                .foregroundStyle(Palette.ok)
+                        }
+                    }
+                    Text("\(attraction.date) · \(attraction.time)")
+                        .font(.system(size: 9, weight: .medium, design: .monospaced))
                         .foregroundStyle(Palette.ink3)
+                    Text(attraction.price)
+                        .font(.system(size: 9, weight: .medium))
+                        .foregroundStyle(Palette.ink2)
                 }
+
                 Spacer(minLength: 4)
-                TagView(text: status, style: statusStyle)
+
+                if attraction.booked {
+                    TagView(text: "已预约", style: .ok)
+                } else {
+                    Text("预约")
+                        .font(.system(size: 9.5, weight: .bold))
+                        .foregroundStyle(Palette.ink)
+                        .padding(.horizontal, 11)
+                        .frame(height: 29)
+                        .background(Capsule().fill(Palette.lime))
+                        .overlay(Capsule().strokeBorder(Palette.ink, lineWidth: 1))
+                }
             }
             .padding(.vertical, 9)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+    }
+
+    private func attractionFill(_ tint: Int) -> Color {
+        [Palette.pinkSoft, Palette.skySoft, Palette.mintSoft, Palette.mustardSoft, Palette.periwinkleSoft, Palette.limeSoft][tint % 6]
     }
 
     // MARK: Services
@@ -306,11 +407,92 @@ struct MeView: View {
         .buttonStyle(.plain)
     }
 
+    // MARK: External info
+
+    private var externalSection: some View {
+        VStack(alignment: .leading, spacing: 9) {
+            SectionHeading(title: "外部信息", index: "03", trailing: "非必需")
+
+            VStack(spacing: 0) {
+                Button {
+                    Haptics.tap()
+                    withAnimation(.spring(response: 0.36, dampingFraction: 0.86)) {
+                        externalOpen.toggle()
+                    }
+                } label: {
+                    HStack(spacing: 10) {
+                        IconBadge(icon: "link", tint: Palette.ink2, background: Palette.cream, size: 34)
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text("机票与酒店")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundStyle(Palette.ink2)
+                            Text("外部同步 · 仅作参考，不影响行程")
+                                .font(.system(size: 9, weight: .medium))
+                                .foregroundStyle(Palette.ink3)
+                        }
+                        Spacer(minLength: 4)
+                        TagView(text: "已同步", style: .soft)
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 9, weight: .black))
+                            .foregroundStyle(Palette.ink3)
+                            .rotationEffect(.degrees(externalOpen ? 180 : 0))
+                    }
+                    .padding(.vertical, 10)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+
+                if externalOpen {
+                    SoftDivider().padding(.leading, 50)
+
+                    externalRow(icon: "airplane", title: "国航 CA182", detail: "10/15 08:45 → 11:20 · 首都 T3", status: "已出票") {
+                        model.toast("已打开机票详情", icon: "airplane")
+                    }
+                    SoftDivider().padding(.leading, 50)
+                    externalRow(icon: "building.2", title: "王府井文华东方", detail: "10/15 – 10/18 · 3 晚 · 大床房", status: "已确认") {
+                        model.toast("已打开酒店确认单", icon: "building.2.fill")
+                    }
+
+                    Text("来自航司与酒店确认单 · 仅供参考，不参与提醒与预约。")
+                        .font(.system(size: 8.5, weight: .medium))
+                        .foregroundStyle(Palette.ink3)
+                        .padding(.vertical, 9)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+            .padding(.horizontal, 13)
+            .padding(.vertical, 2)
+            .background(RoundedRectangle(cornerRadius: 21, style: .continuous).fill(Palette.paperWarm))
+            .dashedBorder(color: Palette.ink.opacity(0.4), radius: 21)
+        }
+    }
+
+    private func externalRow(icon: String, title: String, detail: String, status: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 10) {
+                IconBadge(icon: icon, tint: Palette.ink3, background: Palette.cream, size: 33)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(title)
+                        .font(.system(size: 11.5, weight: .semibold))
+                        .foregroundStyle(Palette.ink2)
+                    Text(detail)
+                        .font(.system(size: 9, weight: .medium))
+                        .foregroundStyle(Palette.ink3)
+                }
+                Spacer(minLength: 4)
+                TagView(text: status, style: .soft)
+            }
+            .padding(.vertical, 8)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
     // MARK: Settings
 
     private var settingsSection: some View {
         VStack(alignment: .leading, spacing: 9) {
-            SectionHeading(title: "通知与偏好", index: "03")
+            SectionHeading(title: "通知与偏好", index: "04")
             VStack(spacing: 0) {
                 HStack(spacing: 10) {
                     IconBadge(icon: "bell", tint: Palette.ink, background: Palette.accentSoft, size: 37)

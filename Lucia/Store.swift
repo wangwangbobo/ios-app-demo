@@ -31,7 +31,9 @@ final class AppModel: ObservableObject {
     @Published var joinedEvent = false
     @Published var joinedEventIDs: Set<UUID> = []
     @Published var savedPlaces: Set<UUID> = []
+    @Published var savedPostIDs: Set<UUID> = []
     @Published var localEvents: [LocalEvent]
+    @Published var forumPosts: [ForumPost]
 
     // MARK: Translate
     @Published var translateMode: TranslateMode = .live
@@ -45,6 +47,7 @@ final class AppModel: ObservableObject {
 
     // MARK: Me
     @Published var notificationsOn = true
+    @Published var attractions: [AttractionBooking]
 
     // MARK: Chat
     @Published var chatMessages: [ChatMessage] = []
@@ -138,6 +141,8 @@ final class AppModel: ObservableObject {
             LiveMessage(zh: "直走两个路口，在红绿灯处左转。", en: "Go straight for two blocks, then turn left at the lights.", isMine: true)
         ]
         localEvents = Self.makeLocalEvents()
+        forumPosts = Self.makeForumPosts()
+        attractions = Self.makeAttractions()
         applySavedChecklist()
         applyLaunchScreen()
     }
@@ -399,6 +404,55 @@ final class AppModel: ObservableObject {
         }
     }
 
+    func toggleSavedPost(_ post: ForumPost) {
+        if savedPostIDs.contains(post.id) {
+            savedPostIDs.remove(post.id)
+        } else {
+            savedPostIDs.insert(post.id)
+            Haptics.tap()
+        }
+        toast(savedPostIDs.contains(post.id) ? "已收藏笔记 · 可在「我的」查看" : "已取消收藏", icon: "bookmark.fill")
+    }
+
+    // MARK: Attractions
+
+    var bookedAttractionCount: Int { attractions.filter(\.booked).count }
+
+    var attractionProgress: Double {
+        attractions.isEmpty ? 0 : Double(bookedAttractionCount) / Double(attractions.count)
+    }
+
+    var pendingAttractions: [AttractionBooking] {
+        attractions.filter { !$0.booked }
+    }
+
+    func bookAttraction(_ attraction: AttractionBooking) {
+        guard let index = attractions.firstIndex(where: { $0.id == attraction.id }), !attractions[index].booked else { return }
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.86)) {
+            attractions[index].booked = true
+            attractions[index].code = Self.makeBookingCode()
+        }
+        Haptics.success()
+        toast("已预约 \(attraction.title) · 刷身份证入园", icon: "ticket.fill")
+    }
+
+    func bookAllAttractions() {
+        guard !pendingAttractions.isEmpty else { return }
+        let count = pendingAttractions.count
+        withAnimation(.spring(response: 0.45, dampingFraction: 0.86)) {
+            for index in attractions.indices where !attractions[index].booked {
+                attractions[index].booked = true
+                attractions[index].code = Self.makeBookingCode()
+            }
+        }
+        Haptics.success()
+        toast("已一键预约 \(count) 个景点 · 凭证已生成", icon: "checkmark.seal.fill")
+    }
+
+    private static func makeBookingCode() -> String {
+        "LUCIA-" + String((0..<4).map { _ in "ABCDEFGHJKLMNPQRSTUVWXYZ23456789".randomElement()! })
+    }
+
     func joinEvent() {
         withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
             joinedEvent.toggle()
@@ -435,6 +489,28 @@ final class AppModel: ObservableObject {
         )
         withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
             localEvents.insert(event, at: 0)
+            forumPosts.insert(
+                ForumPost(
+                    author: "王博",
+                    avatar: "W",
+                    tint: 5,
+                    time: "刚刚",
+                    kind: .event,
+                    title: title,
+                    body: note.isEmpty ? "由你发起 · 欢迎同行" : note,
+                    tags: [date, fee.isEmpty ? "免费" : fee],
+                    likes: "0",
+                    saves: "0",
+                    symbol: "sun.horizon.fill",
+                    artTint: 3,
+                    height: 150,
+                    eventTitle: title,
+                    comments: 0,
+                    comment: "由你发起 · 欢迎同行",
+                    isMine: true
+                ),
+                at: 0
+            )
         }
         Haptics.success()
         toast("活动已发布 · 已进入社区审核", icon: "calendar.badge.plus")
@@ -650,6 +726,99 @@ final class AppModel: ObservableObject {
             RouteStop(name: "什刹海", time: "15:00", duration: "1.5 小时", x: 0.37, y: 0.38, tag: "AI 建议", tagStyle: .accent),
             RouteStop(name: "南锣鼓巷", time: "16:30", duration: "45 分钟", x: 0.61, y: 0.31, tag: "咖啡"),
             RouteStop(name: "钟鼓楼", time: "17:30", duration: "45 分钟", x: 0.50, y: 0.20, tag: "日落")
+        ]
+    }
+
+    private static func makeForumPosts() -> [ForumPost] {
+        [
+            ForumPost(author: "林小满", avatar: "林", tint: 5, time: "2 小时前", kind: .spot,
+                      title: "景山万春亭的落日，比照片还好看",
+                      body: "17:00 上山刚好，故宫金顶被夕阳点亮。机位在东侧栏杆，记得早点占。",
+                      tags: ["景山", "日落", "机位"], likes: "3.4k", saves: "862",
+                      symbol: "sun.horizon.fill", artTint: 3, height: 174,
+                      placeTitle: "景山看日落", comment: "@阿哲：周三去的，17:10 太阳刚好落到屋脊上。"),
+            ForumPost(author: "Ken", avatar: "K", tint: 4, time: "4 小时前", kind: .route,
+                      title: "中轴线一日：从永定门走到钟鼓楼",
+                      body: "6 站 4.2 km，下午三点出发正好赶上景山日落。沿途都有地铁备份。",
+                      tags: ["中轴线", "步行", "路线"], likes: "2.1k", saves: "1.2k",
+                      symbol: "point.topleft.down.to.point.bottomright.curvepath", artTint: 4, height: 120,
+                      routeIndex: 1, comment: "@Lina：按这条走完，脚还行，咖啡补了两次。"),
+            ForumPost(author: "阿哲", avatar: "哲", tint: 3, time: "5 小时前", kind: .restaurant,
+                      title: "四季民福 11 点前到，真的不排队",
+                      body: "鸭皮蘸白糖先吃，点半只就够两个人。下午三点以后基本不用等位。",
+                      tags: ["烤鸭", "故宫", "排队"], likes: "2.3k", saves: "708",
+                      symbol: "fork.knife", artTint: 0, height: 146,
+                      placeTitle: "四季民福 · 故宫店", comment: "@周周：亲测 10:40 到，直接进。"),
+            ForumPost(author: "Lina", avatar: "L", tint: 0, time: "昨天", kind: .restaurant,
+                      title: "前门胡同咖啡，下午三点光线最好",
+                      body: "Metal Hands 藏在后巷，窗边两张桌子最安静。手冲偏酸，配可颂刚好。",
+                      tags: ["咖啡", "胡同", "下午"], likes: "1.1k", saves: "433",
+                      symbol: "cup.and.saucer.fill", artTint: 1, height: 162,
+                      placeTitle: "Metal Hands · 前门", comment: "@小北：周日去坐了俩小时，没人赶。"),
+            ForumPost(author: "周周", avatar: "周", tint: 2, time: "昨天", kind: .spot,
+                      title: "天坛的清晨，几乎没有游客",
+                      body: "从南门进，回音壁九点前最空。古柏树影落在红墙上，随便拍都好看。",
+                      tags: ["天坛", "清晨", "建筑"], likes: "2.8k", saves: "610",
+                      symbol: "building.columns.fill", artTint: 2, height: 130,
+                      placeTitle: "天坛公园", comment: "@胡同档案：本地人晨练时段，别大声。"),
+            ForumPost(author: "胡同档案", avatar: "胡", tint: 3, time: "2 天前", kind: .event,
+                      title: "周六钟鼓楼夜市，摊主名单更新",
+                      body: "手作、黑胶和热红酒，19:00 后人最多。地铁 8 号线什刹海站 A 口。",
+                      tags: ["夜市", "钟鼓楼", "周末"], likes: "986", saves: "241",
+                      symbol: "moon.stars.fill", artTint: 3, height: 154,
+                      eventTitle: "胡同夜市 · 免费入场", comment: "@Ken：报名了，到时候一起逛。"),
+            ForumPost(author: "老赵", avatar: "赵", tint: 1, time: "2 天前", kind: .gift,
+                      title: "稻香村散装 vs 礼盒，本地人这么买",
+                      body: "散装点心按斤称，日期新、能拼口味。礼盒适合送人，自己吃没必要。",
+                      tags: ["伴手礼", "稻香村", "省钱"], likes: "1.7k", saves: "529",
+                      symbol: "gift.fill", artTint: 5, height: 138,
+                      placeTitle: "稻香村 · 本地人伴手礼", comment: "@林小满：枣泥和牛舌饼必买。"),
+            ForumPost(author: "阿哲", avatar: "哲", tint: 3, time: "3 天前", kind: .route,
+                      title: "什刹海夜走 5 站，沿途 3 家小酒馆",
+                      body: "银锭桥开始，沿后海北沿走到鼓楼。九点以后人少，风大记得带外套。",
+                      tags: ["夜游", "什刹海", "小酒馆"], likes: "860", saves: "377",
+                      symbol: "figure.walk", artTint: 2, height: 126,
+                      routeIndex: 2, comment: "@Lina：银锭桥边上那家精酿不错。"),
+            ForumPost(author: "小北", avatar: "北", tint: 0, time: "3 天前", kind: .gift,
+                      title: "角楼冰箱贴补货了，进门先买",
+                      body: "神武门文创店上午补货，角楼系列经常断。限购两个，别等到闭馆。",
+                      tags: ["故宫文创", "冰箱贴", "限定"], likes: "604", saves: "188",
+                      symbol: "sparkles", artTint: 0, height: 112,
+                      placeTitle: "故宫文创 · 冰箱贴", comment: "@周周：昨天还有日落色，冲。"),
+            ForumPost(author: "阿May", avatar: "M", tint: 5, time: "4 天前", kind: .restaurant,
+                      title: "满恒记排队 40 分钟，值不值？",
+                      body: "手切羊肉配麻酱，铜锅一开就知道没白等。17:00 前取号能少排一半。",
+                      tags: ["涮肉", "牛街", "排队"], likes: "1.9k", saves: "522",
+                      symbol: "flame.fill", artTint: 3, height: 140,
+                      placeTitle: "满恒记 · 牛街", comment: "@老赵：值。糖蒜记得加一份。"),
+            ForumPost(author: "Lina", avatar: "L", tint: 0, time: "5 天前", kind: .spot,
+                      title: "北海划船，从湖上看白塔最舒服",
+                      body: "下午四点后太阳不晒，租一条脚踏船一小时刚好。风大时会停船。",
+                      tags: ["北海", "划船", "亲子"], likes: "2.1k", saves: "498",
+                      symbol: "sailboat.fill", artTint: 1, height: 148,
+                      placeTitle: "北海公园", comment: "@小北：带小孩的话选电动船。")
+        ]
+    }
+
+    private static func makeAttractions() -> [AttractionBooking] {
+        [
+            AttractionBooking(
+                title: "故宫博物院", date: "10/15", time: "09:00 – 12:00",
+                price: "¥60 · 成人 ×2", symbol: "building.columns.fill", tint: 3,
+                booked: true, code: "LUCIA-7Q2K"
+            ),
+            AttractionBooking(
+                title: "八达岭长城", date: "10/16", time: "08:30 集合",
+                price: "¥40 · 含缆车", symbol: "mountain.2.fill", tint: 2
+            ),
+            AttractionBooking(
+                title: "颐和园", date: "10/17", time: "09:00 – 12:00",
+                price: "¥60 · 联票", symbol: "leaf.fill", tint: 4
+            ),
+            AttractionBooking(
+                title: "国家博物馆", date: "10/17", time: "14:00 – 16:30",
+                price: "免费 · 实名预约", symbol: "building.columns", tint: 1
+            )
         ]
     }
 

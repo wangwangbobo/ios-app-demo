@@ -289,6 +289,148 @@ enum ForumFilter: String, CaseIterable, Identifiable {
     }
 }
 
+enum ForumPostKind: String, CaseIterable, Identifiable {
+    case all, restaurant, spot, route, gift, event
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .all: return "全部"
+        case .restaurant: return "餐厅"
+        case .spot: return "景点"
+        case .route: return "路线"
+        case .gift: return "伴手礼"
+        case .event: return "活动"
+        }
+    }
+
+    var label: String {
+        switch self {
+        case .all: return "ALL"
+        case .restaurant: return "EAT"
+        case .spot: return "SEE"
+        case .route: return "WALK"
+        case .gift: return "GIFT"
+        case .event: return "EVENT"
+        }
+    }
+
+    var forumFilter: ForumFilter {
+        switch self {
+        case .all: return .all
+        case .restaurant: return .restaurant
+        case .spot: return .spot
+        case .route: return .route
+        case .gift: return .gift
+        case .event: return .event
+        }
+    }
+}
+
+struct ForumPost: Identifiable {
+    let id: UUID
+    var author: String
+    var avatar: String
+    var tint: Int
+    var time: String
+    var kind: ForumPostKind
+    var title: String
+    var body: String
+    var tags: [String]
+    var likes: String
+    var saves: String
+    var symbol: String
+    var artTint: Int
+    var height: CGFloat
+    var placeTitle: String?
+    var routeIndex: Int?
+    var eventTitle: String?
+    var comments: Int
+    var comment: String
+    var isMine: Bool
+
+    init(
+        id: UUID = UUID(),
+        author: String,
+        avatar: String,
+        tint: Int,
+        time: String,
+        kind: ForumPostKind,
+        title: String,
+        body: String,
+        tags: [String],
+        likes: String,
+        saves: String,
+        symbol: String,
+        artTint: Int,
+        height: CGFloat,
+        placeTitle: String? = nil,
+        routeIndex: Int? = nil,
+        eventTitle: String? = nil,
+        comments: Int = 28,
+        comment: String = "",
+        isMine: Bool = false
+    ) {
+        self.id = id
+        self.author = author
+        self.avatar = avatar
+        self.tint = tint
+        self.time = time
+        self.kind = kind
+        self.title = title
+        self.body = body
+        self.tags = tags
+        self.likes = likes
+        self.saves = saves
+        self.symbol = symbol
+        self.artTint = artTint
+        self.height = height
+        self.placeTitle = placeTitle
+        self.routeIndex = routeIndex
+        self.eventTitle = eventTitle
+        self.comments = comments
+        self.comment = comment
+        self.isMine = isMine
+    }
+}
+
+// MARK: - Attractions
+
+struct AttractionBooking: Identifiable, Equatable {
+    let id: UUID
+    var title: String
+    var date: String
+    var time: String
+    var price: String
+    var symbol: String
+    var tint: Int
+    var booked: Bool
+    var code: String?
+
+    init(
+        id: UUID = UUID(),
+        title: String,
+        date: String,
+        time: String,
+        price: String,
+        symbol: String,
+        tint: Int,
+        booked: Bool = false,
+        code: String? = nil
+    ) {
+        self.id = id
+        self.title = title
+        self.date = date
+        self.time = time
+        self.price = price
+        self.symbol = symbol
+        self.tint = tint
+        self.booked = booked
+        self.code = code
+    }
+}
+
 struct ForumRoute: Identifiable {
     let id = UUID()
     var title: String
