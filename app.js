@@ -305,8 +305,10 @@ const S = {
   checklistCat: 'All',
   notifications: true,
   autoplay: false,
-  assistantContext: 'Trip · 10/15 Forbidden City',
-  messages: [{ role: 'assistant', text: "I'm here. Ask me about your route, tickets, translation or checklist." }],
+  assistantContext: 'New trip · Planning with Pico',
+  planning: true,
+  planBuilt: false,
+  messages: [{ role: 'assistant', text: "Hi, I'm Pico. Tell me what kind of trip you like and I'll build your first Beijing plan — route order, timing and all." }],
   thinking: false,
   draft: { title: '', date: '11/08 Sat', time: '14:00 – 18:00', place: '', fee: 'Free', note: '' },
   toastTimer: null,
@@ -1766,20 +1768,127 @@ function reportSheet() {
 }
 
 /* ---------- assistant ---------- */
+const PLAN_DAYS = [
+  ['Day 1', 'Central Axis · Forbidden City & Jingshan'],
+  ['Day 2', 'Great Wall · Badaling by private car'],
+  ['Day 3', 'Imperial gardens · Palace & museum'],
+  ['Day 4', 'Slow hutongs · departure']
+];
+
+function planLength() {
+  if (S.quiz.days === '2–3 days') return 3;
+  if (S.quiz.days === '6+ days') return 6;
+  return 4;
+}
+
+function planBuilderHTML() {
+  const answered = quizAnswered();
+  return `<div class="planner-card" id="plannerCard">
+    <div class="planner-top">
+      <span class="quiz-badge">${icon('sparkle', 10)} Trip match</span>
+      <span class="planner-count">${answered} / 3</span>
+    </div>
+    <div>
+      <div class="planner-title">Build your first Beijing trip</div>
+      <p class="planner-sub">Three answers and I'll set the order, the timing and the walking.</p>
+    </div>
+    ${QUIZ.map((q) => `<div class="planner-q">
+      <div class="planner-label">${esc(q.label)}</div>
+      <div class="planner-opts">
+        ${q.options.map((o) => `<button class="qchip ${S.quiz[q.key] === o ? 'on' : ''}" data-act="quiz" data-key="${q.key}" data-val="${esc(o)}" aria-pressed="${S.quiz[q.key] === o}">${esc(o)}</button>`).join('')}
+      </div>
+    </div>`).join('')}
+    <button class="plan-generate" data-act="generate-plan">
+      ${icon('sparkle', 12)}<span>Generate plan</span>${icon('arrowr', 11)}
+    </button>
+    <div class="planner-note" id="plannerNote">
+      ${icon('info', 9)}<span>${answered === 3 ? 'All set — tap Generate plan.' : 'Pick one per question — you can change it later.'}</span>
+    </div>
+  </div>`;
+}
+
+function planSummaryHTML() {
+  const persona = quizPersona();
+  const days = planLength();
+  const rows = PLAN_DAYS.slice(0, Math.min(days, 4));
+  return `<div class="plan-ready">
+    <div class="pr-head">
+      <span class="quiz-badge">${icon('check', 9)} Plan ready</span>
+      <span class="pr-days">${days} days</span>
+    </div>
+    <div class="pr-title">${esc(persona ? persona.title : 'Your Beijing plan')}</div>
+    <div class="pr-meta">${esc(S.quiz.days)} · ${esc(S.quiz.style)} · ${esc(S.quiz.theme)}</div>
+    <div class="pr-stats">
+      <div><b>${days}</b><span>days</span></div>
+      <div><b>${days * 4}</b><span>stops</span></div>
+      <div><b>${(days * 4.6).toFixed(1)}</b><span>km walking</span></div>
+    </div>
+    <div class="pr-days-list">
+      ${rows.map(([d, t]) => `<div class="pr-row"><b>${esc(d)}</b><span>${esc(t)}</span></div>`).join('')}
+      ${days > 4 ? `<div class="pr-more">+ ${days - 4} more days, saved to your trip</div>` : ''}
+    </div>
+    <button class="pr-open" data-act="open-plan">${icon('map', 10)} Open my plan ${icon('arrowr', 10)}</button>
+  </div>`;
+}
+
+function planNarrative(persona) {
+  const style = S.quiz.style;
+  const detail = style === 'Food first'
+    ? 'Lunch is a duck stop before the 11:30 queue, and there are coffee gaps between sights.'
+    : style === 'Outdoors'
+      ? 'Mornings stay outside — Jingshan at sunrise, the Great Wall ridge walk, boats at Beihai.'
+      : style === 'Night owl'
+        ? 'Sights finish by 17:00, then the Drum Tower and Houhai carry you into the evening.'
+        : 'Two long museum stops and a teahouse afternoon, never more than 4 km of walking a day.';
+  return `Done. I built a ${planLength()}-day route for ${persona ? persona.title : 'you'}, keeping the palace on day one. ${detail} Adjust anything by just asking.`;
+}
+
+function generatePlan() {
+  const missing = QUIZ.find((q) => !S.quiz[q.key]);
+  if (missing) {
+    const card = $('#plannerCard');
+    const note = $('#plannerNote');
+    if (note) note.innerHTML = `${icon('info', 9)}<span>Still need “${esc(missing.label.replace('?', ''))}”.</span>`;
+    if (card) {
+      card.classList.remove('nudge');
+      void card.offsetWidth;
+      card.classList.add('nudge');
+    }
+    toast('Answer all three first', 'info');
+    return;
+  }
+  const persona = quizPersona();
+  const days = planLength();
+  S.planning = false;
+  S.planBuilt = true;
+  S.assistantContext = `Plan · ${persona ? persona.fit : 'Beijing'} · ${days} days`;
+  S.routeName = `${persona ? persona.fit : 'Central Axis'} · New plan`;
+  S.messages.push({ role: 'user', text: `${S.quiz.days} · ${S.quiz.style} · ${S.quiz.theme}` });
+  S.thinking = true;
+  renderSheet();
+  clearTimeout(S.chatTimer);
+  S.chatTimer = setTimeout(() => {
+    S.thinking = false;
+    S.messages.push({ role: 'assistant', text: planNarrative(persona), plan: true });
+    refreshChat();
+    toast('Plan ready · your travel title is unlocked', 'sparkle');
+  }, 1250);
+}
+
 function assistantSheet() {
   return `<div class="sheet tall">
     <div class="assistant-head">
       <span class="orb-mini">${sparkleIcon(16)}</span>
       <div class="grow">
         <h3>Pico</h3>
-        <div class="ctx">${esc(S.assistantContext)}</div>
+        <div class="ctx">${esc(S.planBuilt ? S.assistantContext : 'New trip · Planning with Pico')}</div>
       </div>
       <button class="sheet-close" data-act="close-sheet" aria-label="Close">${icon('x', 10)}</button>
     </div>
     <div class="chat" id="chat">${chatHTML()}</div>
-    <div class="quick-wrap">
+    ${S.planning ? '' : `<div class="quick-wrap">
       ${QUICK.map((q) => `<button data-act="quick" data-text="${esc(q)}">${esc(q)}</button>`).join('')}
-    </div>
+    </div>`}
     <div class="chat-input">
       <input id="chatInput" placeholder="Ask Pico about routes, tickets, translation…" aria-label="Ask Pico a question" autocomplete="off">
       <button data-act="send-chat" aria-label="Send">${icon('arrowr', 14)}</button>
@@ -1822,6 +1931,7 @@ function chatHTML() {
         <span class="ava">${sparkleIcon(10)}</span>
         <div>
           <div class="bubble">${m.text}
+            ${m.plan ? planSummaryHTML() : ''}
             ${m.actions ? `<div class="actions">${m.actions.map((a) => `<button class="${a.plain ? 'plain' : ''}" data-act="${a.act}"${a.tab ? ` data-tab="${a.tab}"` : ''}${a.channel ? ` data-channel="${a.channel}"` : ''}>${a.icon ? icon(a.icon, 8) : ''}${esc(a.label)}</button>`).join('')}</div>` : ''}
           </div>
         </div>
@@ -1829,7 +1939,7 @@ function chatHTML() {
     }
     return `<div class="msg user"><div class="bubble">${esc(m.text)}</div></div>`;
   }).join('')
-  + (S.messages.length === 1 ? assistContextHTML() : '')
+  + (S.planBuilt ? '' : (S.planning ? planBuilderHTML() : (S.messages.length === 1 ? assistContextHTML() : '')))
   + (S.thinking ? `<div class="msg"><span class="ava">${sparkleIcon(10)}</span><div class="bubble"><div class="thinking"><i></i><i></i><i></i></div></div></div>` : '');
 }
 
@@ -2389,14 +2499,26 @@ document.addEventListener('click', (e) => {
     case 'quiz': {
       const wasComplete = !!quizPersona();
       S.quiz[el.dataset.key] = el.dataset.val;
-      render();
-      if (!wasComplete && quizPersona()) {
-        requestAnimationFrame(() => {
-          document.querySelector('.quiz-result')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        });
+      if (S.sheet === 'assistant') {
+        renderSheet();
+      } else {
+        render();
+        if (!wasComplete && quizPersona()) {
+          requestAnimationFrame(() => {
+            document.querySelector('.quiz-result')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          });
+        }
       }
       break;
     }
+    case 'generate-plan':
+      generatePlan();
+      break;
+    case 'open-plan':
+      closeSheet();
+      go('plan');
+      toast(`Your plan is on the map · ${planLength()} days`, 'map');
+      break;
     case 'quiz-reset':
       S.quiz = { days: null, style: null, theme: null };
       render();
@@ -2707,10 +2829,14 @@ function boot() {
   } else if (['trip', 'plan', 'forum', 'translate', 'me'].includes(raw)) {
     S.tab = raw;
   }
+  if (!S.planBuilt) {
+    S.sheet = 'assistant';
+    S.assistantContext = 'New trip · Planning with Pico';
+  }
   render(true);
   setTimeout(() => {
     try {
-      if (!sessionStorage.getItem('roamchina-hint')) {
+      if (!S.sheet && !sessionStorage.getItem('roamchina-hint')) {
         sessionStorage.setItem('roamchina-hint', '1');
         toast('Try Adjust stops on the Plan tab, then drag a numbered dot', 'hand');
       }

@@ -1,19 +1,9 @@
 import SwiftUI
 
-private struct TravelPersona {
-    let title: String
-    let icon: String
-    let meta: String
-    let fit: String
-}
-
 struct TripView: View {
     @EnvironmentObject private var model: AppModel
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var expandedPlan = 0
-    @State private var quizDays: String? = nil
-    @State private var quizStyle: String? = nil
-    @State private var quizTheme: String? = nil
     @State private var heroIndex = 0
     @State private var heroAutoResumeAt = Date.distantPast
     @State private var heroAutoAdvancing = false
@@ -40,7 +30,7 @@ struct TripView: View {
                 .padding(.top, 10)
                 .padding(.bottom, 130)
             }
-            .onChange(of: answeredCount) { _, count in
+            .onChange(of: model.quizAnswered) { _, count in
                 guard count == 3 else { return }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
                     withAnimation(.easeInOut(duration: 0.35)) {
@@ -49,14 +39,6 @@ struct TripView: View {
                 }
             }
         }
-        #if DEBUG
-        .onAppear {
-            guard ProcessInfo.processInfo.arguments.contains("-quizdone") else { return }
-            quizDays = quizDays ?? "4–5 days"
-            quizStyle = quizStyle ?? "Food first"
-            quizTheme = quizTheme ?? "Hutongs & coffee"
-        }
-        #endif
         .onChange(of: heroIndex) { _, _ in
             if heroAutoAdvancing {
                 heroAutoAdvancing = false
@@ -323,32 +305,15 @@ struct TripView: View {
 
     // MARK: Travel style check
 
-    private var answeredCount: Int {
-        [quizDays, quizStyle, quizTheme].compactMap { $0 }.count
-    }
-
-    private var quizPersona: TravelPersona? {
-        guard let days = quizDays, let style = quizStyle, let theme = quizTheme else { return nil }
-        let map: [String: (String, String)] = [
-            "Slow culture": ("The Slow Culture Wanderer", "safari"),
-            "Food first": ("The Table-First Wanderer", "fork.knife"),
-            "Outdoors": ("The Open-Air Rambler", "figure.walk"),
-            "Night owl": ("The After-Dark Flâneur", "star.fill")
-        ]
-        let base = map[style] ?? ("The Slow Culture Wanderer", "safari")
-        let fit = (theme == "Imperial history" || theme == "Hutongs & coffee") ? "Central Axis" : "Imperial Gardens"
-        return TravelPersona(title: base.0, icon: base.1, meta: "\(days) · \(style) · \(theme)", fit: fit)
-    }
-
     private var quizSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            SectionHeading(title: "Travel style check", icon: "sparkles", trailing: "\(answeredCount) / 3")
+            SectionHeading(title: "Travel style check", icon: "sparkles", trailing: "\(model.quizAnswered) / 3")
 
             VStack(alignment: .leading, spacing: 11) {
                 HStack(spacing: 8) {
                     TagView(text: "Trip match", style: .accent)
                     Spacer()
-                    if quizPersona == nil {
+                    if model.quizPersona == nil {
                         Text("Answer all three for your title")
                             .font(.system(size: 8, weight: .medium, design: .monospaced))
                             .foregroundStyle(Palette.ink3)
@@ -372,13 +337,13 @@ struct TripView: View {
                     }
                 }
 
-                if let persona = quizPersona {
+                if let persona = model.quizPersona {
                     personaBanner(persona)
                         .transition(.opacity)
                 } else {
-                    quizQuestion("How many days do you like?", options: ["2–3 days", "4–5 days", "6+ days"], selection: $quizDays)
-                    quizQuestion("Your kind of holiday", options: ["Slow culture", "Food first", "Outdoors", "Night owl"], selection: $quizStyle)
-                    quizQuestion("A theme, or none?", options: ["Imperial history", "Hutongs & coffee", "Art & design", "No theme"], selection: $quizTheme)
+                    quizQuestion("How many days do you like?", options: ["2–3 days", "4–5 days", "6+ days"], selection: $model.quizDays)
+                    quizQuestion("Your kind of holiday", options: ["Slow culture", "Food first", "Outdoors", "Night owl"], selection: $model.quizStyle)
+                    quizQuestion("A theme, or none?", options: ["Imperial history", "Hutongs & coffee", "Art & design", "No theme"], selection: $model.quizTheme)
 
                     HStack(spacing: 5) {
                         Image(systemName: "info.circle")
@@ -457,9 +422,9 @@ struct TripView: View {
     private func resetQuiz() {
         Haptics.tap()
         withAnimation(.easeOut(duration: 0.2)) {
-            quizDays = nil
-            quizStyle = nil
-            quizTheme = nil
+            model.quizDays = nil
+            model.quizStyle = nil
+            model.quizTheme = nil
         }
     }
 

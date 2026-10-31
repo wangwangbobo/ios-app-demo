@@ -1010,6 +1010,53 @@ img{max-width:100%;display:block}
 .chat-input button{width:36px;height:36px;border-radius:50%;background:var(--coral);border:1px solid var(--ink);display:grid;place-items:center;flex:none}
 .chat-input button svg{width:14px;height:14px;color:var(--paper)}
 
+/* plan builder inside the assistant */
+.planner-card{
+  width:100%;flex:none;background:var(--paper);border:1.1px solid var(--ink);border-radius:16px;
+  padding:12px;display:flex;flex-direction:column;gap:9px;box-shadow:0 2px 0 rgba(25,23,16,.1);
+}
+.planner-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.planner-count{font:700 8px var(--mono);color:var(--ink3)}
+.planner-title{font-size:14.5px;font-weight:900;letter-spacing:-.3px;line-height:1.15}
+.planner-sub{font-size:8.5px;line-height:1.55;color:var(--ink3);margin:3px 0 0}
+.planner-q{display:flex;flex-direction:column;gap:5px}
+.planner-label{font-size:9px;font-weight:800;letter-spacing:-.1px}
+.planner-opts{display:flex;flex-wrap:wrap;gap:4px}
+.planner-opts .qchip{height:26px;padding:0 8px;font-size:8px;display:inline-flex;align-items:center}
+.plan-generate{
+  height:42px;border-radius:999px;border:1.1px solid var(--ink);background:var(--lime);
+  display:flex;align-items:center;justify-content:center;gap:7px;
+  font-size:11.5px;font-weight:900;letter-spacing:-.1px;color:var(--ink);
+  box-shadow:0 3px 0 var(--ink);margin-top:2px;transition:transform .12s,box-shadow .12s;
+}
+.plan-generate svg{width:12px;height:12px}
+.plan-generate:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
+.planner-note{display:flex;align-items:flex-start;gap:5px;font-size:7.5px;line-height:1.5;color:var(--ink3)}
+.planner-note svg{width:9px;height:9px;flex:none;margin-top:1px}
+.planner-card.nudge{animation:nudge .36s ease}
+@keyframes nudge{0%,100%{transform:translateX(0)}20%{transform:translateX(-4px)}40%{transform:translateX(4px)}60%{transform:translateX(-3px)}80%{transform:translateX(2px)}}
+
+.plan-ready{display:flex;flex-direction:column;gap:8px;width:100%;margin-top:9px;padding-top:9px;border-top:1px dashed rgba(25,23,16,.22)}
+.pr-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.pr-days{font:700 8px var(--mono);color:var(--ink3)}
+.pr-title{font-size:14px;font-weight:900;letter-spacing:-.25px;line-height:1.2}
+.pr-meta{font:600 7.5px var(--mono);color:var(--ink3);line-height:1.5}
+.pr-stats{display:flex;border-top:1px dashed rgba(25,23,16,.25);border-bottom:1px dashed rgba(25,23,16,.25);padding:7px 0}
+.pr-stats div{flex:1;display:flex;flex-direction:column;gap:1px;border-left:1px dashed rgba(25,23,16,.2);padding-left:8px}
+.pr-stats div:first-child{border-left:0;padding-left:0}
+.pr-stats b{font-size:13px;font-weight:900;letter-spacing:-.3px;line-height:1}
+.pr-stats span{font-size:7px;color:var(--ink3);font-weight:600}
+.pr-days-list{display:flex;flex-direction:column;gap:0}
+.pr-row{display:flex;align-items:baseline;gap:7px;padding:4px 0;border-top:1px solid rgba(25,23,16,.1);font-size:8.5px;line-height:1.35}
+.pr-row:first-child{border-top:0;padding-top:0}
+.pr-row b{font:700 7.5px var(--mono);color:var(--ink3);flex:none;width:32px}
+.pr-more{font-size:7.5px;color:var(--ink3);padding-top:4px;border-top:1px dashed rgba(25,23,16,.2)}
+.pr-open{
+  height:32px;border-radius:999px;border:1px solid var(--ink);background:var(--ink);color:var(--paper);
+  font-size:9.5px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:5px;
+}
+.pr-open svg{width:10px;height:10px}
+
 /* assistant context card */
 .assist-card{
   margin-left:28px;max-width:calc(88% + 28px);

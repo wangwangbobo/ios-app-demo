@@ -532,7 +532,14 @@ enum ChatRole {
 }
 
 enum AssistantCardKind {
-    case ticket, hotels, checklist, route, translate
+    case ticket, hotels, checklist, route, translate, plan
+}
+
+struct TravelPersona {
+    let title: String
+    let icon: String
+    let meta: String
+    let fit: String
 }
 
 struct ChatMessage: Identifiable, Equatable {

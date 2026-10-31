@@ -45,6 +45,18 @@ struct RootView: View {
                 .presentationCornerRadius(30)
                 .presentationBackground(Palette.bg)
         }
+        .task {
+            #if DEBUG
+            if ProcessInfo.processInfo.arguments.contains("-noassistant") { return }
+            #endif
+            guard model.onboarding, !model.assistantOpen else { return }
+            try? await Task.sleep(for: .milliseconds(450))
+            guard !model.assistantOpen, !model.notesOpen, !model.checklistOpen else { return }
+            if model.chatMessages.isEmpty {
+                model.seedAssistant()
+            }
+            model.assistantOpen = true
+        }
     }
 
     @ViewBuilder

@@ -8,8 +8,10 @@ final class AppModel: ObservableObject {
     @Published var tab: Tab = .trip
     @Published var checklistOpen = false
     @Published var assistantOpen = false
-    @Published var assistantContext = Tab.trip.assistantContext
+    @Published var assistantContext = "New trip · Planning with Pico"
     @Published var notesOpen = false
+    @Published var onboarding = true
+    @Published var planBuilt = false
 
     // MARK: Trip
     @Published var reminderDismissed = false
@@ -53,6 +55,36 @@ final class AppModel: ObservableObject {
     @Published var chatMessages: [ChatMessage] = []
     @Published var chatDraft = ""
     @Published var chatThinking = false
+
+    // MARK: Plan builder (shared with the trip page style check)
+    @Published var quizDays: String? = nil
+    @Published var quizStyle: String? = nil
+    @Published var quizTheme: String? = nil
+
+    var quizAnswered: Int {
+        [quizDays, quizStyle, quizTheme].compactMap { $0 }.count
+    }
+
+    var quizPersona: TravelPersona? {
+        guard let days = quizDays, let style = quizStyle, let theme = quizTheme else { return nil }
+        let map: [String: (String, String)] = [
+            "Slow culture": ("The Slow Culture Wanderer", "safari"),
+            "Food first": ("The Table-First Wanderer", "fork.knife"),
+            "Outdoors": ("The Open-Air Rambler", "figure.walk"),
+            "Night owl": ("The After-Dark Flâneur", "star.fill")
+        ]
+        let base = map[style] ?? ("The Slow Culture Wanderer", "safari")
+        let fit = (theme == "Imperial history" || theme == "Hutongs & coffee") ? "Central Axis" : "Imperial Gardens"
+        return TravelPersona(title: base.0, icon: base.1, meta: "\(days) · \(style) · \(theme)", fit: fit)
+    }
+
+    var planLength: Int {
+        if quizDays == "2–3 days" { return 3 }
+        if quizDays == "6+ days" { return 6 }
+        return 4
+    }
+
+    var showPlanBuilder: Bool { onboarding && !planBuilt }
 
     // MARK: Static demo content
     let forumRoutes: [ForumRoute] = [
@@ -190,8 +222,30 @@ final class AppModel: ObservableObject {
             notesOpen = true
         }
         if args.contains("-checklist") { checklistOpen = true }
+        if args.contains("-quizdone") {
+            quizDays = quizDays ?? "4–5 days"
+            quizStyle = quizStyle ?? "Food first"
+            quizTheme = quizTheme ?? "Hutongs & coffee"
+        }
+        if args.contains("-planbuilt") {
+            quizDays = "4–5 days"
+            quizStyle = "Food first"
+            quizTheme = "Hutongs & coffee"
+            onboarding = false
+            planBuilt = true
+            assistantContext = "Plan · Central Axis · \(planLength) days"
+            routeName = "Central Axis · New plan"
+            if let persona = quizPersona {
+                chatMessages = [
+                    ChatMessage(role: .assistant, text: "Hi, I'm Pico. Tell me what kind of trip you like and I'll build your first Beijing plan — route order, timing and all."),
+                    ChatMessage(role: .user, text: "4–5 days · Food first · Hutongs & coffee"),
+                    ChatMessage(role: .assistant, text: planNarrative(persona), card: .plan)
+                ]
+            }
+            assistantOpen = true
+        }
         if args.contains("-assistant") {
-            assistantContext = tab.assistantContext
+            assistantContext = onboarding ? "New trip · Planning with Pico" : tab.assistantContext
             seedAssistant()
             assistantOpen = true
         }
@@ -546,6 +600,10 @@ final class AppModel: ObservableObject {
     }
 
     func seedAssistant() {
+        if showPlanBuilder {
+            chatMessages = [ChatMessage(role: .assistant, text: "Hi, I'm Pico. Tell me what kind of trip you like and I'll build your first Beijing plan — route order, timing and all.")]
+            return
+        }
         let context = assistantContext
         var card: AssistantCardKind? = nil
         let text: String
@@ -584,6 +642,45 @@ final class AppModel: ObservableObject {
     func resetChat() {
         chatMessages = []
         seedAssistant()
+    }
+
+    func buildPlan() {
+        guard let persona = quizPersona else {
+            Haptics.tap()
+            return
+        }
+        onboarding = false
+        planBuilt = true
+        assistantContext = "Plan · \(persona.fit) · \(planLength) days"
+        routeName = "\(persona.fit) · New plan"
+        chatMessages.append(ChatMessage(role: .user, text: "\(quizDays ?? "") · \(quizStyle ?? "") · \(quizTheme ?? "")"))
+        chatThinking = true
+        Haptics.tap()
+        Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 1_250_000_000)
+            guard let self else { return }
+            self.chatThinking = false
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.86)) {
+                self.chatMessages.append(ChatMessage(role: .assistant, text: self.planNarrative(persona), card: .plan))
+            }
+            Haptics.success()
+            self.toast("Plan ready · your travel title is unlocked", icon: "sparkles")
+        }
+    }
+
+    private func planNarrative(_ persona: TravelPersona) -> String {
+        let detail: String
+        switch quizStyle {
+        case "Food first":
+            detail = "Lunch is a duck stop before the 11:30 queue, with coffee gaps between sights."
+        case "Outdoors":
+            detail = "Mornings stay outside — Jingshan at sunrise, the Great Wall ridge walk, boats at Beihai."
+        case "Night owl":
+            detail = "Sights finish by 17:00, then the Drum Tower and Houhai carry you into the evening."
+        default:
+            detail = "Two long museum stops and a teahouse afternoon, never more than 4 km of walking a day."
+        }
+        return "Done. I built a \(planLength)-day route for \(persona.title), keeping the palace on day one. \(detail) Adjust anything by just asking."
     }
 
     func sendChat(_ raw: String) {
