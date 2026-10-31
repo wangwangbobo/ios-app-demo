@@ -2,6 +2,8 @@
 
 一款原生 SwiftUI 旅行助手（iOS 18+）：五个主 Tab、全局悬浮助手、行前清单、可拖点位的城市漫步、一页一主题的社区频道、拍照翻译。
 
+**在线体验：<https://wangwangbobo.github.io/ios-app-demo/>** —— 打开就是可点的 App：五个 Tab、拖动路线点位、社区频道、拍照扫描、AI 助手都能真的操作。原生 SwiftUI 源码在 [`Lucia/`](Lucia/)。
+
 ## 界面
 
 - **行程**：北京行程、天气与穿搭提醒、今日路线、行前清单进度
@@ -32,6 +34,8 @@ open Lucia.xcodeproj
 ## 目录
 
 ```
+index.html           可交互网页版入口（GitHub Pages）
+app.css / app.js     网页版样式与交互
 Lucia/               SwiftUI 源码
 Lucia.xcodeproj      工程与共享 scheme
 AppIcon.png          1024 应用图标（打包时按尺寸注入）
