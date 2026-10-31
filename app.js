@@ -53,6 +53,7 @@ const ICONS = {
   download: '<path d="M12 3v12M7 10l5 5 5-5M4.5 20.5h15"/>',
   layers: '<path d="m12 3 9 5-9 5-9-5 9-5z"/><path d="m3 13 9 5 9-5"/>',
   sliders: '<path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/>',
+  grip: '<path d="M5 7h14M5 12h14M5 17h14"/>',
   updown: '<path d="M8 4v16M4.5 7.5 8 4l3.5 3.5M16 20V4M12.5 16.5 16 20l3.5-3.5"/>',
   move: '<path d="M12 3v18M3 12h18M9 6l3-3 3 3M9 18l3 3 3-3M6 9l-3 3 3 3M18 9l3 3-3 3"/>',
   star: '<path d="m12 3 2.8 5.8 6.2.9-4.5 4.4 1 6.2-5.5-3-5.5 3 1-6.2L3 9.7l6.2-.9L12 3z"/>',
@@ -550,7 +551,10 @@ function render(resetScroll = false) {
   renderDock();
   if (S.sheet) renderSheet();
   if (S.tab === 'plan') initMapDrag();
-  if (S.tab === 'trip' && S.tripEdit && !S.tripLive) initMapDrag('#tripMapBody', activeDay().stops);
+  if (S.tab === 'trip' && S.tripEdit && !S.tripLive) {
+    initMapDrag('#tripMapBody', activeDay().stops);
+    initTripStopDrag();
+  }
   clearInterval(heroTimer);
   if (S.tab === 'trip') initHeroCarousel();
   updateHash();
@@ -768,19 +772,16 @@ function tripView() {
 function tripStopRow(stop, index) {
   const colors = ['var(--mustard)', 'var(--pink)', 'var(--mint)', 'var(--peri)', 'var(--lime)', 'var(--sky)'];
   const selected = S.selected === stop.id;
-  const n = activeDay().stops.length;
-  return `<div class="trow ${selected ? 'on' : ''}">
+  return `<div class="trow ${selected ? 'on' : ''}" data-stop="${stop.id}" data-index="${index}">
     <span class="time">${esc(stop.time)}</span>
     <span class="num" style="background:${colors[index % colors.length]}">${index + 1}</span>
     <button class="info" data-act="select-stop" data-id="${stop.id}">
       <b>${esc(stop.name)} ${stop.tag ? tag(stop.tag, stop.tagStyle || 'soft') : ''}</b>
       <small>${esc(stop.duration || '45 min')} · ${index === 0 ? 'Start here' : 'on the route'}</small>
     </button>
-    ${S.tripEdit ? `<span class="tedit">
-      <button data-act="trip-up" data-index="${index}" ${index === 0 ? 'disabled' : ''} aria-label="Move up">${icon('up', 9)}</button>
-      <button data-act="trip-down" data-index="${index}" ${index === n - 1 ? 'disabled' : ''} aria-label="Move down">${icon('down', 9)}</button>
-      <button class="del" data-act="trip-del" data-index="${index}" ${n <= 2 ? 'disabled' : ''} aria-label="Remove stop">${icon('trash', 9)}</button>
-    </span>` : `<span class="grip">${icon('sliders', 10)}</span>`}
+    ${S.tripEdit
+      ? `<span class="tdrag"><span class="drag-grip" data-grip="${stop.id}" role="button" tabindex="0" aria-label="Drag ${esc(stop.name)} to reorder">${icon('grip', 13)}</span></span>`
+      : `<span class="grip">${icon('sliders', 10)}</span>`}
   </div>`;
 }
 
@@ -2355,6 +2356,93 @@ function similarSheet() {
   </div>`;
 }
 
+/* ---------- drag stops ---------- */
+let tripStopDrag = null;
+
+function initTripStopDrag() {
+  $$('.rc-stops [data-grip]').forEach((grip) => {
+    grip.addEventListener('pointerdown', onTripGripDown);
+  });
+}
+
+function onTripGripDown(event) {
+  if (event.button !== undefined && event.button !== 0) return;
+  const grip = event.currentTarget;
+  const row = grip.closest('.trow');
+  if (!row) return;
+  event.preventDefault();
+  event.stopPropagation();
+  const rows = $$('.rc-stops .trow');
+  tripStopDrag = {
+    row,
+    grip,
+    rows,
+    index: Number(row.dataset.index),
+    pointerId: event.pointerId,
+    startY: event.clientY,
+    target: Number(row.dataset.index),
+    active: false
+  };
+  try { grip.setPointerCapture(event.pointerId); } catch (_) {}
+  grip.addEventListener('pointermove', onTripGripMove, { passive: false });
+  grip.addEventListener('pointerup', onTripGripEnd);
+  grip.addEventListener('pointercancel', onTripGripEnd);
+}
+
+function onTripGripMove(event) {
+  const drag = tripStopDrag;
+  if (!drag || event.pointerId !== drag.pointerId) return;
+  const dy = event.clientY - drag.startY;
+  if (!drag.active) {
+    if (Math.abs(dy) < 5) return;
+    drag.active = true;
+    drag.row.classList.add('dragging');
+    drag.grip.parentElement.classList.add('armed');
+    drag.rows.forEach((r) => { if (r !== drag.row) r.style.transition = 'background .15s, border-color .15s'; });
+  }
+  event.preventDefault();
+  drag.row.style.transform = `translateY(${dy}px)`;
+  let target = 0;
+  drag.rows.forEach((r) => {
+    if (r === drag.row) return;
+    const rect = r.getBoundingClientRect();
+    if (event.clientY > rect.top + rect.height / 2) target += 1;
+  });
+  target = clamp(target, 0, drag.rows.length - 1);
+  if (target !== drag.target) {
+    drag.target = target;
+    drag.rows.forEach((r, i) => r.classList.toggle('drop-target', i === target && r !== drag.row));
+  }
+}
+
+function onTripGripEnd(event) {
+  const drag = tripStopDrag;
+  if (!drag || event.pointerId !== drag.pointerId) return;
+  tripStopDrag = null;
+  drag.grip.removeEventListener('pointermove', onTripGripMove);
+  drag.grip.removeEventListener('pointerup', onTripGripEnd);
+  drag.grip.removeEventListener('pointercancel', onTripGripEnd);
+  try { drag.grip.releasePointerCapture(event.pointerId); } catch (_) {}
+  if (!drag.active) return;
+  drag.row.style.transform = '';
+  drag.row.classList.remove('dragging');
+  drag.grip.parentElement.classList.remove('armed');
+  drag.rows.forEach((r) => { r.classList.remove('drop-target'); r.style.transition = ''; });
+  const blockClick = (ev) => { ev.preventDefault(); ev.stopPropagation(); };
+  document.addEventListener('click', blockClick, { capture: true, once: true });
+  setTimeout(() => document.removeEventListener('click', blockClick, true), 400);
+  if (drag.target === drag.index) return;
+  const stops = activeStops();
+  const slots = stops.map((s) => s.time);
+  const [stop] = stops.splice(drag.index, 1);
+  if (!stop) return;
+  stops.splice(clamp(drag.target, 0, stops.length), 0, stop);
+  stops.forEach((s, i) => { if (slots[i] != null) s.time = slots[i]; });
+  markPlanEdited();
+  render();
+  toast('Order updated · route recalculated', 'refresh');
+}
+
 /* ---------- reorder ---------- */
 function reorderSheet() {
   const stops = activeStops();
@@ -2778,10 +2866,12 @@ function moveStop(index, dir) {
   const stops = activeStops();
   const to = index + dir;
   if (to < 0 || to >= stops.length) return;
+  const slots = stops.map((s) => s.time);
   const body = $('.sheet-body');
   const top = body ? body.scrollTop : 0;
   const arr = stops.slice();
   [arr[index], arr[to]] = [arr[to], arr[index]];
+  arr.forEach((s, i) => { if (slots[i] != null) s.time = slots[i]; });
   if (stops === S.stops) S.stops = arr;
   else stops.splice(0, stops.length, ...arr);
   markPlanEdited();
@@ -2884,7 +2974,7 @@ document.addEventListener('click', (e) => {
       S.tripEdit = !S.tripEdit;
       if (S.tripEdit) S.selected = null;
       render();
-      toast(S.tripEdit ? 'Drag a numbered dot, or use the row buttons' : 'Stops saved', S.tripEdit ? 'hand' : 'check');
+      toast(S.tripEdit ? 'Drag a numbered dot or grab a row to reorder' : 'Stops saved', S.tripEdit ? 'hand' : 'check');
       break;
     case 'trip-add':
       openSheet('addStop');

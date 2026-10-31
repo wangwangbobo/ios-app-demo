@@ -1558,14 +1558,21 @@ img{max-width:100%;display:block}
 .trow .info small{display:block;font-size:8px;color:var(--ink3);margin-top:1px}
 .trow .grip{opacity:.4;display:grid;place-items:center;width:24px;flex:none}
 .trow .grip svg{width:10px;height:10px}
-.trow .tedit{display:flex;gap:3px;flex:none}
-.trow .tedit button{
-  width:24px;height:24px;border-radius:8px;border:1px solid var(--ink);background:var(--paper);
-  display:grid;place-items:center;box-shadow:0 1.5px 0 rgba(25,23,16,.14);
+.trow .tdrag{display:flex;align-items:center;flex:none}
+.trow .drag-grip{
+  width:30px;height:27px;border-radius:8px;border:1px solid rgba(25,23,16,.7);background:var(--paper);
+  display:grid;place-items:center;box-shadow:0 1.5px 0 rgba(25,23,16,.14);color:var(--ink);
+  cursor:grab;touch-action:none;-webkit-user-select:none;user-select:none;
 }
-.trow .tedit button:disabled{opacity:.3;box-shadow:none}
-.trow .tedit button.del{background:var(--coral-soft)}
-.trow .tedit svg{width:9px;height:9px}
+.trow .drag-grip svg{width:13px;height:13px;pointer-events:none}
+.trow .drag-grip:active,.trow .tdrag.armed .drag-grip{
+  background:var(--lime);cursor:grabbing;box-shadow:none;transform:translateY(1px);
+}
+.trow.dragging{
+  position:relative;z-index:8;background:var(--paper);border-color:rgba(25,23,16,.35);
+  box-shadow:0 10px 22px rgba(25,23,16,.2);
+}
+.trow.drop-target{background:var(--lime-soft);border-color:var(--coral);border-style:dashed}
 .rc-note{display:flex;gap:5px;padding:6px 13px 0;font-size:7.5px;line-height:1.5;color:var(--ink3)}
 .rc-note svg{width:9px;height:9px;flex:none;margin-top:1px}
 .rc-actions{display:flex;gap:5px;padding:9px 11px 11px}

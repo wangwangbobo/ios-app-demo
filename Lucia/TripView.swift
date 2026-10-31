@@ -4,6 +4,10 @@ struct TripView: View {
     @EnvironmentObject private var model: AppModel
     @State private var showAddStop = false
     @State private var showReorder = false
+    @State private var draggingStopID: UUID?
+    @State private var stopDragOffset: CGFloat = 0
+    @State private var stopDropTarget: Int?
+    @State private var stopFrames: [UUID: CGRect] = [:]
 
     var body: some View {
         Group {
@@ -238,9 +242,28 @@ struct TripView: View {
 
                 VStack(spacing: 2) {
                     ForEach(Array(model.currentStops.enumerated()), id: \.element.id) { index, stop in
-                        stopRow(index: index, stop: stop)
+                        let isDragging = draggingStopID == stop.id
+                        let showDrop = draggingStopID != nil
+                            && !isDragging
+                            && stopDropTarget == index
+                            && dragSourceIndex != index
+                        stopRow(index: index, stop: stop, isDropTarget: showDrop)
+                            .background(
+                                GeometryReader { proxy in
+                                    Color.clear.preference(
+                                        key: TripStopFrameKey.self,
+                                        value: [stop.id: proxy.frame(in: .named("tripStops"))]
+                                    )
+                                }
+                            )
+                            .offset(y: isDragging ? stopDragOffset : 0)
+                            .scaleEffect(isDragging ? 1.02 : 1)
+                            .shadow(color: isDragging ? Palette.ink.opacity(0.16) : .clear, radius: 11, x: 0, y: 6)
+                            .zIndex(isDragging ? 20 : 0)
                     }
                 }
+                .coordinateSpace(name: "tripStops")
+                .onPreferenceChange(TripStopFrameKey.self) { stopFrames = $0 }
 
                 Text(day.note)
                     .font(.system(size: 9.5, weight: .medium))
@@ -472,9 +495,10 @@ struct TripView: View {
 
     private let stopChipColors: [Color] = [Palette.mustard, Palette.pink, Palette.mint, Palette.periwinkle, Palette.lime, Palette.sky]
 
-    private func stopRow(index: Int, stop: RouteStop) -> some View {
+    private func stopRow(index: Int, stop: RouteStop, isDropTarget: Bool = false) -> some View {
         let selected = model.selectedStopID == stop.id
         let last = index == model.currentStops.count - 1
+        let isDragging = draggingStopID == stop.id
         return HStack(spacing: 9) {
             Text(stop.time)
                 .font(.system(size: 9.5, weight: .semibold, design: .monospaced))
@@ -512,7 +536,7 @@ struct TripView: View {
             Spacer(minLength: 4)
 
             if model.tripEdit {
-                editControls(index: index, stop: stop)
+                dragHandle(stop: stop, index: index)
             } else {
                 Image(systemName: selected ? "arrow.up.right" : "line.3.horizontal")
                     .font(.system(size: selected ? 9 : 10, weight: .bold))
@@ -523,11 +547,22 @@ struct TripView: View {
         .padding(.horizontal, 6)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(selected ? Palette.limeSoft : Color.clear)
+                .fill(
+                    selected ? Palette.limeSoft
+                        : (isDragging ? Palette.paper : (isDropTarget ? Palette.limeSoft.opacity(0.7) : Color.clear))
+                )
         )
         .overlay(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .strokeBorder(selected ? Palette.ink.opacity(0.5) : Color.clear, lineWidth: 1)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(
+                    Palette.accent,
+                    style: StrokeStyle(lineWidth: 1.4, dash: [4, 3])
+                )
+                .opacity(isDropTarget ? 1 : 0)
         )
         .contentShape(Rectangle())
         .onTapGesture {
@@ -539,34 +574,65 @@ struct TripView: View {
         }
     }
 
-    private func editControls(index: Int, stop: RouteStop) -> some View {
-        HStack(spacing: 4) {
-            miniControl(icon: "chevron.up", disabled: index == 0) {
-                model.shiftTripStop(stop.id, up: true)
-            }
-            miniControl(icon: "chevron.down", disabled: index == model.currentStops.count - 1) {
-                model.shiftTripStop(stop.id, up: false)
-            }
-            miniControl(icon: "trash", disabled: model.currentStops.count <= 2) {
-                model.deleteTripStop(stop.id)
-            }
-        }
+    private func dragHandle(stop: RouteStop, index: Int) -> some View {
+        Image(systemName: "line.3.horizontal")
+            .font(.system(size: 12, weight: .black))
+            .foregroundStyle(Palette.ink)
+            .frame(width: 30, height: 27)
+            .background(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(draggingStopID == stop.id ? Palette.lime : Palette.paper)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .strokeBorder(Palette.ink.opacity(0.7), lineWidth: 1)
+            )
+            .contentShape(Rectangle())
+            .gesture(stopDragGesture(stop: stop, index: index))
+            .accessibilityLabel("Drag to reorder")
     }
 
-    private func miniControl(icon: String, disabled: Bool, action: @escaping () -> Void) -> some View {
-        Button {
-            action()
-        } label: {
-            Image(systemName: icon)
-                .font(.system(size: 8, weight: .black))
-                .foregroundStyle(disabled ? Palette.ink3.opacity(0.4) : Palette.ink)
-                .frame(width: 23, height: 23)
-                .background(Circle().fill(Palette.paper))
-                .overlay(Circle().strokeBorder(disabled ? Palette.ink.opacity(0.16) : Palette.ink.opacity(0.7), lineWidth: 1))
+    private var dragSourceIndex: Int? {
+        guard let id = draggingStopID else { return nil }
+        return model.currentStops.firstIndex(where: { $0.id == id })
+    }
+
+    private func dropIndex(at y: CGFloat, excluding id: UUID) -> Int {
+        var index = 0
+        for stop in model.currentStops where stop.id != id {
+            guard let frame = stopFrames[stop.id] else { continue }
+            if y > frame.midY { index += 1 }
         }
-        .buttonStyle(PressableButtonStyle(scale: 0.92))
-        .disabled(disabled)
-        .accessibilityLabel(icon == "trash" ? "Remove stop" : "Move stop")
+        return min(index, max(0, model.currentStops.count - 1))
+    }
+
+    private func stopDragGesture(stop: RouteStop, index: Int) -> some Gesture {
+        DragGesture(minimumDistance: 2, coordinateSpace: .named("tripStops"))
+            .onChanged { value in
+                if draggingStopID != stop.id {
+                    draggingStopID = stop.id
+                    Haptics.tap()
+                }
+                stopDragOffset = value.translation.height
+                let target = stopFrames.isEmpty ? index : dropIndex(at: value.location.y, excluding: stop.id)
+                if target != stopDropTarget {
+                    stopDropTarget = target
+                    if target != index { Haptics.tap() }
+                }
+            }
+            .onEnded { _ in
+                let target = stopDropTarget
+                let id = draggingStopID
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.86)) {
+                    draggingStopID = nil
+                    stopDragOffset = 0
+                    stopDropTarget = nil
+                }
+                guard let target, let id else { return }
+                let source = model.currentStops.firstIndex(where: { $0.id == id }) ?? index
+                guard target != source else { return }
+                model.moveTripStopToIndex(id, to: target)
+            }
     }
 
     private func metaText(_ day: TripDay) -> String {
@@ -899,6 +965,13 @@ struct TripView: View {
 }
 
 // MARK: - Live trip
+
+private struct TripStopFrameKey: PreferenceKey {
+    static var defaultValue: [UUID: CGRect] = [:]
+    static func reduce(value: inout [UUID: CGRect], nextValue: () -> [UUID: CGRect]) {
+        value.merge(nextValue(), uniquingKeysWith: { $1 })
+    }
+}
 
 private struct LiveTripView: View {
     @EnvironmentObject private var model: AppModel

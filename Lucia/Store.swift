@@ -567,7 +567,7 @@ final class AppModel: ObservableObject {
         }
         Haptics.tap()
         toast(
-            tripEdit ? "Edit stops · drag pins or use the arrows" : "Edit done · times kept",
+            tripEdit ? "Edit stops · drag pins or grab a stop" : "Edit done · times kept",
             icon: tripEdit ? "hand.draw.fill" : "checkmark.circle.fill"
         )
     }
@@ -588,12 +588,13 @@ final class AppModel: ObservableObject {
 
     func moveTripStops(from source: IndexSet, to destination: Int) {
         var list = currentStops
+        let slots = list.map(\.time)
         list.move(fromOffsets: source, toOffset: destination)
-        Self.renumberTrip(&list)
+        Self.applyTimeSlots(&list, slots: slots)
         setCurrentStops(list)
         markTripEdited()
         Haptics.success()
-        toast("Order updated · times follow the stop", icon: "arrow.up.arrow.down")
+        toast("Order updated · route recalculated", icon: "arrow.up.arrow.down")
     }
 
     func shiftTripStop(_ id: UUID, up: Bool) {
@@ -601,20 +602,35 @@ final class AppModel: ObservableObject {
         guard let index = list.firstIndex(where: { $0.id == id }) else { return }
         let target = up ? index - 1 : index + 1
         guard list.indices.contains(target) else { return }
+        let slots = list.map(\.time)
         list.swapAt(index, target)
-        Self.renumberTrip(&list)
+        Self.applyTimeSlots(&list, slots: slots)
         setCurrentStops(list)
         markTripEdited()
         Haptics.tap()
-        toast("Order updated · times follow the stop", icon: "arrow.up.arrow.down")
+        toast("Order updated · route recalculated", icon: "arrow.up.arrow.down")
+    }
+
+    func moveTripStopToIndex(_ id: UUID, to target: Int) {
+        var list = currentStops
+        guard let source = list.firstIndex(where: { $0.id == id }), source != target else { return }
+        let slots = list.map(\.time)
+        let stop = list.remove(at: source)
+        list.insert(stop, at: min(max(target, 0), list.count))
+        Self.applyTimeSlots(&list, slots: slots)
+        setCurrentStops(list)
+        markTripEdited()
+        Haptics.success()
+        toast("Order updated · route recalculated", icon: "arrow.up.arrow.down")
     }
 
     func deleteTripStop(_ id: UUID) {
         var list = currentStops
         guard list.count > 2, let index = list.firstIndex(where: { $0.id == id }) else { return }
         let name = list[index].name
+        let slots = list.map(\.time)
         list.remove(at: index)
-        Self.renumberTrip(&list)
+        Self.applyTimeSlots(&list, slots: slots)
         setCurrentStops(list)
         markTripEdited()
         Haptics.tap()
@@ -738,11 +754,9 @@ final class AppModel: ObservableObject {
         return String(format: "%02d:%02d", total / 60, total % 60)
     }
 
-    private static func renumberTrip(_ list: inout [RouteStop]) {
-        var minutes = 9 * 60
-        for index in list.indices {
-            list[index].time = String(format: "%02d:%02d", minutes / 60, minutes % 60)
-            minutes += 50
+    private static func applyTimeSlots(_ list: inout [RouteStop], slots: [String]) {
+        for index in list.indices where index < slots.count {
+            list[index].time = slots[index]
         }
     }
 
