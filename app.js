@@ -1,4 +1,4 @@
-/* Lucia — interactive web edition */
+/* RoamChina — interactive web edition */
 (() => {
 'use strict';
 
@@ -74,83 +74,83 @@ function sparkleIcon(size = 14) {
 
 /* ---------- data ---------- */
 const STOPS = [
-  { id: 's1', name: '天安门广场', time: '09:00', duration: '30 分钟', x: 0.49, y: 0.86, tag: '拍照' },
-  { id: 's2', name: '故宫博物院', time: '09:40', duration: '3 小时', x: 0.52, y: 0.67, tag: '已订', tagStyle: 'ok' },
-  { id: 's3', name: '景山公园', time: '13:00', duration: '1 小时', x: 0.57, y: 0.56, tag: '登高' },
-  { id: 's4', name: '什刹海', time: '15:00', duration: '1.5 小时', x: 0.37, y: 0.38, tag: 'AI 建议', tagStyle: 'coral' },
-  { id: 's5', name: '南锣鼓巷', time: '16:30', duration: '45 分钟', x: 0.61, y: 0.31, tag: '咖啡' },
-  { id: 's6', name: '钟鼓楼', time: '17:30', duration: '45 分钟', x: 0.50, y: 0.20, tag: '日落' }
+  { id: 's1', name: 'Tiananmen Square', time: '09:00', duration: '30 min', x: 0.49, y: 0.86, tag: 'Photo' },
+  { id: 's2', name: 'Forbidden City', time: '09:40', duration: '3 hr', x: 0.52, y: 0.67, tag: 'Booked', tagStyle: 'ok' },
+  { id: 's3', name: 'Jingshan Park', time: '13:00', duration: '1 hr', x: 0.57, y: 0.56, tag: 'Hilltop' },
+  { id: 's4', name: 'Shichahai', time: '15:00', duration: '1.5 hr', x: 0.37, y: 0.38, tag: 'Lucia pick', tagStyle: 'coral' },
+  { id: 's5', name: 'Nanluoguxiang', time: '16:30', duration: '45 min', x: 0.61, y: 0.31, tag: 'Coffee' },
+  { id: 's6', name: 'Drum & Bell Towers', time: '17:30', duration: '45 min', x: 0.50, y: 0.20, tag: 'Sunset' }
 ];
 
 const SIMILAR = [
-  { title: '北京中轴线 · 经典半日', author: '@Ken', match: 94, stops: 6, distance: '4.2 km', duration: '约 5 小时', tags: ['经典', '步行', '日落'], highlight: '和你的 6 个点位重合 5 个，故宫段顺序一致。' },
-  { title: '胡同咖啡慢走 · 8 站', author: '@Lina', match: 87, stops: 8, distance: '6.4 km', duration: '约一整天', tags: ['咖啡', '拍照', '轻松'], highlight: '把南锣鼓巷换成 3 家咖啡店，适合下午出发。' },
-  { title: '景山落日 + 什刹海夜走', author: '@阿哲', match: 79, stops: 5, distance: '3.8 km', duration: '约 3 小时', tags: ['夜游', '日落', '本地'], highlight: '保留你的景山日落，回程沿什刹海走，少一次折返。' }
+  { title: 'Central Axis · Classic Half Day', author: '@Ken', match: 94, stops: 6, distance: '4.2 km', duration: '~5 hr', tags: ['Classic', 'Walking', 'Sunset'], highlight: 'Shares 5 of your 6 stops, and the palace stretch runs in the same order.' },
+  { title: 'Hutong Coffee Stroll · 8 stops', author: '@Lina', match: 87, stops: 8, distance: '6.4 km', duration: '~a full day', tags: ['Coffee', 'Photos', 'Easy'], highlight: 'Swaps Nanluoguxiang for three coffee stops — best if you start after lunch.' },
+  { title: 'Jingshan Sunset + Shichahai by Night', author: '@Zhe', match: 79, stops: 5, distance: '3.8 km', duration: '~3 hr', tags: ['Night', 'Sunset', 'Local'], highlight: 'Keeps your Jingshan sunset, then walks back along Shichahai — one less backtrack.' }
 ];
 
 const PLACES = [
-  { id: 'p1', kind: 'restaurant', title: '四季民福 · 故宫店', subtitle: '11:00 前到不排队 · 烤鸭', price: '¥150', tags: ['家庭', '本地人常去'], likes: '2.3k', symbol: 'fork', tint: 'mustard-soft', heat: 96, area: '东城 · 故宫', note: '下午三点以后去几乎不用等位，鸭皮还是脆的。', bestTime: '11:00 前 / 15:00 后' },
-  { id: 'p2', kind: 'restaurant', title: '满恒记 · 牛街', subtitle: '手切鲜羊肉 · 铜锅涮肉', price: '¥95', tags: ['本地', '排队'], likes: '1.9k', symbol: 'flame', tint: 'pink-soft', heat: 93, area: '西城 · 牛街', note: '手切羊肉配麻酱，本地人排队也愿意等。', bestTime: '17:00 前取号' },
-  { id: 'p3', kind: 'restaurant', title: '胖妹面庄 · 北新桥', subtitle: '小面 · 现炸酥肉', price: '¥45', tags: ['本地', '快吃'], likes: '886', symbol: 'fork', tint: 'mint-soft', heat: 88, area: '东城 · 北新桥', note: '小面要少辣，酥肉现炸的最好吃。', bestTime: '工作日 14:00' },
-  { id: 'p4', kind: 'restaurant', title: 'Metal Hands · 前门', subtitle: '胡同咖啡 · 自家烘焙', price: '¥45', tags: ['咖啡', '安静'], likes: '1.1k', symbol: 'coffee', tint: 'peri-soft', heat: 81, area: '东城 · 前门', note: '巷子里的安静咖啡馆，下午光线最好。', bestTime: '15:00–17:00' },
-  { id: 'p5', kind: 'gift', title: '稻香村 · 本地人伴手礼', subtitle: '避开网红款 · 8 件', price: '¥50–120', tags: ['伴手礼', '可托运'], likes: '1.7k', symbol: 'gift', tint: 'pink-soft', heat: 86, area: '各城区门店', note: '散装点心比礼盒更值得买，记得要新鲜日期。', bestTime: '上午补货' },
-  { id: 'p6', kind: 'gift', title: '故宫文创 · 冰箱贴', subtitle: '角楼系列 · 限定色', price: '¥39', tags: ['轻便', '限定'], likes: '604', symbol: 'sparkle', tint: 'mustard-soft', heat: 78, area: '故宫 · 神武门', note: '角楼冰箱贴经常断货，进门先买。', bestTime: '开馆后 1 小时' },
-  { id: 'p7', kind: 'gift', title: '同仁堂 · 酸梅汤原料', subtitle: '煮一壶老北京的夏天', price: '¥38', tags: ['可托运', '轻便'], likes: '512', symbol: 'leaf', tint: 'mint-soft', heat: 74, area: '东城 · 大栅栏', note: '夏天煮一壶，比瓶装饮料更像北京。', bestTime: '任何时间' },
-  { id: 'p8', kind: 'spot', title: '景山看日落', subtitle: '17:00 前上山 · 万春亭', price: '免费', tags: ['日落', '俯拍故宫'], likes: '3.4k', symbol: 'sun', tint: 'mustard-soft', heat: 94, area: '东城 · 景山', note: '17:00 前上万春亭，能拍到故宫全景。', bestTime: '日落前 40 分钟' },
-  { id: 'p9', kind: 'spot', title: '天坛公园', subtitle: '回音壁 · 古柏与祈年殿', price: '¥34', tags: ['建筑', '人少'], likes: '2.8k', symbol: 'building', tint: 'peri-soft', heat: 90, area: '东城 · 天坛', note: '从南门进，回音壁人少的时候最有意思。', bestTime: '开园后 1 小时' },
-  { id: 'p10', kind: 'spot', title: '北海公园', subtitle: '划船看白塔 · 亲子友好', price: '¥10', tags: ['亲子', '划船'], likes: '2.1k', symbol: 'wave', tint: 'sky-soft', heat: 82, area: '西城 · 北海', note: '租一条船，从湖上看白塔最舒服。', bestTime: '15:00 后' }
+  { id: 'p1', kind: 'restaurant', title: 'Siji Minfu · Forbidden City', subtitle: 'In before 11:00 · Peking duck', price: '¥150', tags: ['Family', 'Local favorite'], likes: '2.3k', symbol: 'fork', tint: 'mustard-soft', heat: 96, area: 'Dongcheng · Forbidden City', note: 'Come after three and there is barely a wait, with the skin still crisp.', bestTime: 'Before 11:00 / after 15:00' },
+  { id: 'p2', kind: 'restaurant', title: 'Manhengji · Niujie', subtitle: 'Hand-cut lamb · Copper-pot hotpot', price: '¥95', tags: ['Local', 'Queues'], likes: '1.9k', symbol: 'flame', tint: 'pink-soft', heat: 93, area: 'Xicheng · Niujie', note: 'Hand-cut lamb with sesame dip — locals queue, and happily.', bestTime: 'Take a number before 17:00' },
+  { id: 'p3', kind: 'restaurant', title: 'Pangmei Noodle House · Beixinqiao', subtitle: 'Chongqing noodles · Crispy pork', price: '¥45', tags: ['Local', 'Quick bite'], likes: '886', symbol: 'fork', tint: 'mint-soft', heat: 88, area: 'Dongcheng · Beixinqiao', note: 'Ask for mild heat; the crispy pork is best straight from the wok.', bestTime: 'Weekdays at 14:00' },
+  { id: 'p4', kind: 'restaurant', title: 'Metal Hands · Qianmen', subtitle: 'Hutong coffee · House roast', price: '¥45', tags: ['Coffee', 'Quiet'], likes: '1.1k', symbol: 'coffee', tint: 'peri-soft', heat: 81, area: 'Dongcheng · Qianmen', note: 'A quiet café down a side alley; the afternoon light is the good part.', bestTime: '15:00–17:00' },
+  { id: 'p5', kind: 'gift', title: 'Daoxiangcun · Local gift sweets', subtitle: 'Skip the tourist boxes · 8 picks', price: '¥50–120', tags: ['Gifts', 'Check-in ok'], likes: '1.7k', symbol: 'gift', tint: 'pink-soft', heat: 86, area: 'Branches across town', note: 'Loose pastries beat the gift boxes — and check the date stamp.', bestTime: 'Morning restock' },
+  { id: 'p6', kind: 'gift', title: 'Palace Shop · Fridge magnets', subtitle: 'Corner tower series · Limited colors', price: '¥39', tags: ['Light', 'Limited'], likes: '604', symbol: 'sparkle', tint: 'mustard-soft', heat: 78, area: 'Forbidden City · Shenwu Gate', note: 'The corner-tower magnets sell out; buy on your way in.', bestTime: 'Within an hour of opening' },
+  { id: 'p7', kind: 'gift', title: 'Tongrentang · Sour plum mix', subtitle: 'Brew a pot of old Beijing summer', price: '¥38', tags: ['Check-in ok', 'Light'], likes: '512', symbol: 'leaf', tint: 'mint-soft', heat: 74, area: 'Dongcheng · Dashilar', note: 'Brew a pot in summer — it tastes more like Beijing than anything bottled.', bestTime: 'Any time' },
+  { id: 'p8', kind: 'spot', title: 'Sunset at Jingshan', subtitle: 'Up before 17:00 · Wanchun Pavilion', price: 'Free', tags: ['Sunset', 'Palace views'], likes: '3.4k', symbol: 'sun', tint: 'mustard-soft', heat: 94, area: 'Dongcheng · Jingshan', note: 'Reach Wanchun Pavilion before 17:00 for the full palace panorama.', bestTime: '40 min before sunset' },
+  { id: 'p9', kind: 'spot', title: 'Temple of Heaven Park', subtitle: 'Echo Wall · Old cypresses, Prayer Hall', price: '¥34', tags: ['Architecture', 'Quiet'], likes: '2.8k', symbol: 'building', tint: 'peri-soft', heat: 90, area: 'Dongcheng · Temple of Heaven', note: 'Enter by the south gate; the Echo Wall is best when it is quiet.', bestTime: 'An hour after opening' },
+  { id: 'p10', kind: 'spot', title: 'Beihai Park', subtitle: 'Boat out to the White Dagoba · Family friendly', price: '¥10', tags: ['Family', 'Boating'], likes: '2.1k', symbol: 'wave', tint: 'sky-soft', heat: 82, area: 'Xicheng · Beihai', note: 'Rent a boat — the White Dagoba looks best from the water.', bestTime: 'After 15:00' }
 ];
 
 const EVENTS = [
-  { id: 'e1', title: '胡同夜市 · 免费入场', subtitle: '手作、黑胶与小吃，本地摊主出摊', date: '10/18 周六', time: '18:00 – 22:00', place: '钟鼓楼广场 · 距酒店 35 分钟', host: '@Lucia 社区', fee: '免费', attendees: 128, tint: 'coral' },
-  { id: 'e2', title: '白塔寺旧物市集', subtitle: '老相机、旧书与手冲咖啡，摊主多是本地藏家', date: '11/01 周六', time: '13:00 – 19:00', place: '白塔寺东夹道 · 距酒店 20 分钟', host: '@胡同档案', fee: '免费', attendees: 64, tint: 'mustard' },
-  { id: 'e3', title: '中轴线夜骑 · 自备车', subtitle: '从永定门骑到钟鼓楼，领队讲城楼故事', date: '11/02 周日', time: '19:00', place: '永定门公园北门', host: '@Ken', fee: '¥20', attendees: 37, tint: 'peri' }
+  { id: 'e1', title: 'Hutong Night Market · Free entry', subtitle: 'Handmade goods, vinyl and snacks from local stalls', date: '10/18 Sat', time: '18:00 – 22:00', place: 'Drum & Bell Towers square · 35 min from hotel', host: '@RoamChina Community', fee: 'Free', attendees: 128, tint: 'coral' },
+  { id: 'e2', title: 'BaiTa Temple Flea Market', subtitle: 'Old cameras, secondhand books and pour-over coffee, run by local collectors', date: '11/01 Sat', time: '13:00 – 19:00', place: 'BaiTa Temple east alley · 20 min from hotel', host: '@Hutong Archive', fee: 'Free', attendees: 64, tint: 'mustard' },
+  { id: 'e3', title: 'Central Axis Night Ride · BYO bike', subtitle: 'From Yongdingmen to the Drum & Bell Towers, with gate stories from the lead', date: '11/02 Sun', time: '19:00', place: 'Yongdingmen Park, north gate', host: '@Ken', fee: '¥20', attendees: 37, tint: 'peri' }
 ];
 
 const ATTRACTIONS = [
-  { id: 'a1', name: '故宫博物院', date: '10/15', week: '周三', time: '09:00', people: '2 人', price: '¥120', booked: true, code: 'LUCIA-8821', note: '午门进 · 神武门出' },
-  { id: 'a2', name: '八达岭长城', date: '10/16', week: '周四', time: '08:30', people: '2 人', price: '¥80', booked: false, note: '需实名 · 缆车另计' },
-  { id: 'a3', name: '颐和园', date: '10/17', week: '周五', time: '09:00', people: '2 人', price: '¥60', booked: false, note: '联票 · 建议东宫门进' },
-  { id: 'a4', name: '国家博物馆', date: '10/17', week: '周五', time: '14:00', people: '2 人', price: '免费', booked: false, note: '需提前实名预约' }
+  { id: 'a1', name: 'Forbidden City', date: '10/15', week: 'Wed', time: '09:00', people: '2 guests', price: '¥120', booked: true, code: 'RC-8821', note: 'In at Meridian Gate · out at Shenwu Gate' },
+  { id: 'a2', name: 'Badaling Great Wall', date: '10/16', week: 'Thu', time: '08:30', people: '2 guests', price: '¥80', booked: false, note: 'ID required · cable car extra' },
+  { id: 'a3', name: 'Summer Palace', date: '10/17', week: 'Fri', time: '09:00', people: '2 guests', price: '¥60', booked: false, note: 'Combined ticket · East Palace Gate is easiest' },
+  { id: 'a4', name: 'National Museum of China', date: '10/17', week: 'Fri', time: '14:00', people: '2 guests', price: 'Free', booked: false, note: 'Real-name booking in advance' }
 ];
 
 const TRIP_PLANS = [
   {
-    date: '10/15', week: '周三', day: 1, title: '中轴线 · 故宫与胡同',
-    meta: '6 站 · 4.2 km · 约 5 小时', tag: '今天', tagStyle: 'coral',
+    date: '10/15', week: 'Wed', day: 1, title: 'Central Axis · Palace and Hutongs',
+    meta: '6 stops · 4.2 km · ~5 hr', tag: 'Today', tagStyle: 'coral',
     stops: [
-      { name: '天安门广场', time: '09:00' }, { name: '故宫博物院', time: '09:40' },
-      { name: '景山万春亭', time: '12:30' }, { name: '什刹海', time: '15:00' },
-      { name: '南锣鼓巷', time: '16:30' }, { name: '钟鼓楼', time: '17:30' }
+      { name: 'Tiananmen Square', time: '09:00' }, { name: 'Forbidden City', time: '09:40' },
+      { name: 'Jingshan, Wanchun Pavilion', time: '12:30' }, { name: 'Shichahai', time: '15:00' },
+      { name: 'Nanluoguxiang', time: '16:30' }, { name: 'Drum & Bell Towers', time: '17:30' }
     ],
-    note: '故宫 09:00 已预约 · 午门进，神武门出'
+    note: 'Forbidden City booked for 09:00 · in at Meridian Gate, out at Shenwu Gate'
   },
   {
-    date: '10/16', week: '周四', day: 2, title: '长城一日 · 八达岭',
-    meta: '3 站 · 包车往返 · 约全天', tag: '已约车', tagStyle: 'blue',
+    date: '10/16', week: 'Thu', day: 2, title: 'Great Wall Day · Badaling',
+    meta: '3 stops · private car both ways · ~full day', tag: 'Car booked', tagStyle: 'blue',
     stops: [
-      { name: '酒店出发', time: '07:30' }, { name: '八达岭长城', time: '09:00' },
-      { name: '奥森公园', time: '16:30' }
+      { name: 'Leave the hotel', time: '07:30' }, { name: 'Badaling Great Wall', time: '09:00' },
+      { name: 'Olympic Forest Park', time: '16:30' }
     ],
-    note: '带身份证 · 山上风大，加一件外套'
+    note: 'Bring your passport · it is windy up there, pack an extra layer'
   },
   {
-    date: '10/17', week: '周五', day: 3, title: '皇家园林 · 颐和园与国博',
-    meta: '4 站 · 地铁 4 号线 · 约 8 小时', tag: '门票待约', tagStyle: 'soft',
+    date: '10/17', week: 'Fri', day: 3, title: 'Imperial Gardens · Palace & Museum',
+    meta: '4 stops · Metro Line 4 · ~8 hr', tag: 'Tickets to book', tagStyle: 'soft',
     stops: [
-      { name: '颐和园', time: '09:00' }, { name: '五道口午餐', time: '12:30' },
-      { name: '国家博物馆', time: '14:00' }, { name: '前门大街', time: '18:00' }
+      { name: 'Summer Palace', time: '09:00' }, { name: 'Lunch in Wudaokou', time: '12:30' },
+      { name: 'National Museum of China', time: '14:00' }, { name: 'Qianmen Street', time: '18:00' }
     ],
-    note: '国博需提前实名预约，记得带身份证'
+    note: 'The National Museum needs a real-name booking — bring your passport'
   },
   {
-    date: '10/18', week: '周六', day: 4, title: '胡同慢走 · 返程',
-    meta: '4 站 · 步行 3.1 km · 约 4 小时', tag: '返程', tagStyle: 'ok',
+    date: '10/18', week: 'Sat', day: 4, title: 'Slow Hutongs · Departure',
+    meta: '4 stops · 3.1 km on foot · ~4 hr', tag: 'Departure', tagStyle: 'ok',
     stops: [
-      { name: '南锣鼓巷', time: '09:30' }, { name: '钟鼓楼', time: '11:00' },
-      { name: '稻香村采购', time: '13:00' }, { name: '首都机场', time: '16:00' }
+      { name: 'Nanluoguxiang', time: '09:30' }, { name: 'Drum & Bell Towers', time: '11:00' },
+      { name: 'Daoxiangcun run', time: '13:00' }, { name: 'Beijing Capital Airport', time: '16:00' }
     ],
-    note: '航班 18:40 · 提前 2.5 小时到机场'
+    note: 'Flight at 18:40 · be at the airport 2.5 hr ahead'
   }
 ];
 
@@ -173,18 +173,18 @@ const PHRASES = [
 ];
 
 const CHECKLIST = [
-  { id: 'c1', title: '护照有效期 ≥ 6 个月', meta: '已确认 · 2027/03 到期', cat: '证件', phase: '出发前', status: 'done', right: '已核验' },
-  { id: 'c2', title: '往返机票 & 酒店', meta: '已出票 · 王府井 3 晚', cat: '证件', phase: '出发前', status: 'done', right: '查看' },
-  { id: 'c3', title: '旅行保险 · 生效中', meta: '安联 · 保额 ¥80 万', cat: '证件', phase: '出发前', status: 'done', right: '已生效' },
-  { id: 'c4', title: '故宫门票 · 10/15 09:00', meta: '成人 ×2 · ¥120 · 余票 812', cat: '门票', phase: '出发前', status: 'action', action: '去预约', tag: '余票紧张', tone: 'warn' },
-  { id: 'c5', title: '长城 · 10/16 08:30', meta: '八达岭 · 需预约缆车', cat: '门票', phase: '出发前', status: 'action', action: '预约', tag: '待预约', tone: 'soft' },
-  { id: 'c6', title: '颐和园 · 10/17 09:00', meta: '联票 ¥60 / 人', cat: '门票', phase: '出发前', status: 'todo', action: '购票' },
-  { id: 'c7', title: '国家博物馆 · 10/17 14:00', meta: '免费 · 需实名预约', cat: '门票', phase: '出发前', status: 'todo', action: '预约' },
-  { id: 'c8', title: 'eSIM / 中国手机号', meta: '3 家方案对比 · 从 ¥29 起', cat: '网络', phase: '落地当天', status: 'action', action: '选套餐' },
-  { id: 'c9', title: 'VPN', meta: '境内应用商店无法下载', cat: '网络', phase: '落地当天', status: 'action', action: '教程', tag: '提前装', tone: 'warn' },
-  { id: 'c10', title: '离线地图与翻译包', meta: '北京 · 86 句应急表达', cat: '网络', phase: '落地当天', status: 'done', right: '已下载' },
-  { id: 'c11', title: '支付宝 / 微信支付', meta: '已绑定 VISA · 单笔 ≤ ¥5,000', cat: '交通', phase: '落地当天', status: 'done', right: '已完成' },
-  { id: 'c12', title: '交通卡 / 地铁乘车码', meta: 'Apple 钱包 · 已开通', cat: '交通', phase: '落地当天', status: 'done', right: '已开通' }
+  { id: 'c1', title: 'Passport valid 6+ months', meta: 'Confirmed · expires 2027/03', cat: 'Documents', phase: 'Before you fly', status: 'done', right: 'Verified' },
+  { id: 'c2', title: 'Flights & hotel', meta: 'Ticketed · 3 nights in Wangfujing', cat: 'Documents', phase: 'Before you fly', status: 'done', right: 'View' },
+  { id: 'c3', title: 'Travel insurance · Active', meta: 'Allianz · ¥800k cover', cat: 'Documents', phase: 'Before you fly', status: 'done', right: 'Active' },
+  { id: 'c4', title: 'Forbidden City · 10/15 09:00', meta: '2 adults · ¥120 · 812 left', cat: 'Tickets', phase: 'Before you fly', status: 'action', action: 'Book now', tag: 'Filling up', tone: 'warn' },
+  { id: 'c5', title: 'Great Wall · 10/16 08:30', meta: 'Badaling · cable car needs booking', cat: 'Tickets', phase: 'Before you fly', status: 'action', action: 'Book', tag: 'To book', tone: 'soft' },
+  { id: 'c6', title: 'Summer Palace · 10/17 09:00', meta: 'Combined ticket ¥60 / person', cat: 'Tickets', phase: 'Before you fly', status: 'todo', action: 'Buy tickets' },
+  { id: 'c7', title: 'National Museum · 10/17 14:00', meta: 'Free · real-name booking', cat: 'Tickets', phase: 'Before you fly', status: 'todo', action: 'Book' },
+  { id: 'c8', title: 'eSIM / Chinese number', meta: '3 plans compared · from ¥29', cat: 'Connectivity', phase: 'Arrival day', status: 'action', action: 'Pick a plan' },
+  { id: 'c9', title: 'VPN', meta: 'Not on the local app stores', cat: 'Connectivity', phase: 'Arrival day', status: 'action', action: 'How-to', tag: 'Install early', tone: 'warn' },
+  { id: 'c10', title: 'Offline maps & phrasebook', meta: 'Beijing · 86 emergency phrases', cat: 'Connectivity', phase: 'Arrival day', status: 'done', right: 'Downloaded' },
+  { id: 'c11', title: 'Alipay / WeChat Pay', meta: 'VISA linked · up to ¥5,000 per payment', cat: 'Transit', phase: 'Arrival day', status: 'done', right: 'Done' },
+  { id: 'c12', title: 'Transit card / metro QR', meta: 'Apple Wallet · activated', cat: 'Transit', phase: 'Arrival day', status: 'done', right: 'Active' }
 ];
 
 const LIVE = [
@@ -212,7 +212,7 @@ const S = {
   selected: null,
   editMode: false,
   layer: 'mine',
-  routeName: '北京中轴线 · 草稿',
+  routeName: 'Central Axis · Draft',
   aiVisible: true,
   expandedPlan: 0,
   applied: false,
@@ -238,13 +238,13 @@ const S = {
   sheet: null,
   sheetData: null,
   checklist: CHECKLIST.map((c) => ({ ...c })),
-  checklistCat: '全部',
+  checklistCat: 'All',
   notifications: true,
   autoplay: false,
-  assistantContext: '行程 · 10/15 故宫',
-  messages: [{ role: 'assistant', text: '我在。行程、路线、翻译、清单都可以问我。' }],
+  assistantContext: 'Trip · 10/15 Forbidden City',
+  messages: [{ role: 'assistant', text: "I'm here. Ask me about your route, tickets, translation or checklist." }],
   thinking: false,
-  draft: { title: '', date: '11/08 周六', time: '14:00 – 18:00', place: '', fee: '免费', note: '' },
+  draft: { title: '', date: '11/08 Sat', time: '14:00 – 18:00', place: '', fee: 'Free', note: '' },
   toastTimer: null,
   scanTimer: null,
   micTimer: null,
@@ -371,18 +371,18 @@ function mapBase() {
 
 /* ---------- shell render ---------- */
 const TABS = [
-  { id: 'trip', label: '行程', icon: 'home', badge: 0 },
-  { id: 'plan', label: '计划', icon: 'map', badge: 1 },
-  { id: 'forum', label: '社区', icon: 'compass', badge: 0 },
-  { id: 'translate', label: '翻译', icon: 'chat', badge: 0 },
-  { id: 'me', label: '我的', icon: 'user', badge: 0 }
+  { id: 'trip', label: 'Trip', icon: 'home', badge: 0 },
+  { id: 'plan', label: 'Plan', icon: 'map', badge: 1 },
+  { id: 'forum', label: 'Community', icon: 'compass', badge: 0 },
+  { id: 'translate', label: 'Translate', icon: 'chat', badge: 0 },
+  { id: 'me', label: 'Me', icon: 'user', badge: 0 }
 ];
 const TAB_CTX = {
-  trip: '行程 · 10/15 故宫',
-  plan: '计划 · 北京中轴线',
-  forum: '社区 · 餐厅与路线',
-  translate: '翻译 · 应急语句',
-  me: '我的 · 订单与离线包'
+  trip: 'Trip · 10/15 Forbidden City',
+  plan: 'Plan · Central Axis',
+  forum: 'Community · Food & routes',
+  translate: 'Translate · Emergency phrases',
+  me: 'Me · Bookings & offline packs'
 };
 
 function renderDock() {
@@ -391,7 +391,7 @@ function renderDock() {
       ${icon(t.icon, 18)}<span>${t.label}</span>
       ${t.badge ? '<i class="badge" aria-hidden="true"></i>' : ''}
     </button>`).join('') + `
-    <button class="orb" data-act="assistant" data-ctx="${TAB_CTX[S.tab]}" aria-label="问问 Lucia">${sparkleIcon(21)}</button>`;
+    <button class="orb" data-act="assistant" data-ctx="${TAB_CTX[S.tab]}" aria-label="Ask Lucia">${sparkleIcon(21)}</button>`;
 }
 
 const screens = {
@@ -433,59 +433,59 @@ function tripView() {
   return `
     <header class="top">
       <div>
-        <div class="eyebrow"><span class="eyebrow-line"></span>我的旅行 / BEIJING ${sparkleIcon(8)}</div>
-        <div class="h1row"><div class="h1">北京</div>${tag('4 天 3 晚', 'coral')}</div>
-        <div class="meta">10/15 – 10/18 · 2 人同行</div>
+        <div class="eyebrow"><span class="eyebrow-line"></span>My trip / BEIJING ${sparkleIcon(8)}</div>
+        <div class="h1row"><div class="h1">Beijing</div>${tag('4 days, 3 nights', 'coral')}</div>
+        <div class="meta">10/15 – 10/18 · 2 travelers</div>
       </div>
       <div class="top-right">
         <div class="row">
-          <button class="icon-btn" data-act="assistant" data-ctx="行程 · 通知与提醒" aria-label="通知">${icon('bell', 15)}</button>
+          <button class="icon-btn" data-act="assistant" data-ctx="Trip · Notifications and reminders" aria-label="Notifications">${icon('bell', 15)}</button>
           <div class="avatar">W</div>
         </div>
-        <div class="meta">今天 · 第 1 天</div>
+        <div class="meta">Today · Day 1</div>
       </div>
     </header>
 
     <div class="section-title" style="margin-top:18px">
-      <div class="st-left"><span class="idx">01</span><h2>当日信息</h2></div>
-      <span class="today-date">10/15 · 周三</span>
+      <div class="st-left"><span class="idx">01</span><h2>Today at a glance</h2></div>
+      <span class="today-date">10/15 · Wed</span>
     </div>
 
     <article class="card today-card">
       <div class="cityscape">
         ${cityscape()}
         <div class="scene-chips">
-          <span class="weather">${icon('sun', 12)}22° <small>晴 · 11–22°</small></span>
-          ${tag('今天 · 第 1 天 / 4', 'dark')}
+          <span class="weather">${icon('sun', 12)}22° <small>Clear · 11–22°</small></span>
+          ${tag('Today · Day 1 of 4', 'dark')}
         </div>
       </div>
       <div class="hero-foot">
         <div class="grow">
-          <div class="h3">中轴线 · 故宫与胡同</div>
+          <div class="h3">Central Axis · Palace and Hutongs</div>
           <div class="mini">
-            <span>${icon('pin', 9)} 6 站</span>
+            <span>${icon('pin', 9)} 6 stops</span>
             <span>${icon('walk', 9)} 4.2 km</span>
-            <span>${icon('clock', 9)} 约 5 小时</span>
+            <span>${icon('clock', 9)} ~5 hr</span>
           </div>
         </div>
-        <button class="round-lime" data-act="tab" data-tab="plan" aria-label="打开地图">${icon('arrowur', 14)}</button>
+        <button class="round-lime" data-act="tab" data-tab="plan" aria-label="Open map">${icon('arrowur', 14)}</button>
       </div>
       <div class="today-facts">
-        <button class="fact" data-act="assistant" data-ctx="门票 · 故宫 10/15 09:00">
-          ${icon('ticket', 11)}<span><b>故宫 09:00</b><small>已预约 · 午门进</small></span>
+        <button class="fact" data-act="assistant" data-ctx="Tickets · Forbidden City 10/15 09:00">
+          ${icon('ticket', 11)}<span><b>Palace 09:00</b><small>Booked · Meridian Gate</small></span>
         </button>
-        <button class="fact" data-act="assistant" data-ctx="天气 · 北京 10/15">
-          ${icon('sun', 11)}<span><b>11° – 22°</b><small>早晚温差 11℃</small></span>
+        <button class="fact" data-act="assistant" data-ctx="Weather · Beijing 10/15">
+          ${icon('sun', 11)}<span><b>11° – 22°</b><small>Chilly mornings</small></span>
         </button>
-        <button class="fact" data-act="assistant" data-ctx="行程 · 今日日落 17:18">
-          ${icon('clock', 11)}<span><b>日落 17:18</b><small>景山万春亭</small></span>
+        <button class="fact" data-act="assistant" data-ctx="Trip · sunset today 17:18">
+          ${icon('clock', 11)}<span><b>Sunset 17:18</b><small>Wanchun Pavilion</small></span>
         </button>
       </div>
     </article>
 
     <div class="section-title">
-      <div class="st-left"><span class="idx">02</span><h2>旅行计划</h2></div>
-      <button class="link" data-act="assistant" data-ctx="行程 · 调整旅行计划">问 Lucia ${icon('arrowur', 8)}</button>
+      <div class="st-left"><span class="idx">02</span><h2>Your days</h2></div>
+      <button class="link" data-act="assistant" data-ctx="Trip · Adjust the plan">Ask Lucia ${icon('arrowur', 8)}</button>
     </div>
 
     <div class="trip-plans">
@@ -509,9 +509,9 @@ function tripPlanCard(p, index) {
       <div class="tp-stops">${p.stops.map((s) => `<div class="tp-stop"><i></i><b>${esc(s.name)}</b><span>${esc(s.time)}</span></div>`).join('')}</div>
       <div class="tp-note">${esc(p.note)}</div>
       <div class="tp-foot">
-        <button class="tp-open" data-act="tab" data-tab="plan">打开地图 ${icon('arrowur', 8)}</button>
-        <button class="tp-open ghost" data-act="assistant" data-ctx="行程 · ${esc(p.title)}">问 Lucia ${sparkleIcon(8)}</button>
-        <span class="tp-hint">${p.stops.length} 个停留点</span>
+        <button class="tp-open" data-act="tab" data-tab="plan">Open map ${icon('arrowur', 8)}</button>
+        <button class="tp-open ghost" data-act="assistant" data-ctx="Trip · ${esc(p.title)}">Ask Lucia ${sparkleIcon(8)}</button>
+        <span class="tp-hint">${p.stops.length} stops</span>
       </div>
     </div>` : ''}
   </article>`;
@@ -545,12 +545,12 @@ function planView() {
     <div class="map">
       ${mapBase()}
       <div class="map-wash"></div>
-      <span class="map-label" style="left:20%;top:31%">什刹海</span>
-      <span class="map-label" style="left:71%;top:27%">南锣鼓巷</span>
-      <span class="map-label" style="left:68%;top:50%">故宫</span>
-      <span class="map-label" style="left:71%;top:40%">景山</span>
+      <span class="map-label" style="left:20%;top:31%">Shichahai</span>
+      <span class="map-label" style="left:71%;top:27%">Nanluoguxiang</span>
+      <span class="map-label" style="left:68%;top:50%">Forbidden City</span>
+      <span class="map-label" style="left:71%;top:40%">Jingshan</span>
       ${collaborator('Lina', 'left:74%;top:33%')}
-      ${collaborator('周', 'left:27%;top:58%', true)}
+      ${collaborator('Zhou', 'left:27%;top:58%', true)}
       <div class="map-body" id="mapBody">
         ${communityOverlay()}
         ${crowdOverlay()}
@@ -560,29 +560,29 @@ function planView() {
         </svg>
         ${stops.map((s, i) => pinHTML(s, i)).join('')}
       </div>
-      ${S.editMode ? `<div class="map-hint">${icon('hand', 9)} ${icon('move', 8)} 拖动编号圆点，路线会跟着重算</div>` : ''}
+      ${S.editMode ? `<div class="map-hint">${icon('hand', 9)} ${icon('move', 8)} Drag a numbered dot — the route recalculates</div>` : ''}
     </div>
 
     <header class="plan-head">
       <div class="spread" style="align-items:flex-start">
         <div>
-          <div class="eyebrow"><span class="eyebrow-line"></span>我的计划 / CITYWALK <span class="tag lime" style="transform:rotate(3deg)">DAY 02</span></div>
+          <div class="eyebrow"><span class="eyebrow-line"></span>My plan / CITYWALK <span class="tag lime" style="transform:rotate(3deg)">DAY 02</span></div>
           <div class="name">${esc(S.routeName)}</div>
-          <div class="meta">${stops.length} 站 · 4.2 km · 约 5 小时</div>
+          <div class="meta">${stops.length} stops · 4.2 km · ~5 hr</div>
         </div>
         <div class="plan-head-right">
-          <button class="plan-note" data-act="notes">${icon('doc', 10)}生成笔记</button>
+          <button class="plan-note" data-act="notes">${icon('doc', 10)}Make a note</button>
           <div class="row" style="justify-content:flex-end;gap:6px">
-            <div class="avatar-stack"><div class="avatar sm">林</div><div class="avatar sm pink">周</div></div>
-            <button class="icon-btn" data-act="share-route" aria-label="分享路线" style="width:31px;height:31px">${icon('share', 13)}</button>
+            <div class="avatar-stack"><div class="avatar sm">L</div><div class="avatar sm pink">Z</div></div>
+            <button class="icon-btn" data-act="share-route" aria-label="Share route" style="width:31px;height:31px">${icon('share', 13)}</button>
           </div>
         </div>
       </div>
       <div class="chips">
-        <button class="chip ${S.layer === 'mine' ? 'on' : ''}" data-act="layer" data-layer="mine">我的路线</button>
-        <button class="chip ${S.layer === 'community' ? 'on' : ''}" data-act="layer" data-layer="community">社区 3</button>
-        <button class="chip ${S.layer === 'crowd' ? 'on' : ''}" data-act="layer" data-layer="crowd">客流</button>
-        ${S.editMode ? `<span class="chip lime" style="margin-left:auto">${icon('hand', 9)} 拖动点位</span>` : ''}
+        <button class="chip ${S.layer === 'mine' ? 'on' : ''}" data-act="layer" data-layer="mine">My route</button>
+        <button class="chip ${S.layer === 'community' ? 'on' : ''}" data-act="layer" data-layer="community">Community 3</button>
+        <button class="chip ${S.layer === 'crowd' ? 'on' : ''}" data-act="layer" data-layer="crowd">Crowds</button>
+        ${S.editMode ? `<span class="chip lime" style="margin-left:auto">${icon('hand', 9)} Drag stops</span>` : ''}
       </div>
     </header>
 
@@ -590,21 +590,21 @@ function planView() {
       <div class="grab"></div>
       <div class="panel-top">
         <div>
-          <h3>${stops.length} 站 · 4.2 km</h3>
-          <div class="meta">${S.editMode ? '拖动编号圆点 · 路线实时重算' : '约 5 小时 · 步行 + 地铁'}</div>
+          <h3>${stops.length} stops · 4.2 km</h3>
+          <div class="meta">${S.editMode ? 'Drag the numbered dots · route updates live' : '~5 hr · walk + metro'}</div>
         </div>
         <div class="actions">
-          <button class="small-chip ${S.editMode ? 'on' : ''}" data-act="toggle-edit">${icon(S.editMode ? 'check' : 'hand', 9)}${S.editMode ? '完成' : '调点位'}</button>
-          <button class="small-chip" data-act="reorder">${icon('updown', 9)}编辑顺序</button>
+          <button class="small-chip ${S.editMode ? 'on' : ''}" data-act="toggle-edit">${icon(S.editMode ? 'check' : 'hand', 9)}${S.editMode ? 'Done' : 'Adjust stops'}</button>
+          <button class="small-chip" data-act="reorder">${icon('updown', 9)}Reorder</button>
         </div>
       </div>
 
       ${S.aiVisible && !S.editMode ? `
       <div class="ai-bar">
         <span class="spark">${sparkleIcon(10)}</span>
-        <span>Lucia 建议：什刹海挪到 13:00</span>
-        <span class="note">少走 1.2 km</span>
-        <button data-act="apply-ai">应用</button>
+        <span>Lucia: move Shichahai to 13:00</span>
+        <span class="note">1.2 km less</span>
+        <button data-act="apply-ai">Apply</button>
       </div>` : ''}
 
       <div class="stops" id="stopList">
@@ -612,9 +612,9 @@ function planView() {
       </div>
 
       <div class="panel-actions">
-        <button class="pa dashed" data-act="assistant" data-ctx="计划 · 添加地点">${icon('plus', 10)}加地点</button>
-        <button class="pa lime" data-act="similar">${icon('layers', 10)}相似路线</button>
-        <button class="pa coral" data-act="assistant" data-ctx="计划 · ${esc(S.routeName)}"><span class="sp">${sparkleIcon(9)}</span>问问 Lucia</button>
+        <button class="pa dashed" data-act="assistant" data-ctx="Plan · Add a place">${icon('plus', 10)}Add place</button>
+        <button class="pa lime" data-act="similar">${icon('layers', 10)}Similar routes</button>
+        <button class="pa coral" data-act="assistant" data-ctx="Plan · ${esc(S.routeName)}"><span class="sp">${sparkleIcon(9)}</span>Ask Lucia</button>
       </div>
     </div>
   </div>`;
@@ -641,7 +641,7 @@ function stopRowHTML(stop, index) {
   return `<button class="stop-row ${selected ? 'on' : ''}" data-act="select-stop" data-id="${stop.id}">
     <span class="time">${esc(stop.time)}</span>
     <span class="num" style="background:${colors[index % colors.length]}">${index + 1}</span>
-    <span class="info"><b>${esc(stop.name)} ${stop.tag ? tag(stop.tag, stop.tagStyle || 'soft') : ''}</b><small>${esc(stop.duration)} · 步行 6 分</small></span>
+    <span class="info"><b>${esc(stop.name)} ${stop.tag ? tag(stop.tag, stop.tagStyle || 'soft') : ''}</b><small>${esc(stop.duration)} · 6 min walk</small></span>
     <span class="grip">${icon(selected ? 'arrowur' : 'sliders', 10)}</span>
   </button>`;
 }
@@ -660,7 +660,7 @@ function crowdOverlay() {
     <span style="position:absolute;left:54%;top:60%;width:92px;height:92px;border-radius:50%;background:rgba(238,91,52,.14);transform:translate(-50%,-50%)"></span>
     <span style="position:absolute;left:62%;top:30%;width:64px;height:64px;border-radius:50%;background:rgba(238,91,52,.16);transform:translate(-50%,-50%)"></span>
     <span style="position:absolute;left:48%;top:88%;width:52px;height:52px;border-radius:50%;background:rgba(238,91,52,.18);transform:translate(-50%,-50%)"></span>
-    <span style="position:absolute;right:4px;bottom:6px;font:700 8px var(--mono);color:var(--warn)">14:00 后客流上升</span>
+    <span style="position:absolute;right:4px;bottom:6px;font:700 8px var(--mono);color:var(--warn)">Crowds rise after 14:00</span>
   </div>`;
 }
 
@@ -696,7 +696,7 @@ function initMapDrag() {
         window.removeEventListener('pointermove', move);
         window.removeEventListener('pointerup', up);
         window.removeEventListener('pointercancel', up);
-        toast('点位已更新 · 路线已重算', 'refresh');
+        toast('Stop moved · route recalculated', 'refresh');
       };
       window.addEventListener('pointermove', move);
       window.addEventListener('pointerup', up);
@@ -711,26 +711,26 @@ ICONS.leaf = '<path d="M5 19c0-8 5-13 14-13 0 9-5 14-13 14"/><path d="M5 19c3-4 
 ICONS.pencil = '<path d="M4 20h4L20 8l-4-4L4 16z"/><path d="M14 6l4 4"/>';
 
 const FORUM_ROUTES = [
-  { title: '2 天胡同慢走 · 8 站', author: '@Lina', meta: '4.8 分 · 收藏 1.2k', tags: ['胡同', '咖啡', '慢走'], likes: '1.2k', art: 'A' },
-  { title: '中轴线一日 · 6 站', author: '@Ken', meta: '4.9 分 · 收藏 3.4k', tags: ['经典', '日落', '故宫'], likes: '3.4k', art: 'B' },
-  { title: '什刹海夜走 · 5 站', author: '@阿哲', meta: '4.7 分 · 收藏 860', tags: ['夜游', '本地', '小酒馆'], likes: '860', art: 'C' }
+  { title: 'Two Days of Hutong Strolling · 8 stops', author: '@Lina', meta: '4.8 · 1.2k saves', tags: ['Hutongs', 'Coffee', 'Slow'], likes: '1.2k', art: 'A' },
+  { title: 'Central Axis in a Day · 6 stops', author: '@Ken', meta: '4.9 · 3.4k saves', tags: ['Classic', 'Sunset', 'Palace'], likes: '3.4k', art: 'B' },
+  { title: 'Shichahai After Dark · 5 stops', author: '@Zhe', meta: '4.7 · 860 saves', tags: ['Night', 'Local', 'Bars'], likes: '860', art: 'C' }
 ];
 
 const CHANNELS = [
-  { id: 'restaurant', lab: 'EAT', title: '餐厅热度', sub: '热度榜 · 4 家', icon: 'flame', fill: 'mustard' },
-  { id: 'spot', lab: 'SEE', title: '景点推荐', sub: '本周 · 3 处', icon: 'sun', fill: 'mint' },
-  { id: 'gift', lab: 'GIFT', title: '伴手礼', sub: '本地人买 · 3 件', icon: 'gift', fill: 'pink' },
-  { id: 'route', lab: 'WALK', title: '城市漫步', sub: '可套用 · 3 条', icon: 'route', fill: 'peri' },
-  { id: 'event', lab: 'EVENT', title: '本地活动', sub: '本周 · 3 场', icon: 'calendar', fill: 'sky' }
+  { id: 'restaurant', lab: 'EAT', title: 'Where to eat', sub: 'Trending · 4 spots', icon: 'flame', fill: 'mustard' },
+  { id: 'spot', lab: 'SEE', title: 'What to see', sub: 'This week · 3 places', icon: 'sun', fill: 'mint' },
+  { id: 'gift', lab: 'GIFT', title: 'Gifts to take home', sub: 'Locals pick · 3 finds', icon: 'gift', fill: 'pink' },
+  { id: 'route', lab: 'WALK', title: 'Citywalks', sub: 'Ready to borrow · 3', icon: 'route', fill: 'peri' },
+  { id: 'event', lab: 'EVENT', title: 'Local events', sub: 'This week · 3 on', icon: 'calendar', fill: 'sky' }
 ];
 
 const POST_KINDS = [
-  { id: 'all', lab: '全部' },
-  { id: 'restaurant', lab: '餐厅' },
-  { id: 'spot', lab: '景点' },
-  { id: 'route', lab: '路线' },
-  { id: 'gift', lab: '伴手礼' },
-  { id: 'event', lab: '活动' }
+  { id: 'all', lab: 'All' },
+  { id: 'restaurant', lab: 'Food' },
+  { id: 'spot', lab: 'Sights' },
+  { id: 'route', lab: 'Routes' },
+  { id: 'gift', lab: 'Gifts' },
+  { id: 'event', lab: 'Events' }
 ];
 
 const POST_KIND_LABEL = { restaurant: 'EAT', spot: 'SEE', route: 'WALK', gift: 'GIFT', event: 'EVENT' };
@@ -738,81 +738,81 @@ const POST_KIND_LABEL = { restaurant: 'EAT', spot: 'SEE', route: 'WALK', gift: '
 /* platform user posts — the primary forum content */
 const POSTS = [
   {
-    id: 'n1', author: '林小满', avatar: '林', tint: 'lime', time: '2 小时前', kind: 'spot',
-    title: '景山万春亭的落日，比照片还好看', body: '17:00 上山刚好，故宫金顶被夕阳点亮。机位在东侧栏杆，记得早点占。',
-    tags: ['景山', '日落', '机位'], likes: '3.4k', saves: '862', art: 'sunset', h: 174, placeId: 'p8',
-    comment: '@阿哲：周三去的，17:10 太阳刚好落到屋脊上。'
+    id: 'n1', author: 'Lin Xiaoman', avatar: 'LX', tint: 'lime', time: '2 hr ago', kind: 'spot',
+    title: 'Sunset from Wanchun Pavilion beats any photo', body: 'Up at 17:00 is just right — the palace roofs turn gold. The shot is along the east railing, so claim a spot early.',
+    tags: ['Jingshan', 'Sunset', 'Viewpoint'], likes: '3.4k', saves: '862', art: 'sunset', h: 174, placeId: 'p8',
+    comment: '@Zhe: Went on Wednesday — at 17:10 the sun landed right on the ridge.'
   },
   {
-    id: 'n2', author: 'Ken', avatar: 'K', tint: 'peri', time: '4 小时前', kind: 'route',
-    title: '中轴线一日：从永定门走到钟鼓楼', body: '6 站 4.2 km，下午三点出发正好赶上景山日落。沿途都有地铁备份。',
-    tags: ['中轴线', '步行', '路线'], likes: '2.1k', saves: '1.2k', art: 'route', h: 120, routeIndex: 1,
-    comment: '@Lina：按这条走完，脚还行，咖啡补了两次。'
+    id: 'n2', author: 'Ken', avatar: 'K', tint: 'peri', time: '4 hr ago', kind: 'route',
+    title: 'The Central Axis in a day: Yongdingmen to the Drum Tower', body: 'Six stops, 4.2 km. Start at three and you reach Jingshan for sunset. There is a metro exit near every leg.',
+    tags: ['Central Axis', 'Walking', 'Route'], likes: '2.1k', saves: '1.2k', art: 'route', h: 120, routeIndex: 1,
+    comment: '@Lina: Walked the whole thing — feet held up, topped up with coffee twice.'
   },
   {
-    id: 'n3', author: '阿哲', avatar: '哲', tint: 'mustard', time: '5 小时前', kind: 'restaurant',
-    title: '四季民福 11 点前到，真的不排队', body: '鸭皮蘸白糖先吃，点半只就够两个人。下午三点以后基本不用等位。',
-    tags: ['烤鸭', '故宫', '排队'], likes: '2.3k', saves: '708', art: 'food', h: 146, placeId: 'p1',
-    comment: '@周周：亲测 10:40 到，直接进。'
+    id: 'n3', author: 'Zhe', avatar: 'Z', tint: 'mustard', time: '5 hr ago', kind: 'restaurant',
+    title: 'Siji Minfu before 11 really is queue-free', body: 'Eat the skin with sugar first, and half a duck is plenty for two. After three, tables free up on their own.',
+    tags: ['Peking duck', 'Forbidden City', 'Queues'], likes: '2.3k', saves: '708', art: 'food', h: 146, placeId: 'p1',
+    comment: '@Zhou: Confirmed — arrived at 10:40 and walked straight in.'
   },
   {
-    id: 'n4', author: 'Lina', avatar: 'L', tint: 'pink', time: '昨天', kind: 'restaurant',
-    title: '前门胡同咖啡，下午三点光线最好', body: 'Metal Hands 藏在后巷，窗边两张桌子最安静。手冲偏酸，配可颂刚好。',
-    tags: ['咖啡', '胡同', '下午'], likes: '1.1k', saves: '433', art: 'coffee', h: 162, placeId: 'p4',
-    comment: '@小北：周日去坐了俩小时，没人赶。'
+    id: 'n4', author: 'Lina', avatar: 'L', tint: 'pink', time: 'Yesterday', kind: 'restaurant',
+    title: 'A Qianmen hutong café, best light at three', body: 'Metal Hands hides in a back alley; the two window tables are the quietest. The pour-over runs bright — order a croissant with it.',
+    tags: ['Coffee', 'Hutongs', 'Afternoon'], likes: '1.1k', saves: '433', art: 'coffee', h: 162, placeId: 'p4',
+    comment: '@Xiaobei: Sat there two hours on Sunday. Nobody hurried us out.'
   },
   {
-    id: 'n5', author: '周周', avatar: '周', tint: 'mint', time: '昨天', kind: 'spot',
-    title: '天坛的清晨，几乎没有游客', body: '从南门进，回音壁九点前最空。古柏树影落在红墙上，随便拍都好看。',
-    tags: ['天坛', '清晨', '建筑'], likes: '2.8k', saves: '610', art: 'temple', h: 130, placeId: 'p9',
-    comment: '@胡同档案：本地人晨练时段，别大声。'
+    id: 'n5', author: 'Zhou', avatar: 'Z', tint: 'mint', time: 'Yesterday', kind: 'spot',
+    title: 'Early morning at the Temple of Heaven, almost empty', body: 'Come in by the south gate; the Echo Wall is quietest before nine. Cypress shadows on the red wall — every frame works.',
+    tags: ['Temple of Heaven', 'Morning', 'Architecture'], likes: '2.8k', saves: '610', art: 'temple', h: 130, placeId: 'p9',
+    comment: '@Hutong Archive: That is when locals do their morning practice. Keep voices low.'
   },
   {
-    id: 'n6', author: '胡同档案', avatar: '胡', tint: 'coral', time: '2 天前', kind: 'event',
-    title: '周六钟鼓楼夜市，摊主名单更新', body: '手作、黑胶和热红酒，19:00 后人最多。地铁 8 号线什刹海站 A 口。',
-    tags: ['夜市', '钟鼓楼', '周末'], likes: '986', saves: '241', art: 'night', h: 154, eventId: 'e1',
-    comment: '@Ken：报名了，到时候一起逛。'
+    id: 'n6', author: 'Hutong Archive', avatar: 'HA', tint: 'coral', time: '2 days ago', kind: 'event',
+    title: 'Saturday night market at the Drum Tower: stall list updated', body: 'Handmade goods, vinyl and mulled wine. Busiest after 19:00. Metro Line 8, Shichahai station, exit A.',
+    tags: ['Night market', 'Drum Tower', 'Weekend'], likes: '986', saves: '241', art: 'night', h: 154, eventId: 'e1',
+    comment: '@Ken: Signed up — see you there.'
   },
   {
-    id: 'n7', author: '老赵', avatar: '赵', tint: 'sky', time: '2 天前', kind: 'gift',
-    title: '稻香村散装 vs 礼盒，本地人这么买', body: '散装点心按斤称，日期新、能拼口味。礼盒适合送人，自己吃没必要。',
-    tags: ['伴手礼', '稻香村', '省钱'], likes: '1.7k', saves: '529', art: 'gift', h: 138, placeId: 'p5',
-    comment: '@林小满：枣泥和牛舌饼必买。'
+    id: 'n7', author: 'Lao Zhao', avatar: 'LZ', tint: 'sky', time: '2 days ago', kind: 'gift',
+    title: 'Daoxiangcun: loose pastries or gift boxes?', body: 'Loose sweets are sold by weight, fresher, and you can mix flavors. Boxes are for giving — no need for your own snack stash.',
+    tags: ['Gifts', 'Daoxiangcun', 'Save money'], likes: '1.7k', saves: '529', art: 'gift', h: 138, placeId: 'p5',
+    comment: '@Lin Xiaoman: Date paste and ox-tongue pastries, every time.'
   },
   {
-    id: 'n8', author: '阿哲', avatar: '哲', tint: 'mustard', time: '3 天前', kind: 'route',
-    title: '什刹海夜走 5 站，沿途 3 家小酒馆', body: '银锭桥开始，沿后海北沿走到鼓楼。九点以后人少，风大记得带外套。',
-    tags: ['夜游', '什刹海', '小酒馆'], likes: '860', saves: '377', art: 'hutong', h: 126, routeIndex: 2,
-    comment: '@Lina：银锭桥边上那家精酿不错。'
+    id: 'n8', author: 'Zhe', avatar: 'Z', tint: 'mustard', time: '3 days ago', kind: 'route',
+    title: 'Shichahai after dark: 5 stops, 3 bars on the way', body: 'Begin at Yinding Bridge and follow the north shore to the Drum Tower. After nine it thins out; bring a jacket for the wind.',
+    tags: ['Night', 'Shichahai', 'Bars'], likes: '860', saves: '377', art: 'hutong', h: 126, routeIndex: 2,
+    comment: '@Lina: The craft beer spot by Yinding Bridge is solid.'
   },
   {
-    id: 'n9', author: '小北', avatar: '北', tint: 'pink', time: '3 天前', kind: 'gift',
-    title: '角楼冰箱贴补货了，进门先买', body: '神武门文创店上午补货，角楼系列经常断。限购两个，别等到闭馆。',
-    tags: ['故宫文创', '冰箱贴', '限定'], likes: '604', saves: '188', art: 'gift2', h: 112, placeId: 'p6',
-    comment: '@周周：昨天还有日落色，冲。'
+    id: 'n9', author: 'Xiaobei', avatar: 'XB', tint: 'pink', time: '3 days ago', kind: 'gift',
+    title: 'Corner-tower magnets are back — buy on your way in', body: 'The Shenwu Gate shop restocks in the morning and the corner-tower series goes fast. Two per person, so do not wait for closing.',
+    tags: ['Palace shop', 'Magnets', 'Limited'], likes: '604', saves: '188', art: 'gift2', h: 112, placeId: 'p6',
+    comment: '@Zhou: They still had the sunset color yesterday. Go.'
   },
   {
-    id: 'n10', author: '阿May', avatar: 'M', tint: 'lime', time: '4 天前', kind: 'restaurant',
-    title: '满恒记排队 40 分钟，值不值？', body: '手切羊肉配麻酱，铜锅一开就知道没白等。17:00 前取号能少排一半。',
-    tags: ['涮肉', '牛街', '排队'], likes: '1.9k', saves: '522', art: 'hotpot', h: 140, placeId: 'p2',
-    comment: '@老赵：值。糖蒜记得加一份。'
+    id: 'n10', author: 'May', avatar: 'M', tint: 'lime', time: '4 days ago', kind: 'restaurant',
+    title: 'Forty minutes in line at Manhengji — worth it?', body: 'Hand-cut lamb, sesame dip, and a copper pot that settles the question the moment it boils. Take a number before 17:00 and halve the wait.',
+    tags: ['Hotpot', 'Niujie', 'Queues'], likes: '1.9k', saves: '522', art: 'hotpot', h: 140, placeId: 'p2',
+    comment: '@Lao Zhao: Worth it. Order the sweet garlic.'
   },
   {
-    id: 'n11', author: 'Lina', avatar: 'L', tint: 'pink', time: '5 天前', kind: 'spot',
-    title: '北海划船，从湖上看白塔最舒服', body: '下午四点后太阳不晒，租一条脚踏船一小时刚好。风大时会停船。',
-    tags: ['北海', '划船', '亲子'], likes: '2.1k', saves: '498', art: 'boat', h: 148, placeId: 'p10',
-    comment: '@小北：带小孩的话选电动船。'
+    id: 'n11', author: 'Lina', avatar: 'L', tint: 'pink', time: '5 days ago', kind: 'spot',
+    title: 'Boating at Beihai, the White Dagoba from the water', body: 'After four the sun softens; an hour in a pedal boat is just right. Rentals stop when the wind picks up.',
+    tags: ['Beihai', 'Boating', 'Family'], likes: '2.1k', saves: '498', art: 'boat', h: 148, placeId: 'p10',
+    comment: '@Xiaobei: With kids, choose an electric boat.'
   }
 ];
 
 
 const SCENARIOS = [
-  { id: 'route', title: '找路', icon: 'pin' },
-  { id: 'dining', title: '就餐', icon: 'fork' },
-  { id: 'medical', title: '就医', icon: 'shield' },
-  { id: 'taxi', title: '打车', icon: 'plane' },
-  { id: 'shopping', title: '购物', icon: 'gift' },
-  { id: 'emergency', title: '紧急求助', icon: 'info' }
+  { id: 'route', title: 'Directions', icon: 'pin' },
+  { id: 'dining', title: 'Dining', icon: 'fork' },
+  { id: 'medical', title: 'Medical', icon: 'shield' },
+  { id: 'taxi', title: 'Taxi', icon: 'plane' },
+  { id: 'shopping', title: 'Shopping', icon: 'gift' },
+  { id: 'emergency', title: 'Emergency', icon: 'info' }
 ];
 
 const LIVE_MORE = [
@@ -821,7 +821,7 @@ const LIVE_MORE = [
   { zh: '去南锣鼓巷怎么走？', en: 'How do I get to Nanluoguxiang?', mine: false }
 ];
 
-const QUICK = ['帮我调路线', '故宫还有票吗', '附近吃什么', '翻译：我过敏', '检查行前清单'];
+const QUICK = ['Rework my route', 'Any palace tickets left?', 'Where should I eat?', 'Translate: I have an allergy', 'Check my pre-trip list'];
 
 /* ================= FORUM ================= */
 function channelMeta(id) { return CHANNELS.find((c) => c.id === id) || CHANNELS[0]; }
@@ -842,18 +842,18 @@ function forumView() {
   return `<div class="forum-top">
       <header class="top">
         <div>
-          <div class="eyebrow"><span class="eyebrow-line"></span>社区 / BEIJING ${sparkleIcon(8)}</div>
-          <div class="forum-title">大家的北京</div>
-          <div class="meta">4,208 条笔记 · 今天新增 126 条 · 本地人也在发</div>
+          <div class="eyebrow"><span class="eyebrow-line"></span>Community / BEIJING ${sparkleIcon(8)}</div>
+          <div class="forum-title">Our Beijing</div>
+          <div class="meta">4,208 notes · 126 today · locals post here too</div>
         </div>
-        <button class="icon-btn" style="background:var(--ink);color:var(--paper);width:42px;height:42px" data-act="compose" aria-label="发起活动">${icon('pencil', 15)}</button>
+        <button class="icon-btn" style="background:var(--ink);color:var(--paper);width:42px;height:42px" data-act="compose" aria-label="Start an event">${icon('pencil', 15)}</button>
       </header>
     </div>
 
     <div class="forum-search">
       ${icon('search', 13)}
-      <input type="search" placeholder="搜笔记、地点、作者" data-role="search" value="${esc(S.search)}" aria-label="搜索社区笔记">
-      ${S.search ? `<button class="clear" data-act="search-clear" aria-label="清空搜索">${icon('x', 8)}</button>` : ''}
+      <input type="search" placeholder="Search notes, places, people" data-role="search" value="${esc(S.search)}" aria-label="Search community notes">
+      ${S.search ? `<button class="clear" data-act="search-clear" aria-label="Clear search">${icon('x', 8)}</button>` : ''}
     </div>
 
     <div id="forumBody">${forumBodyHTML()}</div>`;
@@ -874,21 +874,21 @@ function feedIntroHTML() {
   const k = POST_KINDS.find((x) => x.id === S.forumFilter) || POST_KINDS[0];
   const n = filteredPosts(S.forumFilter).length;
   return `<div class="feed-intro">
-    <div class="st-left"><span class="live-dot"></span><b>${k.id === 'all' ? '最新笔记' : k.lab + ' 笔记'}</b></div>
-    <span class="meta">${n} 篇 · 按发布时间</span>
+    <div class="st-left"><span class="live-dot"></span><b>${k.id === 'all' ? 'Latest notes' : k.lab + ' notes'}</b></div>
+    <span class="meta">${n} posts · newest first</span>
   </div>`;
 }
 
 function feedEndHTML() {
-  return `<div class="feed-end"><span>已经到底了</span><small>4,208 条笔记 · 下拉刷新试试</small></div>`;
+  return `<div class="feed-end"><span>You are all caught up</span><small>4,208 notes · pull down to refresh</small></div>`;
 }
 
 function postFeedHTML(list) {
   if (!list.length) {
     return `<div class="feed-empty">
       <span class="doodle">${sparkleIcon(18)}</span>
-      <b>这里还没有笔记</b>
-      <small>换个分类，或者去「活动」发起一次 Citywalk。</small>
+      <b>No notes here yet</b>
+      <small>Try another category, or start a citywalk under Events.</small>
     </div>`;
   }
   return `<div class="post-feed">${list.map(postCardHTML).join('')}</div>`;
@@ -900,7 +900,7 @@ function postCardHTML(p) {
     <span class="post-cover" style="height:${p.h}px">
       ${postArt(p.art)}
       <span class="post-kind">${esc(POST_KIND_LABEL[p.kind])}</span>
-      <button class="post-save ${saved ? 'saved' : ''}" data-act="save-post" data-id="${p.id}" aria-label="${saved ? '取消收藏' : '收藏笔记'}">${icon(saved ? 'bookmark' : 'heart', 9)}</button>
+      <button class="post-save ${saved ? 'saved' : ''}" data-act="save-post" data-id="${p.id}" aria-label="${saved ? 'Remove from saved' : 'Save note'}">${icon(saved ? 'bookmark' : 'heart', 9)}</button>
     </span>
     <span class="post-body">
       <b>${esc(p.title)}</b>
@@ -919,13 +919,13 @@ function searchHTML() {
   const list = filteredPosts('all');
   return `<div class="search-results">
     <div class="spread" style="margin:8px 0 2px">
-      <b style="font-size:13px">搜索 “${esc(q)}”</b>
-      <span class="meta">${list.length} 条笔记</span>
+      <b style="font-size:13px">Search “${esc(q)}”</b>
+      <span class="meta">${list.length} notes</span>
     </div>
     ${list.length ? postFeedHTML(list) : `<div class="feed-empty">
       <span class="doodle">${sparkleIcon(18)}</span>
-      <b>没有找到「${esc(q)}」</b>
-      <small>试试 “烤鸭” “胡同” “日落” “伴手礼”</small>
+      <b>Nothing for “${esc(q)}”</b>
+      <small>Try “duck”, “hutong”, “sunset” or “gifts”.</small>
     </div>`}
   </div>`;
 }
@@ -933,10 +933,10 @@ function searchHTML() {
 function forumChannelView(id) {
   const c = channelMeta(id);
   const action = id === 'event'
-    ? `<button class="link" style="font-size:9px" data-act="compose">${icon('plus', 9)}发起活动</button>`
-    : `<button class="link" style="font-size:9px" data-act="assistant" data-ctx="社区 · ${esc(c.title)}">问 Lucia</button>`;
+    ? `<button class="link" style="font-size:9px" data-act="compose">${icon('plus', 9)}Start an event</button>`
+    : `<button class="link" style="font-size:9px" data-act="assistant" data-ctx="Community · ${esc(c.title)}">Ask Lucia</button>`;
   return `<div class="back-row">
-      <button class="icon-btn" data-act="back-forum" aria-label="返回社区">${icon('back', 13)}</button>
+      <button class="icon-btn" data-act="back-forum" aria-label="Back to community">${icon('back', 13)}</button>
       <span class="channel-name">${esc(c.lab)} · ${esc(c.title)}</span>
       <span class="spacer"></span>
       ${action}
@@ -951,11 +951,11 @@ function channelBanner(id) {
   const c = channelMeta(id);
   const count = filteredPosts(id).length;
   const desc = {
-    restaurant: '本地人吃什么 · 排队时间与招牌菜',
-    spot: '机位、日落和避开人流的时段',
-    gift: '带得走、不踩雷的手信',
-    route: '可以整套抄的城市漫步',
-    event: '市集、夜骑、旧物交换'
+    restaurant: 'What locals order · queues and signature dishes',
+    spot: 'Viewpoints, sunsets and the quiet hours',
+    gift: 'Things worth carrying home',
+    route: 'Citywalks you can borrow whole',
+    event: 'Markets, night rides, swap meets'
   }[id] || '';
   return `<div class="channel-banner ${c.fill}">
     <span class="cb-sticker">${esc(c.lab)}</span>
@@ -963,25 +963,25 @@ function channelBanner(id) {
       <h2>${esc(c.title)}</h2>
       <p>${esc(desc)}</p>
     </div>
-    <span class="cb-count">${count} 篇笔记</span>
+    <span class="cb-count">${count} notes</span>
   </div>`;
 }
 
 function eventAdminHTML() {
   return `<div class="card event-admin">
-    <div class="rank-head"><b style="font-size:11.5px">本周活动</b><span class="mono">${S.events.length} 场 · 可报名</span></div>
+    <div class="rank-head"><b style="font-size:11.5px">This week</b><span class="mono">${S.events.length} events · open</span></div>
     ${S.events.map((e) => {
       const joined = S.joined.has(e.id);
       const [d, w] = e.date.split(' ');
       return `<div class="calendar-row">
         <span class="calendar-date"><b>${esc(d)}</b><small>${esc(w || '')}</small></span>
         <span class="calendar-info"><b>${esc(e.title)}</b><small>${esc(e.time)} · ${esc(e.place)}</small></span>
-        <button class="check-action" style="background:${joined ? 'var(--lime)' : 'var(--paper)'};border-color:var(--ink);color:var(--ink)" data-act="join-event" data-id="${e.id}">${joined ? '已报名' : '报名'}</button>
+        <button class="check-action" style="background:${joined ? 'var(--lime)' : 'var(--paper)'};border-color:var(--ink);color:var(--ink)" data-act="join-event" data-id="${e.id}">${joined ? 'Going' : 'Join'}</button>
       </div>`;
     }).join('')}
-    <button class="full-btn coral" style="margin-top:10px" data-act="compose">${icon('plus', 11)}发布我的活动</button>
+    <button class="full-btn coral" style="margin-top:10px" data-act="compose">${icon('plus', 11)}Post my event</button>
   </div>
-  <div class="tip-strip">${icon('users', 12)}<span>报名后会在「我的 → 行前清单」里生成提醒，出发前 2 小时推送。</span></div>`;
+  <div class="tip-strip">${icon('users', 12)}<span>Joining adds a reminder under Me → Pre-trip checklist, pushed 2 hours before.</span></div>`;
 }
 
 /* ---------- post cover art ---------- */
@@ -1125,25 +1125,25 @@ function translateView() {
   const mode = S.translateMode;
   return `<header class="top">
       <div>
-        <div class="eyebrow"><span class="eyebrow-line"></span>翻译 / TRANSLATE <span class="tag lime" style="transform:rotate(-3deg)">SAY IT</span></div>
-        <div class="h1" style="font-size:35px;line-height:1.06">说清楚，<br><span style="color:var(--coral)">就不慌了</span></div>
-        <div class="meta">实时对话 · 离线语句 · 拍照即译</div>
+        <div class="eyebrow"><span class="eyebrow-line"></span>Translate / Phrases <span class="tag lime" style="transform:rotate(-3deg)">SAY IT</span></div>
+        <div class="h1" style="font-size:35px;line-height:1.06">Say it clearly,<br><span style="color:var(--coral)">then breathe</span></div>
+        <div class="meta">Live conversation · offline phrases · camera</div>
       </div>
       <div class="top-right">
-        <span class="tag" style="background:var(--mint)">离线可用</span>
-        <div class="meta">86 句 · 4.2 MB</div>
+        <span class="tag" style="background:var(--mint)">Works offline</span>
+        <div class="meta">86 phrases · 4.2 MB</div>
       </div>
     </header>
 
     <div class="seg" role="tablist">
-      <button class="${mode === 'live' ? 'on' : ''}" data-act="mode" data-mode="live">${icon('mic', 11)}实时对话</button>
-      <button class="${mode === 'offline' ? 'on' : ''}" data-act="mode" data-mode="offline">${icon('download', 11)}应急语句</button>
-      <button class="${mode === 'photo' ? 'on' : ''}" data-act="mode" data-mode="photo">${icon('camera', 11)}拍照翻译</button>
+      <button class="${mode === 'live' ? 'on' : ''}" data-act="mode" data-mode="live">${icon('mic', 11)}Live</button>
+      <button class="${mode === 'offline' ? 'on' : ''}" data-act="mode" data-mode="offline">${icon('download', 11)}Phrases</button>
+      <button class="${mode === 'photo' ? 'on' : ''}" data-act="mode" data-mode="photo">${icon('camera', 11)}Camera</button>
     </div>
 
     ${mode === 'live' ? liveSection() : mode === 'offline' ? offlineSection() : photoSection()}
 
-    <div class="privacy">${icon('lock', 9)} 语音只在设备端处理 · 不保存录音</div>`;
+    <div class="privacy">${icon('lock', 9)} Voice is processed on device · recordings are never saved</div>`;
 }
 
 function liveSection() {
@@ -1152,28 +1152,28 @@ function liveSection() {
     </div>
     <div class="card live-card">
       <div class="live-head">
-        <span class="eyebrow">实时对话</span>
-        <span class="lang-swap">中文 ${icon('arrowr', 9)} <b>English</b> ${icon('refresh', 9)}</span>
+        <span class="eyebrow">Live conversation</span>
+        <span class="lang-swap">Chinese ${icon('arrowr', 9)} <b>English</b> ${icon('refresh', 9)}</span>
       </div>
       ${S.live.map((m) => `<div class="bubble-row ${m.mine ? 'mine' : ''}">
         <div class="bubble">
           <b>${esc(m.zh)}</b>
           <small>${esc(m.en)}</small>
           <div class="tools">
-            <button class="tool-chip" data-act="speak" data-text="${esc(m.en)}" data-lang="en">${icon('speaker', 8)}英文</button>
-            <button class="tool-chip" data-act="speak" data-text="${esc(m.zh)}" data-lang="zh">${icon('speaker', 8)}中文</button>
+            <button class="tool-chip" data-act="speak" data-text="${esc(m.en)}" data-lang="en">${icon('speaker', 8)}EN</button>
+            <button class="tool-chip" data-act="speak" data-text="${esc(m.zh)}" data-lang="zh">${icon('speaker', 8)}ZH</button>
           </div>
         </div>
       </div>`).join('')}
       <div class="live-foot">
         <div class="live-hint">
-          <b>${S.listening ? '正在听… 说完点一下结束' : '点一下开始说话'}</b>
-          <span>${S.listening ? '离线识别中 · 说完会自动翻译' : '双人对话 · 自动识别中英文'}</span>
+          <b>${S.listening ? 'Listening… tap again to finish' : 'Tap to start talking'}</b>
+          <span>${S.listening ? 'Recognizing offline · translates when you stop' : 'Two-way · detects Chinese and English'}</span>
         </div>
-        <button class="mic ${S.listening ? 'listening' : ''}" data-act="mic" aria-label="按住说话">${icon('mic', 19)}</button>
+        <button class="mic ${S.listening ? 'listening' : ''}" data-act="mic" aria-label="Tap to talk">${icon('mic', 19)}</button>
       </div>
     </div>
-    <div class="tip-strip" style="margin-top:8px">${icon('info', 12)}<span>没有网络也能用。语音会先在设备上识别，再翻译成英文。</span></div>`;
+    <div class="tip-strip" style="margin-top:8px">${icon('info', 12)}<span>Works without a signal. Speech is recognized on device, then translated into English.</span></div>`;
 }
 
 function offlineSection() {
@@ -1182,8 +1182,8 @@ function offlineSection() {
       ${SCENARIOS.map((sc) => `<button class="chip ${S.scenario === sc.id ? 'on' : ''}" data-act="scenario" data-scenario="${sc.id}">${icon(sc.icon, 8)}${sc.title}</button>`).join('')}
     </div>
     <div class="spread" style="margin:2px 0 9px">
-      <div class="st-left" style="display:flex;align-items:baseline;gap:7px"><b style="font-size:15px;font-weight:900">离线语句库</b><span class="idx" style="font:700 8px var(--mono);color:var(--ink3)">已下载</span></div>
-      <span class="meta">86 句 · 4.2 MB</span>
+      <div class="st-left" style="display:flex;align-items:baseline;gap:7px"><b style="font-size:15px;font-weight:900">Offline phrasebook</b><span class="idx" style="font:700 8px var(--mono);color:var(--ink3)">Downloaded</span></div>
+      <span class="meta">86 phrases · 4.2 MB</span>
     </div>
     ${list.map((p) => phraseCardHTML(p)).join('')}
     ${S.scenario === 'medical' ? emergencyCardHTML() : ''}`;
@@ -1196,9 +1196,9 @@ function phraseCardHTML(p) {
       <b>${esc(p.zh)}</b>
       <small>${esc(p.en)}</small>
       <span class="tools">
-        <button class="tool-chip" data-act="speak" data-text="${esc(p.en)}" data-lang="en">${icon('speaker', 8)}朗读</button>
-        <button class="tool-chip" data-act="copy" data-text="${esc(p.en)}">${icon('copy', 8)}复制</button>
-        <button class="tool-chip" data-act="favorite-phrase">${icon('heart', 8)}收藏</button>
+        <button class="tool-chip" data-act="speak" data-text="${esc(p.en)}" data-lang="en">${icon('speaker', 8)}Play</button>
+        <button class="tool-chip" data-act="copy" data-text="${esc(p.en)}">${icon('copy', 8)}Copy</button>
+        <button class="tool-chip" data-act="favorite-phrase">${icon('heart', 8)}Save</button>
       </span>
     </span>
     ${icon('arrowur', 10)}
@@ -1207,9 +1207,9 @@ function phraseCardHTML(p) {
 
 function emergencyCardHTML() {
   return `<div class="emergency-card">
-    <b>紧急情况 · 先打电话</b>
-    <span>急救 120 · 报警 110 · 火警 119。需要中文协助时，把下面的句子给对方看。</span>
-    <a class="call" href="tel:120">${icon('shield', 9)}拨打 120</a>
+    <b>Emergency · call first</b>
+    <span>Ambulance 120 · Police 110 · Fire 119. If you need help in Chinese, show the sentence below.</span>
+    <a class="call" href="tel:120">${icon('shield', 9)}Call 120</a>
   </div>`;
 }
 
@@ -1218,7 +1218,7 @@ function photoSection() {
   return `<div class="photo-card">
     <div class="photo-top">
       <i class="dot"></i><b>CAMERA · OCR</b>
-      <span class="right">${S.photoScanning ? '<i class="pulse-dot"></i>识别中…' : S.photoScanned ? '已识别 · 9 个词' : '1x · 自动对焦'}</span>
+      <span class="right">${S.photoScanning ? '<i class="pulse-dot"></i>Reading…' : S.photoScanned ? 'Found · 9 words' : '1x · autofocus'}</span>
     </div>
     <div class="photo-scene">
       ${menu ? menuScene() : signScene()}
@@ -1227,18 +1227,18 @@ function photoSection() {
       ${!S.photoScanning && !S.photoScanned ? '<div class="scene-stamp">TAP TO SCAN</div>' : ''}
     </div>
     <div class="photo-controls">
-      <button class="sample-chip ${menu ? 'on' : ''}" data-act="sample" data-sample="menu">${icon('doc', 8)}菜单招牌</button>
-      <button class="sample-chip ${menu ? '' : 'on'}" data-act="sample" data-sample="sign">${icon('pin', 8)}路牌</button>
-      <button class="shutter ${S.photoScanning ? 'scanning' : ''}" data-act="shutter" aria-label="拍照识别"></button>
+      <button class="sample-chip ${menu ? 'on' : ''}" data-act="sample" data-sample="menu">${icon('doc', 8)}Menu sign</button>
+      <button class="sample-chip ${menu ? '' : 'on'}" data-act="sample" data-sample="sign">${icon('pin', 8)}Street sign</button>
+      <button class="shutter ${S.photoScanning ? 'scanning' : ''}" data-act="shutter" aria-label="Scan and translate"></button>
     </div>
   </div>
-  ${S.photoScanned ? photoResultHTML() : `<div class="photo-hint"><b>对准招牌或菜单</b><br>按下快门，Lucia 会框出文字并翻译成中文，识别结果可以直接朗读或复制。</div>`}`;
+  ${S.photoScanned ? photoResultHTML() : `<div class="photo-hint"><b>Point at a sign or a menu</b><br>Press the shutter and Lucia will frame the text and translate it into English. You can play it aloud or copy it.</div>`}`;
 }
 
 function menuScene() {
   return `<div class="scene-menu">
     <div class="menu-paper">
-      <div class="head"><b>老北京小吃</b><small>MENU · 招牌</small></div>
+      <div class="head"><b>老北京小吃</b><small>MENU · SIGNATURE</small></div>
       ${MENU.map((m, i) => `<div class="menu-line ${i === 0 ? 'hl' : ''}">
         <span class="idx">${i + 1}</span><b>${esc(m.zh)}</b><small>${esc(m.en)}</small><span class="price">${esc(m.price)}</span>
       </div>`).join('')}
@@ -1265,19 +1265,19 @@ function photoResultHTML() {
   const isMenu = S.photoSample === 'menu';
   const rows = isMenu ? MENU : SIGN;
   return `<div class="card result-card">
-    <div class="result-head"><b>识别结果 · ${isMenu ? '老北京小吃' : '街区路牌'}</b><span>ZH / EN</span></div>
+    <div class="result-head"><b>Recognized · ${isMenu ? 'Old Beijing snacks' : 'Street signs'}</b><span>ZH / EN</span></div>
     ${rows.map((r, i) => `<div class="result-row">
       <span class="no">${i + 1}</span>
       <span class="txt"><b>${esc(r.zh)}</b><small>${esc(r.en)} ${esc(r.price)}</small></span>
       <button class="tool-chip" data-act="speak" data-text="${esc(r.en)}" data-lang="en">${icon('speaker', 8)}</button>
     </div>`).join('')}
     <div class="result-actions">
-      <button class="tool-chip solid" data-act="speak" data-text="${esc(rows[0].en)}" data-lang="en">${icon('speaker', 9)}朗读</button>
-      <button class="tool-chip" data-act="copy" data-text="${esc(rows.map((r) => `${r.zh} · ${r.en}`).join('\n'))}">${icon('copy', 9)}复制全部</button>
-      <button class="tool-chip" data-act="sample" data-sample="${isMenu ? 'sign' : 'menu'}">${icon('refresh', 9)}换一张</button>
+      <button class="tool-chip solid" data-act="speak" data-text="${esc(rows[0].en)}" data-lang="en">${icon('speaker', 9)}Play aloud</button>
+      <button class="tool-chip" data-act="copy" data-text="${esc(rows.map((r) => `${r.zh} · ${r.en}`).join('\n'))}">${icon('copy', 9)}Copy all</button>
+      <button class="tool-chip" data-act="sample" data-sample="${isMenu ? 'sign' : 'menu'}">${icon('refresh', 9)}Try another</button>
     </div>
   </div>
-  <div class="photo-hint"><b>${isMenu ? '点菜建议' : '认路建议'}</b><br>${isMenu ? '炸酱面是本地最稳的选择，豆汁儿第一次喝可以先两人分一杯。' : '沿指示牌直走，什刹海在地铁 6 号线北海北站方向。'}</div>`;
+  <div class="photo-hint"><b>${isMenu ? 'What to order' : 'Finding your way'}</b><br>${isMenu ? 'Zhajiang noodles are the safest order; first-timers should share one glass of douzhi.' : 'Follow the signs straight ahead — Shichahai is toward Beihai North station on Metro Line 6.'}</div>`;
 }
 
 /* ================= ME ================= */
@@ -1288,134 +1288,134 @@ function meView() {
   return `<div class="me-head">
       <div class="me-avatar">W</div>
       <div class="grow">
-        <div class="eyebrow">我的 / PROFILE</div>
-        <div class="me-name">王博</div>
-        <div class="me-tags">${tag('Lucia 会员', 'lime')}${tag('旅行第 12 城')}</div>
+        <div class="eyebrow">Me / PROFILE</div>
+        <div class="me-name">Wang Bo</div>
+        <div class="me-tags">${tag('RoamChina member', 'lime')}${tag('12th city')}</div>
       </div>
-      <button class="icon-btn" data-act="assistant" data-ctx="我的 · 设置与偏好" aria-label="设置">${icon('settings', 14)}</button>
+      <button class="icon-btn" data-act="assistant" data-ctx="Me · Settings and preferences" aria-label="Settings">${icon('settings', 14)}</button>
     </div>
 
     <div class="me-stat-row">
-      <div class="me-stat mustard"><b>12</b><span>走过的城市</span></div>
-      <div class="me-stat pink"><b>46</b><span>收藏的地点</span></div>
-      <div class="me-stat mint"><b>3</b><span>共享的路线</span></div>
+      <div class="me-stat mustard"><b>12</b><span>Cities visited</span></div>
+      <div class="me-stat pink"><b>46</b><span>Saved places</span></div>
+      <div class="me-stat mint"><b>3</b><span>Shared routes</span></div>
     </div>
 
     <div class="trip-dark">
       <div class="top" style="display:flex;align-items:center;justify-content:space-between">
-        <span class="tag lime">3 天后出发</span>
+        <span class="tag lime">3 days to go</span>
         <span class="meta">10/15 – 10/18</span>
       </div>
-      <h3>北京 · 4 天 3 晚</h3>
-      <div class="meta">王府井 · 2 位成人 · 中轴线慢走</div>
+      <h3>Beijing · 4 days, 3 nights</h3>
+      <div class="meta">Wangfujing · 2 adults · Central Axis on foot</div>
       <div class="who">
-        <div class="avatar-stack"><div class="avatar sm">林</div><div class="avatar sm pink">周</div></div>
-        <span>与林、周同行</span>
-        <button class="view-trip" data-act="tab" data-tab="trip">查看行程</button>
+        <div class="avatar-stack"><div class="avatar sm">L</div><div class="avatar sm pink">Z</div></div>
+        <span>With Lin and Zhou</span>
+        <button class="view-trip" data-act="tab" data-tab="trip">View trip</button>
       </div>
       <div class="quick">
-        <button data-act="checklist">${icon('check', 8)}清单 ${doneCount()}/${S.checklist.length}</button>
-        <button data-act="tab" data-tab="plan">${icon('map', 8)}打开路线</button>
-        <button data-act="share-route">${icon('share', 8)}分享</button>
+        <button data-act="checklist">${icon('check', 8)}List ${doneCount()}/${S.checklist.length}</button>
+        <button data-act="tab" data-tab="plan">${icon('map', 8)}Open route</button>
+        <button data-act="share-route">${icon('share', 8)}Share</button>
       </div>
     </div>
 
-    <div class="section-title"><div class="st-left"><span class="idx">01</span><h2>景点预约</h2></div><span class="meta">${bookedCount} / ${attractionTotal} 已预约</span></div>
+    <div class="section-title"><div class="st-left"><span class="idx">01</span><h2>Attraction bookings</h2></div><span class="meta">${bookedCount} / ${attractionTotal} booked</span></div>
     <div class="resv-card">
       <div class="resv-head">
         <div class="grow">
-          <div class="spread"><b>北京 · 4 天 3 晚</b><span class="resv-count">${bookedPct}%</span></div>
-          <small>门票由景区直连出票，入园刷身份证</small>
+          <div class="spread"><b>Beijing · 4 days, 3 nights</b><span class="resv-count">${bookedPct}%</span></div>
+          <small>Tickets are issued by the venues; scan your passport at the gate</small>
           <div class="resv-progress"><i style="width:${bookedPct}%"></i></div>
         </div>
-        <button class="resv-all" data-act="book-all" ${bookedCount === attractionTotal ? 'disabled' : ''}>${bookedCount === attractionTotal ? '已全部预约' : '一键预约'}</button>
+        <button class="resv-all" data-act="book-all" ${bookedCount === attractionTotal ? 'disabled' : ''}>${bookedCount === attractionTotal ? 'All booked' : 'Book all'}</button>
       </div>
       <div class="resv-list">
         ${S.attractions.map((a) => `<div class="resv-row" data-act="resv-info" data-id="${a.id}" role="button" tabindex="0">
           <span class="resv-date"><b>${esc(a.date)}</b><small>${esc(a.week)}</small></span>
           <span class="grow resv-info"><b>${esc(a.name)}</b><small>${esc(a.time)} · ${esc(a.people)} · ${esc(a.price)}</small></span>
           ${a.booked
-            ? `<span class="resv-status ok">${icon('check', 8)}已预约</span>`
-            : `<button class="resv-book" data-act="book-attraction" data-id="${a.id}">预约</button>`}
+            ? `<span class="resv-status ok">${icon('check', 8)}Booked</span>`
+            : `<button class="resv-book" data-act="book-attraction" data-id="${a.id}">Book</button>`}
         </div>`).join('')}
       </div>
-      <div class="resv-tip">${icon('info', 10)}<span>故宫周一闭馆；10/15 周三开放，预约凭证会长期保存在这里。</span></div>
+      <div class="resv-tip">${icon('info', 10)}<span>The Forbidden City closes on Mondays; it is open Wednesday 10/15. Your booking receipts stay here.</span></div>
     </div>
 
-    <div class="section-title"><div class="st-left"><span class="idx">02</span><h2>旅行服务</h2></div></div>
+    <div class="section-title"><div class="st-left"><span class="idx">02</span><h2>Travel services</h2></div></div>
     <div class="service-grid">
-      <button class="service" data-act="assistant" data-ctx="我的 · 离线包">
+      <button class="service" data-act="assistant" data-ctx="Me · Offline pack">
         <span class="ico" style="background:var(--mint-soft)">${icon('download', 12)}</span>
-        <span><b>离线包</b><small>地图 · 翻译 · 已就绪</small></span>
+        <span><b>Offline pack</b><small>Maps · phrases · ready</small></span>
       </button>
       <button class="service" data-act="tab" data-tab="forum">
         <span class="ico" style="background:var(--pink-soft)">${icon('heart', 12)}</span>
-        <span><b>我的收藏</b><small>46 个地点</small></span>
+        <span><b>Saved</b><small>46 places</small></span>
       </button>
-      <button class="service" data-act="assistant" data-ctx="协作 · 邀请同行">
+      <button class="service" data-act="assistant" data-ctx="Together · Invite a traveler">
         <span class="ico" style="background:var(--peri-soft)">${icon('users', 12)}</span>
-        <span><b>同行协作</b><small>林、周 · 2 人</small></span>
+        <span><b>Travel together</b><small>Lin, Zhou · 2 people</small></span>
       </button>
       <button class="service" data-act="notes">
         <span class="ico" style="background:var(--mustard-soft)">${icon('doc', 12)}</span>
-        <span><b>行程笔记</b><small>导出海报</small></span>
+        <span><b>Trip notes</b><small>Export a poster</small></span>
       </button>
     </div>
 
-    <div class="section-title"><div class="st-left"><span class="idx">03</span><h2>外部信息</h2></div><span class="meta">可选</span></div>
+    <div class="section-title"><div class="st-left"><span class="idx">03</span><h2>Booked elsewhere</h2></div><span class="meta">Optional</span></div>
     <div class="ext-card">
       <button class="ext-head" data-act="toggle-bookings" aria-expanded="${S.showBookings}">
         <span class="ico">${icon('layers', 13)}</span>
-        <span class="grow"><b>机票与酒店</b><small>航司 / 酒店直连同步 · 不必在 Lucia 里管理</small></span>
-        <span class="tag soft">2 项</span>
+        <span class="grow"><b>Flights & hotel</b><small>Synced from the airline and hotel · nothing to manage in RoamChina</small></span>
+        <span class="tag soft">2 items</span>
         <span class="chev ${S.showBookings ? 'open' : ''}">${icon('down', 9)}</span>
       </button>
       ${S.showBookings ? `<div class="ext-body">
-        <div class="ext-row">${icon('plane', 11)}<span class="grow"><b>国航 CA182</b><small>10/15 08:45 → 11:20 · 首都 T3 · 已出票</small></span></div>
-        <div class="ext-row">${icon('bed', 11)}<span class="grow"><b>王府井文华东方</b><small>10/15 – 10/18 · 3 晚 · 已确认</small></span></div>
-        <div class="ext-foot">仅作外部信息展示，不影响景点预约、路线与行前清单。</div>
+        <div class="ext-row">${icon('plane', 11)}<span class="grow"><b>Air China CA182</b><small>10/15 08:45 → 11:20 · Capital T3 · ticketed</small></span></div>
+        <div class="ext-row">${icon('bed', 11)}<span class="grow"><b>Mandarin Oriental Wangfujing</b><small>10/15 – 10/18 · 3 nights · confirmed</small></span></div>
+        <div class="ext-foot">Shown for reference only. It does not affect bookings, routes or your checklist.</div>
       </div>` : ''}
     </div>
 
-    <div class="section-title"><div class="st-left"><span class="idx">04</span><h2>偏好设置</h2></div></div>
+    <div class="section-title"><div class="st-left"><span class="idx">04</span><h2>Preferences</h2></div></div>
     <div class="card" style="padding:2px 13px">
       <div class="setting-row">
         <span class="ico">${icon('bell', 12)}</span>
-        <span class="grow"><b>行程提醒</b><small>出发前 2 小时 · 天气变化</small></span>
+        <span class="grow"><b>Trip reminders</b><small>2 hr before · weather changes</small></span>
         <span class="toggle ${S.notifications ? 'on' : ''}" data-act="toggle-setting" data-key="notifications" role="switch" aria-checked="${S.notifications}" tabindex="0"></span>
       </div>
       <div class="setting-row">
         <span class="ico">${icon('speaker', 12)}</span>
-        <span class="grow"><b>自动朗读翻译</b><small>识别后直接播英文</small></span>
+        <span class="grow"><b>Auto-play translations</b><small>Speak English as soon as it is read</small></span>
         <span class="toggle ${S.autoplay ? 'on' : ''}" data-act="toggle-setting" data-key="autoplay" role="switch" aria-checked="${S.autoplay}" tabindex="0"></span>
       </div>
-      <div class="setting-row" data-act="toast" data-text="离线地图已是最新 · 42 MB" data-icon="download" role="button" tabindex="0">
+      <div class="setting-row" data-act="toast" data-text="Offline maps are up to date · 42 MB" data-icon="download" role="button" tabindex="0">
         <span class="ico">${icon('map', 12)}</span>
-        <span class="grow"><b>离线地图</b><small>北京 · 已下载 42 MB</small></span>
+        <span class="grow"><b>Offline maps</b><small>Beijing · 42 MB downloaded</small></span>
         <span class="val">${icon('right', 9)}</span>
       </div>
     </div>
 
-    <div class="section-title"><div class="st-left"><span class="idx">05</span><h2>关于</h2></div></div>
+    <div class="section-title"><div class="st-left"><span class="idx">05</span><h2>About</h2></div></div>
     <div class="card" style="padding:2px 13px">
-      <div class="setting-row" data-act="toast" data-text="隐私政策 · 所有语音只在设备端处理" data-icon="lock" role="button" tabindex="0">
+      <div class="setting-row" data-act="toast" data-text="Privacy policy · all voice is processed on device" data-icon="lock" role="button" tabindex="0">
         <span class="ico">${icon('lock', 12)}</span>
-        <span class="grow"><b>隐私政策</b><small>数据只留在你的设备上</small></span>
+        <span class="grow"><b>Privacy</b><small>Your data stays on your device</small></span>
         <span class="val">${icon('right', 9)}</span>
       </div>
-      <div class="setting-row" data-act="toast" data-text="服务条款 · Lucia 1.0.0" data-icon="doc" role="button" tabindex="0">
+      <div class="setting-row" data-act="toast" data-text="Terms of service · RoamChina 1.0.0" data-icon="doc" role="button" tabindex="0">
         <span class="ico">${icon('doc', 12)}</span>
-        <span class="grow"><b>服务条款</b><small>最后更新于 2026/10</small></span>
+        <span class="grow"><b>Terms</b><small>Last updated 2026/10</small></span>
         <span class="val">${icon('right', 9)}</span>
       </div>
-      <div class="setting-row" data-act="toast" data-text="Lucia 1.0.0 (12) · 原生 SwiftUI 版" data-icon="info" role="button" tabindex="0">
+      <div class="setting-row" data-act="toast" data-text="RoamChina 1.0.0 (12) · native SwiftUI edition" data-icon="info" role="button" tabindex="0">
         <span class="ico">${icon('info', 12)}</span>
-        <span class="grow"><b>关于 Lucia</b><small>版本 1.0.0 (12)</small></span>
+        <span class="grow"><b>About RoamChina</b><small>Version 1.0.0 (12)</small></span>
         <span class="val">${icon('right', 9)}</span>
       </div>
     </div>
 
-    <div class="me-footer">LUCIA · MADE FOR SLOW TRAVEL<br>把一趟北京装进口袋</div>`;
+    <div class="me-footer">ROAMCHINA · MADE FOR SLOW TRAVEL<br>A whole Beijing, in your pocket</div>`;
 }
 
 /* ================= SHEETS ================= */
@@ -1470,7 +1470,7 @@ function sheetHead(title, eyebrow) {
         ${eyebrow ? `<div class="eyebrow" style="margin-bottom:2px">${esc(eyebrow)}</div>` : ''}
         <h3>${esc(title)}</h3>
       </div>
-      <button class="sheet-close" data-act="close-sheet" aria-label="关闭">${icon('x', 10)}</button>
+      <button class="sheet-close" data-act="close-sheet" aria-label="Close">${icon('x', 10)}</button>
     </div>
   </div>`;
 }
@@ -1501,10 +1501,10 @@ function postSheet() {
       <div class="grab"></div>
       <div class="row">
         <div>
-          <div class="eyebrow" style="margin-bottom:2px">${esc(c.lab)} · 平台笔记</div>
-          <h3>${esc(p.author)} 的笔记</h3>
+          <div class="eyebrow" style="margin-bottom:2px">${esc(c.lab)} · Community note</div>
+          <h3>${esc(p.author)}'s note</h3>
         </div>
-        <button class="sheet-close" data-act="close-sheet" aria-label="关闭">${icon('x', 10)}</button>
+        <button class="sheet-close" data-act="close-sheet" aria-label="Close">${icon('x', 10)}</button>
       </div>
     </div>
     <div class="sheet-body">
@@ -1514,26 +1514,26 @@ function postSheet() {
       </div>
       <div class="post-author-row">
         <span class="pa-avatar" style="background:var(--${p.tint})">${esc(p.avatar)}</span>
-        <div class="grow"><b>${esc(p.author)}</b><small>${esc(p.time)} · 在北京</small></div>
-        <span class="tag soft">${esc(p.tags[0] || '笔记')}</span>
+        <div class="grow"><b>${esc(p.author)}</b><small>${esc(p.time)} · in Beijing</small></div>
+        <span class="tag soft">${esc(p.tags[0] || 'Note')}</span>
       </div>
       <h2 class="post-detail-title">${esc(p.title)}</h2>
       <p class="post-detail-body">${esc(p.body)}</p>
       <div class="tags">${p.tags.map((t) => tag(t)).join('')}</div>
       <div class="post-detail-stats">
-        <span>${icon('heart', 9)} ${esc(p.likes)} 喜欢</span>
-        <span>${icon('bookmark', 9)} ${esc(p.saves)} 收藏</span>
-        <span>${icon('comment', 9)} ${p.comments === 0 ? '还没有评论' : (p.comments || 28) + ' 条评论'}</span>
+        <span>${icon('heart', 9)} ${esc(p.likes)} likes</span>
+        <span>${icon('bookmark', 9)} ${esc(p.saves)} saves</span>
+        <span>${icon('comment', 9)} ${p.comments === 0 ? 'No comments yet' : (p.comments || 28) + ' comments'}</span>
       </div>
-      ${p.comment ? `<div class="post-comment"><b>${p.comments === 0 ? '作者留言' : '评论 · ' + (p.comments || 28)}</b>${esc(p.comment)}</div>` : ''}
+      ${p.comment ? `<div class="post-comment"><b>${p.comments === 0 ? 'From the author' : 'Comments · ' + (p.comments || 28)}</b>${esc(p.comment)}</div>` : ''}
       <div class="post-actions">
-        <button class="post-action primary" data-act="save-post" data-id="${p.id}">${icon(saved ? 'bookmark' : 'heart', 10)}${saved ? '已收藏' : '收藏'}</button>
-        ${p.placeId ? `<button class="post-action" data-act="post-place" data-id="${p.placeId}">${icon('pin', 10)}地点详情</button>` : ''}
-        ${p.routeIndex !== undefined ? `<button class="post-action" data-act="apply-forum-route" data-index="${p.routeIndex}">${icon('route', 10)}套用路线</button>` : ''}
-        ${p.eventId ? `<button class="post-action" data-act="forum" data-channel="event">${icon('calendar', 10)}看活动</button>` : ''}
+        <button class="post-action primary" data-act="save-post" data-id="${p.id}">${icon(saved ? 'bookmark' : 'heart', 10)}${saved ? 'Saved' : 'Save'}</button>
+        ${p.placeId ? `<button class="post-action" data-act="post-place" data-id="${p.placeId}">${icon('pin', 10)}Place details</button>` : ''}
+        ${p.routeIndex !== undefined ? `<button class="post-action" data-act="apply-forum-route" data-index="${p.routeIndex}">${icon('route', 10)}Use this route</button>` : ''}
+        ${p.eventId ? `<button class="post-action" data-act="forum" data-channel="event">${icon('calendar', 10)}See event</button>` : ''}
       </div>
-      <button class="post-action dark" style="width:100%;margin-top:7px" data-act="assistant" data-ctx="社区 · ${esc(p.title)}">${icon('sparkle', 10)}问 Lucia 这条值不值得去</button>
-      <div class="post-detail-foot">发布于 Lucia 社区 · 内容来自平台用户</div>
+      <button class="post-action dark" style="width:100%;margin-top:7px" data-act="assistant" data-ctx="Community · ${esc(p.title)}">${icon('sparkle', 10)}Ask Lucia if it is worth it</button>
+      <div class="post-detail-foot">Posted in the RoamChina Community · content from members</div>
     </div>
   </div>`;
 }
@@ -1544,18 +1544,18 @@ function assistantSheet() {
     <div class="assistant-head">
       <span class="orb-mini">${sparkleIcon(16)}</span>
       <div class="grow">
-        <h3>Lucia 助手</h3>
+        <h3>Lucia</h3>
         <div class="ctx">${esc(S.assistantContext)}</div>
       </div>
-      <button class="sheet-close" data-act="close-sheet" aria-label="关闭">${icon('x', 10)}</button>
+      <button class="sheet-close" data-act="close-sheet" aria-label="Close">${icon('x', 10)}</button>
     </div>
     <div class="chat" id="chat">${chatHTML()}</div>
     <div class="quick-wrap">
       ${QUICK.map((q) => `<button data-act="quick" data-text="${esc(q)}">${esc(q)}</button>`).join('')}
     </div>
     <div class="chat-input">
-      <input id="chatInput" placeholder="问 Lucia：路线、门票、翻译…" aria-label="向 Lucia 提问" autocomplete="off">
-      <button data-act="send-chat" aria-label="发送">${icon('arrowr', 14)}</button>
+      <input id="chatInput" placeholder="Ask Lucia about routes, tickets, translation…" aria-label="Ask Lucia a question" autocomplete="off">
+      <button data-act="send-chat" aria-label="Send">${icon('arrowr', 14)}</button>
     </div>
   </div>`;
 }
@@ -1563,27 +1563,27 @@ function assistantSheet() {
 function assistContextHTML() {
   return `<div class="assist-card">
     <div class="assist-card-top">
-      <span class="eyebrow">NOW · 出发前 3 天</span>
-      <span class="assist-tag">北京 · 4 天 3 晚</span>
+      <span class="eyebrow">NOW · 3 days to departure</span>
+      <span class="assist-tag">Beijing · 4 days, 3 nights</span>
     </div>
     <div class="assist-stats">
-      <div><b>06</b><span>路线地点</span></div>
-      <div><b>02</b><span>位同行</span></div>
-      <div><b>6/12</b><span>清单完成</span></div>
+      <div><b>06</b><span>Route stops</span></div>
+      <div><b>02</b><span>Travelers</span></div>
+      <div><b>6/12</b><span>Checklist</span></div>
     </div>
     <button class="assist-nudge" data-act="checklist">
       <span class="nudge-dot"></span>
-      <span class="grow">故宫门票最紧 · 建议今天预约</span>
+      <span class="grow">Forbidden City tickets are tightest · book today</span>
       ${icon('arrowr', 9)}
     </button>
     <div class="assist-plan">
       <div class="assist-plan-head">
-        <span>今天的路线</span>
-        <button data-act="tab" data-tab="plan">打开地图 ${icon('arrowr', 8)}</button>
+        <span>Today's route</span>
+        <button data-act="tab" data-tab="plan">Open map ${icon('arrowr', 8)}</button>
       </div>
-      <div class="assist-line"><b>09:40</b><span class="grow">故宫 · 中轴线</span><em>已订</em></div>
-      <div class="assist-line"><b>13:00</b><span class="grow">什刹海 · 银锭桥</span><em>待定</em></div>
-      <div class="assist-line"><b>17:00</b><span class="grow">景山 · 日落 17:42</span><em class="best">最佳</em></div>
+      <div class="assist-line"><b>09:40</b><span class="grow">Forbidden City · Central Axis</span><em>Booked</em></div>
+      <div class="assist-line"><b>13:00</b><span class="grow">Shichahai · Yinding Bridge</span><em>Open</em></div>
+      <div class="assist-line"><b>17:00</b><span class="grow">Jingshan · sunset 17:42</span><em class="best">Best</em></div>
     </div>
   </div>`;
 }
@@ -1608,55 +1608,55 @@ function chatHTML() {
 
 function replyFor(text) {
   const t = text.toLowerCase();
-  if (/路线|行程|什刹海|安排|哪天|顺序/.test(text)) {
-    return { role: 'assistant', text: '我看了一下你的中轴线：故宫 09:40 进最顺，什刹海挪到 13:00 能少走 1.2 km。今天日落 17:42，景山 17:00 上山刚好。', actions: [
-      { label: '应用到路线', act: 'apply-ai', icon: 'sparkle' },
-      { label: '打开地图', act: 'tab', tab: 'plan', plain: true }
+  if (/route|plan|shichahai|schedule|which day|order/.test(t)) {
+    return { role: 'assistant', text: 'I looked at your Central Axis plan: entering the Forbidden City at 09:40 flows best, and moving Shichahai to 13:00 saves 1.2 km. Sunset is 17:42 today — up Jingshan by 17:00 is just right.', actions: [
+      { label: 'Apply to route', act: 'apply-ai', icon: 'sparkle' },
+      { label: 'Open map', act: 'tab', tab: 'plan', plain: true }
     ] };
   }
-  if (/门票|故宫|预约|余票|长城|颐和园/.test(text)) {
-    return { role: 'assistant', text: '故宫 10/15 09:00 还有 812 张，成人票 ¥60，需要实名，记得带护照原件。长城缆车和颐和园还没约，建议今天一起订。', actions: [
-      { label: '打开清单', act: 'checklist', icon: 'check' },
-      { label: '去预约', act: 'assistant-ticket', plain: true }
+  if (/ticket|palace|book|booking|wall|summer palace|museum/.test(t)) {
+    return { role: 'assistant', text: 'The Forbidden City still has 812 tickets for 10/15 at 09:00 — ¥60 adult, real name required, so bring your passport. The Great Wall cable car and the Summer Palace are still unbooked; today is a good day to do both.', actions: [
+      { label: 'Open checklist', act: 'checklist', icon: 'check' },
+      { label: 'Book now', act: 'assistant-ticket', plain: true }
     ] };
   }
-  if (/吃|餐厅|烤鸭|咖啡|美食|饭/.test(text)) {
-    return { role: 'assistant', text: '想吃烤鸭就四季民福故宫店，11:00 前到基本不排队；想安静喝咖啡，Metal Hands 前门店下午 3 点光线最好。', actions: [
-      { label: '看社区', act: 'forum', channel: 'restaurant', icon: 'compass' },
-      { label: '加入路线', act: 'add-place', dataId: 'p1', plain: true }
+  if (/eat|food|duck|coffee|dinner|lunch|restaurant/.test(t)) {
+    return { role: 'assistant', text: 'For duck, Siji Minfu at the Forbidden City — arrive before 11 and you walk straight in. For a quiet coffee, Metal Hands in Qianmen has the best light at three.', actions: [
+      { label: 'Browse community', act: 'forum', channel: 'restaurant', icon: 'compass' },
+      { label: 'Add to route', act: 'add-place', dataId: 'p1', plain: true }
     ] };
   }
-  if (/住|酒店|王府井/.test(text)) {
-    return { role: 'assistant', text: '王府井文华东方已确认，3 晚大床房。步行 12 分钟到故宫东门，早上不用打车。要不要我把行李寄存的时间也加进清单？', actions: [
-      { label: '看订单', act: 'tab', tab: 'me', icon: 'bed' },
-      { label: '加入清单', act: 'checklist', plain: true }
+  if (/hotel|stay|wangfujing|room/.test(t)) {
+    return { role: 'assistant', text: 'The Mandarin Oriental Wangfujing is confirmed: three nights, king room. It is a 12-minute walk to the Forbidden City east gate, so no taxi in the morning. Shall I add luggage storage to your checklist?', actions: [
+      { label: 'See booking', act: 'tab', tab: 'me', icon: 'bed' },
+      { label: 'Add to checklist', act: 'checklist', plain: true }
     ] };
   }
-  if (/翻译|过敏|英语|怎么说|医疗/.test(text)) {
-    return { role: 'assistant', text: '我把「我对花生过敏，请确认这道菜不含花生」放进离线语句了，断网也能朗读。更紧急的句子在「翻译 → 就医」里。', actions: [
-      { label: '去翻译', act: 'tab', tab: 'translate', icon: 'chat' },
-      { label: '离线语句', act: 'tab', tab: 'translate', plain: true }
+  if (/translat|allerg|english|phrase|medical|say/.test(t)) {
+    return { role: 'assistant', text: 'I have added the sentence about a peanut allergy to your offline phrases, so you can play it without a signal. More urgent lines sit under Translate → Medical.', actions: [
+      { label: 'Open Translate', act: 'tab', tab: 'translate', icon: 'chat' },
+      { label: 'Offline phrases', act: 'tab', tab: 'translate', plain: true }
     ] };
   }
-  if (/天气|下雨|温度|冷|热/.test(text)) {
-    return { role: 'assistant', text: '10/15–17 白天 22℃，早晚 11℃，带一件薄外套。18 号可能有小雨，折叠伞放包里就好。', actions: [
-      { label: '加入清单', act: 'checklist', icon: 'check' },
-      { label: '打开行程', act: 'tab', tab: 'trip', plain: true }
+  if (/weather|rain|temperature|cold|hot|forecast/.test(t)) {
+    return { role: 'assistant', text: '10/15–17 sits around 22°C by day and 11°C at night — pack a light jacket. The 18th may bring drizzle; a folding umbrella in your bag is enough.', actions: [
+      { label: 'Add to checklist', act: 'checklist', icon: 'check' },
+      { label: 'Open trip', act: 'tab', tab: 'trip', plain: true }
     ] };
   }
-  if (/清单|护照|签证|准备|带什么/.test(text)) {
-    return { role: 'assistant', text: '清单还有 4 项没完成：故宫门票、长城缆车、颐和园、国家博物馆。最紧的是故宫，建议今天预约，周一会闭馆。', actions: [
-      { label: '打开清单', act: 'checklist', icon: 'check' }
+  if (/checklist|passport|visa|prepare|pack|bring|list/.test(t)) {
+    return { role: 'assistant', text: 'Four items are still open: Forbidden City tickets, the Great Wall cable car, the Summer Palace and the National Museum. The Forbidden City is tightest — book today, since it closes on Mondays.', actions: [
+      { label: 'Open checklist', act: 'checklist', icon: 'check' }
     ] };
   }
-  if (/活动|市集|夜|报名/.test(text)) {
-    return { role: 'assistant', text: '18 号钟鼓楼有胡同夜市，免费入场，128 人报名，你已经在名单里了。想去的话我可以把提醒加到行程里。', actions: [
-      { label: '看活动', act: 'forum', channel: 'event', icon: 'calendar' }
+  if (/event|market|night|join|meet/.test(t)) {
+    return { role: 'assistant', text: 'There is a hutong night market at the Drum & Bell Towers on the 18th — free entry, 128 going, and you are on the list. I can add a reminder to your trip if you like.', actions: [
+      { label: 'See events', act: 'forum', channel: 'event', icon: 'calendar' }
     ] };
   }
-  return { role: 'assistant', text: '我先记下了。想改路线、订门票或翻译一句话，直接说，我帮你在 App 里办好。', actions: [
-    { label: '打开路线', act: 'tab', tab: 'plan', icon: 'map' },
-    { label: '行前清单', act: 'checklist', plain: true }
+  return { role: 'assistant', text: 'Noted. If you want the route changed, tickets booked or a sentence translated, just say so and I will take care of it here.', actions: [
+    { label: 'Open route', act: 'tab', tab: 'plan', icon: 'map' },
+    { label: 'Pre-trip checklist', act: 'checklist', plain: true }
   ] };
 }
 
@@ -1677,20 +1677,20 @@ function sendChat(text) {
 /* ---------- similar ---------- */
 function similarSheet() {
   return `<div class="sheet tall">
-    ${sheetHead('相似路线', 'CITYWALK · 3 条可套用')}
+    ${sheetHead('Similar routes', 'CITYWALK · 3 you can borrow')}
     <div class="sheet-body">
-      <p class="sub" style="margin:2px 0 9px">按你的 6 个点位匹配，套用后会替换站点顺序与时间。</p>
+      <p class="sub" style="margin:2px 0 9px">Matched against your 6 stops. Applying a route replaces the order and times.</p>
       ${SIMILAR.map((r, i) => `<div class="card sim-route-card">
         <div class="sim-route-top">
           <div class="match-box ${r.match >= 90 ? '' : 'mid'}">${r.match}%</div>
           <div class="sim-route-info">
             <b>${esc(r.title)}</b>
-            <small>${esc(r.author)} · ${r.stops} 站 · ${esc(r.distance)} · ${esc(r.duration)}</small>
+            <small>${esc(r.author)} · ${r.stops} stops · ${esc(r.distance)} · ${esc(r.duration)}</small>
           </div>
         </div>
         <div class="sim-tags">${r.tags.map((t) => tag(t)).join('')}</div>
         <p>${esc(r.highlight)}</p>
-        <button class="apply" data-act="apply-similar" data-index="${i}">${icon('check', 10)}套用到我的路线</button>
+        <button class="apply" data-act="apply-similar" data-index="${i}">${icon('check', 10)}Apply to my route</button>
       </div>`).join('')}
     </div>
   </div>`;
@@ -1699,21 +1699,21 @@ function similarSheet() {
 /* ---------- reorder ---------- */
 function reorderSheet() {
   return `<div class="sheet medium">
-    ${sheetHead('编辑顺序', '路线 · 调整站点')}
+    ${sheetHead('Reorder stops', 'ROUTE · TUNE THE ORDER')}
     <div class="sheet-body">
-      <p class="sub" style="margin:2px 0 8px">用箭头调整先后，路线与时间会自动重算。</p>
+      <p class="sub" style="margin:2px 0 8px">Use the arrows to change the order; the route and times recalculate.</p>
       ${S.stops.map((s, i) => `<div class="reorder-row">
         <span class="num">${i + 1}</span>
         <span class="grow"><b>${esc(s.name)}</b><small>${esc(s.time)} · ${esc(s.duration)}</small></span>
         <span class="btns">
-          <button data-act="move-stop" data-index="${i}" data-dir="-1" ${i === 0 ? 'disabled' : ''} aria-label="上移">${icon('up', 10)}</button>
-          <button data-act="move-stop" data-index="${i}" data-dir="1" ${i === S.stops.length - 1 ? 'disabled' : ''} aria-label="下移">${icon('down', 10)}</button>
+          <button data-act="move-stop" data-index="${i}" data-dir="-1" ${i === 0 ? 'disabled' : ''} aria-label="Move up">${icon('up', 10)}</button>
+          <button data-act="move-stop" data-index="${i}" data-dir="1" ${i === S.stops.length - 1 ? 'disabled' : ''} aria-label="Move down">${icon('down', 10)}</button>
         </span>
       </div>`).join('')}
     </div>
     <div class="sheet-cta">
-      <button class="ghost" data-act="close-sheet">取消</button>
-      <button class="primary" data-act="finish-reorder">完成</button>
+      <button class="ghost" data-act="close-sheet">Cancel</button>
+      <button class="primary" data-act="finish-reorder">Done</button>
     </div>
   </div>`;
 }
@@ -1721,18 +1721,18 @@ function reorderSheet() {
 /* ---------- notes ---------- */
 function notesSheet() {
   return `<div class="sheet tall">
-    ${sheetHead('行程笔记', 'NOTE · 可保存为海报')}
+    ${sheetHead('Trip note', 'NOTE · SAVE AS POSTER')}
     <div class="sheet-body">
       ${posterHTML()}
       <div class="row" style="gap:6px;margin-top:10px">
-        <button class="full-btn" data-act="save-note">${icon('download', 11)}保存海报</button>
-        <button class="full-btn ink" data-act="copy" data-text="${esc(noteText())}">${icon('copy', 11)}复制文案</button>
+        <button class="full-btn" data-act="save-note">${icon('download', 11)}Save poster</button>
+        <button class="full-btn ink" data-act="copy" data-text="${esc(noteText())}">${icon('copy', 11)}Copy text</button>
       </div>
-      <div class="empty-note">海报按 3:4 导出，适合发在社区或朋友圈。</div>
+      <div class="empty-note">Exports at 3:4 — good for the community or a story.</div>
     </div>
     <div class="sheet-cta">
-      <button class="ghost" data-act="close-sheet">关闭</button>
-      <button class="primary" data-act="note-to-forum">发到社区</button>
+      <button class="ghost" data-act="close-sheet">Close</button>
+      <button class="primary" data-act="note-to-forum">Post to community</button>
     </div>
   </div>`;
 }
@@ -1741,55 +1741,55 @@ function posterHTML() {
   return `<div class="note-poster">
     <div class="poster-head">
       <div>
-        <div class="eyebrow" style="margin-bottom:5px">LUCIA · CITYWALK</div>
+        <div class="eyebrow" style="margin-bottom:5px">ROAMCHINA · CITYWALK</div>
         <b>${esc(S.routeName)}</b>
       </div>
       ${tag('DAY 02', 'lime')}
     </div>
-    <div class="meta">10/15 · 北京 · 2 人同行 · 4.2 km</div>
+    <div class="meta">10/15 · Beijing · 2 travelers · 4.2 km</div>
     <div class="note-stops">
       ${S.stops.map((s, i) => `<div class="note-stop">
         <span class="n">${i + 1}</span>
-        <span class="grow"><b>${esc(s.name)}</b><small>${esc(s.duration)} · ${esc(s.tag || '慢走')}</small></span>
+        <span class="grow"><b>${esc(s.name)}</b><small>${esc(s.duration)} · ${esc(s.tag || 'Slow walk')}</small></span>
         <span class="tm">${esc(s.time)}</span>
       </div>`).join('')}
     </div>
-    <div class="note-foot"><span>约 5 小时 · 步行 + 地铁</span><span>LUCIA / 2026</span></div>
+    <div class="note-foot"><span>~5 hr · walk + metro</span><span>ROAMCHINA / 2026</span></div>
   </div>`;
 }
 
 function noteText() {
-  return `${S.routeName}\n10/15 · 北京 · 2 人同行\n\n${S.stops.map((s, i) => `${i + 1}. ${s.name} ${s.time}`).join('\n')}\n\n4.2 km · 约 5 小时 · 由 Lucia 生成`;
+  return `${S.routeName}\n10/15 · Beijing · 2 travelers\n\n${S.stops.map((s, i) => `${i + 1}. ${s.name} ${s.time}`).join('\n')}\n\n4.2 km · ~5 hr · made with RoamChina`;
 }
 
 /* ---------- checklist ---------- */
 function checklistSheet() {
   const progress = doneCount() / S.checklist.length;
-  const cats = ['全部', '证件', '门票', '网络', '交通'];
-  const phaseNames = ['出发前', '落地当天'];
+  const cats = ['All', 'Documents', 'Tickets', 'Connectivity', 'Transit'];
+  const phaseNames = ['Before you fly', 'Arrival day'];
   return `<div class="sheet tall">
-    ${sheetHead('行前清单', 'CHECKLIST · 12 项')}
+    ${sheetHead('Pre-trip checklist', 'CHECKLIST · 12 ITEMS')}
     <div class="sheet-body">
       <div class="card check-summary">
         ${bigRingHTML(progress)}
         <div class="grow">
-          <h3>出发还剩 3 天</h3>
-          <p>已完成 ${doneCount()} / ${S.checklist.length} 项。故宫门票最紧，建议今天预约。</p>
+          <h3>3 days to departure</h3>
+          <p>Done ${doneCount()} of ${S.checklist.length}. The Forbidden City is the tightest — book today.</p>
         </div>
       </div>
       <div class="check-cats">
         ${cats.map((c) => `<button class="chip ${S.checklistCat === c ? 'on' : ''}" data-act="check-cat" data-cat="${c}">${c}</button>`).join('')}
       </div>
       ${phaseNames.map((phase) => {
-        const items = S.checklist.filter((c) => c.phase === phase && (S.checklistCat === '全部' || c.cat === S.checklistCat));
+        const items = S.checklist.filter((c) => c.phase === phase && (S.checklistCat === 'All' || c.cat === S.checklistCat));
         if (!items.length) return '';
-        return `<div class="phase-title">${phase} · ${items.length} 项</div>${items.map(checkRowHTML).join('')}`;
+        return `<div class="phase-title">${phase} · ${items.length}</div>${items.map(checkRowHTML).join('')}`;
       }).join('')}
-      <div class="empty-note">勾选后进度会同步到「行程」页。</div>
+      <div class="empty-note">Ticking items updates your progress on the Trip tab.</div>
     </div>
     <div class="sheet-cta">
-      <button class="ghost" data-act="close-sheet">关闭</button>
-      <button class="primary" data-act="checklist-assistant">问 Lucia 还缺什么</button>
+      <button class="ghost" data-act="close-sheet">Close</button>
+      <button class="primary" data-act="checklist-assistant">Ask Lucia what is missing</button>
     </div>
   </div>`;
 }
@@ -1808,15 +1808,15 @@ function bigRingHTML(progress) {
 function checkRowHTML(c) {
   const done = c.status === 'done';
   return `<div class="check-row ${done ? 'done' : ''}">
-    <button class="check-box" data-act="toggle-check" data-id="${c.id}" aria-label="勾选 ${esc(c.title)}">${icon('check', 10)}</button>
+    <button class="check-box" data-act="toggle-check" data-id="${c.id}" aria-label="Tick ${esc(c.title)}">${icon('check', 10)}</button>
     <span class="check-info">
       <b>${esc(c.title)}</b>
       <small>${esc(c.meta)}</small>
       ${c.tag ? `<span class="tags">${tag(c.tag, c.tone === 'warn' ? 'warn' : 'soft')}</span>` : ''}
     </span>
     ${done
-      ? `<span class="check-action">${esc(c.right || '已完成')}</span>`
-      : `<button class="check-action" data-act="check-action" data-id="${c.id}">${esc(c.action || '查看')}</button>`}
+      ? `<span class="check-action">${esc(c.right || 'Done')}</span>`
+      : `<button class="check-action" data-act="check-action" data-id="${c.id}">${esc(c.action || 'View')}</button>`}
   </div>`;
 }
 
@@ -1825,7 +1825,7 @@ function placeSheet() {
   const p = placeById(S.sheetData) || PLACES[0];
   const saved = S.saved.has(p.id);
   return `<div class="sheet medium">
-    ${sheetHead('地点详情', '社区 · ' + p.area)}
+    ${sheetHead('Place details', 'COMMUNITY · ' + p.area)}
     <div class="sheet-body">
       <div class="place-hero">
         ${placeScene(p)}
@@ -1836,14 +1836,14 @@ function placeSheet() {
       <div class="place-price">${esc(p.price)}</div>
       <div class="place-note">${esc(p.note)}</div>
       <div class="place-facts">
-        <div class="place-fact"><span>最佳时间</span><b>${esc(p.bestTime)}</b></div>
-        <div class="place-fact"><span>位置</span><b>${esc(p.area)}</b></div>
+        <div class="place-fact"><span>Best time</span><b>${esc(p.bestTime)}</b></div>
+        <div class="place-fact"><span>Where</span><b>${esc(p.area)}</b></div>
       </div>
-      <button class="full-btn" style="margin-top:9px;width:100%" data-act="place-assistant" data-id="${p.id}">${icon('sparkles', 11)}问问 Lucia 怎么安排</button>
+      <button class="full-btn" style="margin-top:9px;width:100%" data-act="place-assistant" data-id="${p.id}">${icon('sparkles', 11)}Ask Lucia how to fit it in</button>
     </div>
     <div class="sheet-cta">
-      <button class="ghost" data-act="save-place" data-id="${p.id}">${icon(saved ? 'check' : 'heart', 10)}${saved ? '已收藏' : '收藏'}</button>
-      <button class="primary" data-act="add-place" data-id="${p.id}">加入今天的路线</button>
+      <button class="ghost" data-act="save-place" data-id="${p.id}">${icon(saved ? 'check' : 'heart', 10)}${saved ? 'Saved' : 'Save'}</button>
+      <button class="primary" data-act="add-place" data-id="${p.id}">Add to today's route</button>
     </div>
   </div>`;
 }
@@ -1863,35 +1863,35 @@ function placeScene(p) {
 function composeSheet() {
   const d = S.draft;
   return `<div class="sheet tall">
-    ${sheetHead('发起一场活动', '社区 · 发布')}
+    ${sheetHead('Start a citywalk', 'COMMUNITY · POST')}
     <div class="sheet-body">
       <div class="field">
-        <label>活动名称</label>
-        <input data-field="title" value="${esc(d.title)}" placeholder="例如：什刹海落日摄影局" maxlength="30">
+        <label>Event name</label>
+        <input data-field="title" value="${esc(d.title)}" placeholder="e.g. Shichahai sunset photo walk" maxlength="30">
       </div>
       <div class="field-row">
-        <div class="field"><label>日期</label><input data-field="date" value="${esc(d.date)}" placeholder="11/08 周六"></div>
-        <div class="field"><label>时间</label><input data-field="time" value="${esc(d.time)}" placeholder="14:00 – 18:00"></div>
+        <div class="field"><label>Date</label><input data-field="date" value="${esc(d.date)}" placeholder="11/08 Sat"></div>
+        <div class="field"><label>Time</label><input data-field="time" value="${esc(d.time)}" placeholder="14:00 – 18:00"></div>
       </div>
-      <div class="field"><label>集合地点</label><input data-field="place" value="${esc(d.place)}" placeholder="例如：银锭桥"></div>
-      <div class="field"><label>费用</label><input data-field="fee" value="${esc(d.fee)}" placeholder="免费 / ¥20"></div>
-      <div class="field"><label>补充说明</label><textarea data-field="note" rows="3" placeholder="想带大家一起做什么？">${esc(d.note)}</textarea></div>
+      <div class="field"><label>Meeting point</label><input data-field="place" value="${esc(d.place)}" placeholder="e.g. Yinding Bridge"></div>
+      <div class="field"><label>Cost</label><input data-field="fee" value="${esc(d.fee)}" placeholder="Free / ¥20"></div>
+      <div class="field"><label>Notes</label><textarea data-field="note" rows="3" placeholder="What would you like to do together?">${esc(d.note)}</textarea></div>
       <div class="preview-card" id="composePreview">${composePreviewHTML()}</div>
-      <div class="publish-note">发布后会出现在「本地活动」频道，可随时编辑或取消。</div>
+      <div class="publish-note">Posts appear in Local events and can be edited or cancelled any time.</div>
     </div>
     <div class="sheet-cta">
-      <button class="ghost" data-act="close-sheet">取消</button>
-      <button class="primary" id="publishBtn" data-act="publish-event">发布活动</button>
+      <button class="ghost" data-act="close-sheet">Cancel</button>
+      <button class="primary" id="publishBtn" data-act="publish-event">Publish event</button>
     </div>
   </div>`;
 }
 
 function composePreviewHTML() {
   const d = S.draft;
-  return `<div class="lab">预览 · 社区卡片</div>
-    <b>${esc(d.title.trim() || '你的活动名称')}</b>
-    <p>${esc(d.date)} ${esc(d.time)} · ${esc(d.place.trim() || '集合地点待定')} · ${esc(d.fee)}</p>
-    <p>${esc(d.note.trim() || '由你发起 · 欢迎同行')}</p>`;
+  return `<div class="lab">PREVIEW · COMMUNITY CARD</div>
+    <b>${esc(d.title.trim() || 'Your event name')}</b>
+    <p>${esc(d.date)} ${esc(d.time)} · ${esc(d.place.trim() || 'Meeting point to be confirmed')} · ${esc(d.fee)}</p>
+    <p>${esc(d.note.trim() || 'Hosted by you · all welcome')}</p>`;
 }
 
 function updateComposePreview() {
@@ -1909,18 +1909,18 @@ function updateComposePreview() {
 function phraseSheet() {
   const p = S.sheetData || PHRASES[0];
   return `<div class="sheet medium">
-    ${sheetHead('应急语句', '离线 · 可朗读')}
+    ${sheetHead('Emergency phrase', 'OFFLINE · PLAY ALOUD')}
     <div class="sheet-body">
       <div class="phrase-focus">
         <div class="zh">${esc(p.zh)}</div>
         <div class="en">${esc(p.en)}</div>
-        <button class="speaker" data-act="speak" data-text="${esc(p.en)}" data-lang="en" aria-label="朗读英文">${icon('speaker', 17)}</button>
-        <div class="hint">点喇叭朗读 · 没有网络也能用</div>
+        <button class="speaker" data-act="speak" data-text="${esc(p.en)}" data-lang="en" aria-label="Play English">${icon('speaker', 17)}</button>
+        <div class="hint">Tap the speaker to play · works offline</div>
       </div>
     </div>
     <div class="sheet-cta">
-      <button class="ghost" data-act="copy" data-text="${esc(p.en)}">${icon('copy', 9)}英文</button>
-      <button class="primary" data-act="copy" data-text="${esc(p.zh)}">${icon('copy', 9)}复制中文</button>
+      <button class="ghost" data-act="copy" data-text="${esc(p.en)}">${icon('copy', 9)}English</button>
+      <button class="primary" data-act="copy" data-text="${esc(p.zh)}">${icon('copy', 9)}Copy Chinese</button>
     </div>
   </div>`;
 }
@@ -1941,9 +1941,9 @@ function applyRouteSuggestion(silent) {
   if (jingshan) jingshan.time = '15:00';
   S.aiVisible = false;
   S.applied = true;
-  S.routeName = '北京中轴线 · 已优化';
+  S.routeName = 'Central Axis · Tuned';
   render();
-  if (!silent) toast('已应用 Lucia 建议 · 少走 1.2 km', 'sparkle');
+  if (!silent) toast("Lucia's suggestion applied · 1.2 km shorter", 'sparkle');
 }
 
 function applySimilar(index) {
@@ -1961,7 +1961,7 @@ function applySimilar(index) {
   closeSheet();
   S.tab = 'plan';
   render(true);
-  toast(`已套用「${r.title}」`, 'check');
+  toast(`Applied “${r.title}”`, 'check');
 }
 
 function applyForumRoute(index) {
@@ -1979,25 +1979,25 @@ function applyForumRoute(index) {
   closeSheet();
   S.tab = 'plan';
   render(true);
-  toast(`已套用「${r.title}」`, 'check');
+  toast(`Applied “${r.title}”`, 'check');
 }
 
 function speak(text, lang) {
-  if (!('speechSynthesis' in window)) { toast('当前浏览器不支持语音朗读', 'info'); return; }
+  if (!('speechSynthesis' in window)) { toast('This browser cannot play audio', 'info'); return; }
   try {
     window.speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
     u.lang = lang === 'zh' ? 'zh-CN' : 'en-US';
     u.rate = .95;
     window.speechSynthesis.speak(u);
-    toast('正在朗读', 'speaker');
+    toast('Playing aloud', 'speaker');
   } catch (e) {
-    toast('朗读失败，请检查系统语音', 'info');
+    toast('Playback failed — check your system voice', 'info');
   }
 }
 
 function copyText(text) {
-  const done = () => toast('已复制到剪贴板', 'copy');
+  const done = () => toast('Copied to clipboard', 'copy');
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(text, done));
   } else {
@@ -2017,12 +2017,12 @@ function fallbackCopy(text, done) {
     document.body.removeChild(ta);
     done();
   } catch (e) {
-    toast('复制失败，请手动选择', 'copy');
+    toast('Copy failed — select the text manually', 'copy');
   }
 }
 
 async function shareRoute() {
-  const data = { title: S.routeName, text: `${S.routeName} · ${S.stops.length} 站 · 4.2 km · Lucia`, url: location.href };
+  const data = { title: S.routeName, text: `${S.routeName} · ${S.stops.length} stops · 4.2 km · RoamChina`, url: location.href };
   if (navigator.share) {
     try { await navigator.share(data); return; }
     catch (err) { if (err && err.name === 'AbortError') return; }
@@ -2051,7 +2051,7 @@ function finishLive() {
   S.live.push({ ...next });
   S.listening = false;
   render();
-  toast('已识别并翻译成英文', 'mic');
+  toast('Recognized and translated into English', 'mic');
   if (S.autoplay) speak(next.en, 'en');
 }
 
@@ -2065,7 +2065,7 @@ function startScan() {
     S.photoScanning = false;
     S.photoScanned = true;
     render();
-    toast('识别到 4 处文字 · 已翻译', 'camera');
+    toast('Found 4 pieces of text · translated', 'camera');
     if (S.autoplay) {
       const row = (S.photoSample === 'menu' ? MENU : SIGN)[0];
       speak(row.en, 'en');
@@ -2077,7 +2077,7 @@ function toggleCheck(id) {
   const item = S.checklist.find((c) => c.id === id);
   if (!item) return;
   item.status = item.status === 'done' ? 'todo' : 'done';
-  if (item.status === 'done') item.right = '已完成';
+  if (item.status === 'done') item.right = 'Done';
   const body = $('.sheet-body');
   const top = body ? body.scrollTop : 0;
   render();
@@ -2085,7 +2085,7 @@ function toggleCheck(id) {
     const nb = $('.sheet-body');
     if (nb) nb.scrollTop = top;
   });
-  toast(item.status === 'done' ? '已完成一项' : '已取消勾选', 'check');
+  toast(item.status === 'done' ? 'One more done' : 'Unticked', 'check');
 }
 
 function moveStop(index, dir) {
@@ -2105,16 +2105,16 @@ function moveStop(index, dir) {
 
 function publishEvent() {
   const d = S.draft;
-  if (!d.title.trim() || !d.place.trim()) { toast('还差活动名称和地点', 'info'); return; }
+  if (!d.title.trim() || !d.place.trim()) { toast('Add an event name and a meeting point', 'info'); return; }
   const event = {
     id: 'e' + Date.now(),
     title: d.title.trim(),
-    subtitle: d.note.trim() || '由你发起的 Citywalk · 欢迎同行',
-    date: d.date.trim() || '11/08 周六',
+    subtitle: d.note.trim() || 'A citywalk by you · all welcome',
+    date: d.date.trim() || '11/08 Sat',
     time: d.time.trim() || '14:00 – 18:00',
     place: d.place.trim(),
-    host: '@王博',
-    fee: d.fee.trim() || '免费',
+    host: '@Wang Bo',
+    fee: d.fee.trim() || 'Free',
     attendees: 1,
     tint: 'lime'
   };
@@ -2122,17 +2122,17 @@ function publishEvent() {
   S.joined.add(event.id);
   S.userPosts.unshift({
     id: 'n' + Date.now(),
-    author: '王博', avatar: 'W', tint: 'lime', time: '刚刚', kind: 'event',
+    author: 'Wang Bo', avatar: 'W', tint: 'lime', time: 'Just now', kind: 'event',
     title: event.title, body: event.subtitle,
     tags: [event.date, event.fee], likes: '0', saves: '0', comments: 0,
     art: 'sunset', h: 148, eventId: event.id,
-    comment: '由你发起 · 欢迎同行'
+    comment: 'Hosted by you · all welcome'
   });
-  S.draft = { title: '', date: '11/08 周六', time: '14:00 – 18:00', place: '', fee: '免费', note: '' };
+  S.draft = { title: '', date: '11/08 Sat', time: '14:00 – 18:00', place: '', fee: 'Free', note: '' };
   closeSheet();
   S.forumChannel = 'event';
   go('forum', 'event');
-  toast('活动已发布 · 可以邀请同行的朋友了', 'sparkle');
+  toast('Event published · invite your friends', 'sparkle');
 }
 
 /* ================= EVENTS ================= */
@@ -2161,7 +2161,7 @@ document.addEventListener('click', (e) => {
       break;
     case 'save-post': {
       const id = el.dataset.id;
-      if (S.savedPosts.has(id)) { S.savedPosts.delete(id); toast('已取消收藏'); } else { S.savedPosts.add(id); toast('已收藏笔记 · 可在「我的」查看', 'bookmark'); }
+      if (S.savedPosts.has(id)) { S.savedPosts.delete(id); toast('Removed from saved'); } else { S.savedPosts.add(id); toast('Note saved · find it under Me', 'bookmark'); }
       if (S.sheet === 'post') renderSheet(); else render();
       break;
     }
@@ -2172,23 +2172,23 @@ document.addEventListener('click', (e) => {
       const a = S.attractions.find((x) => x.id === el.dataset.id);
       if (!a || a.booked) return;
       a.booked = true;
-      a.code = 'LUCIA-' + (3000 + Math.floor(Math.random() * 6000));
+      a.code = 'RC-' + (3000 + Math.floor(Math.random() * 6000));
       render();
-      toast(`${a.name} 预约成功 · 凭证已保存`, 'check');
+      toast(`${a.name} booked · receipt saved`, 'check');
       break;
     }
     case 'book-all': {
       const pending = S.attractions.filter((a) => !a.booked);
-      if (!pending.length) { toast('所有景点都已预约', 'check'); return; }
-      pending.forEach((a) => { a.booked = true; a.code = 'LUCIA-' + (3000 + Math.floor(Math.random() * 6000)); });
+      if (!pending.length) { toast('Every attraction is booked', 'check'); return; }
+      pending.forEach((a) => { a.booked = true; a.code = 'RC-' + (3000 + Math.floor(Math.random() * 6000)); });
       render();
-      toast(`已预约 ${pending.length} 个景点 · 凭证已保存`, 'check');
+      toast(`Booked ${pending.length} attractions · receipts saved`, 'check');
       break;
     }
     case 'resv-info': {
       const a = S.attractions.find((x) => x.id === el.dataset.id);
       if (!a) return;
-      toast(a.booked ? `${a.name} · 凭证 ${a.code}` : `${a.name} · ${a.note || '可在开放时段预约'}`, a.booked ? 'ticket' : 'info');
+      toast(a.booked ? `${a.name} · receipt ${a.code}` : `${a.name} · ${a.note || 'Book during opening hours'}`, a.booked ? 'ticket' : 'info');
       break;
     }
     case 'toggle-bookings':
@@ -2214,7 +2214,7 @@ document.addEventListener('click', (e) => {
     case 'finish-reorder':
       closeSheet();
       render();
-      toast('顺序已更新 · 时间已重算', 'refresh');
+      toast('Order updated · times recalculated', 'refresh');
       break;
     case 'notes':
       openSheet('notes');
@@ -2254,7 +2254,7 @@ document.addEventListener('click', (e) => {
       S.editMode = !S.editMode;
       if (S.editMode) S.selected = null;
       render();
-      toast(S.editMode ? '拖动编号圆点调整位置' : '点位已保存', S.editMode ? 'hand' : 'check');
+      toast(S.editMode ? 'Drag the numbered dots to move stops' : 'Stops saved', S.editMode ? 'hand' : 'check');
       break;
     case 'select-stop':
       S.selected = S.selected === el.dataset.id ? null : el.dataset.id;
@@ -2265,7 +2265,7 @@ document.addEventListener('click', (e) => {
       break;
     case 'join-event': {
       const id = el.dataset.id;
-      if (S.joined.has(id)) { S.joined.delete(id); toast('已取消报名'); } else { S.joined.add(id); toast('报名成功 · 已加入行程提醒', 'check'); }
+      if (S.joined.has(id)) { S.joined.delete(id); toast('Left the event'); } else { S.joined.add(id); toast('You are going · reminder added', 'check'); }
       render();
       break;
     }
@@ -2276,17 +2276,17 @@ document.addEventListener('click', (e) => {
       closeSheet();
       S.tab = 'plan';
       render(true);
-      toast('已加入今天的路线', 'plus');
+      toast("Added to today's route", 'plus');
       break;
     case 'save-place': {
       const id = el.dataset.id;
-      if (S.saved.has(id)) { S.saved.delete(id); toast('已取消收藏'); } else { S.saved.add(id); toast('已收藏 · 可在「我的」查看', 'heart'); }
+      if (S.saved.has(id)) { S.saved.delete(id); toast('Removed from saved'); } else { S.saved.add(id); toast('Saved · find it under Me', 'heart'); }
       renderSheet();
       break;
     }
     case 'place-assistant': {
       const p = placeById(el.dataset.id);
-      openAssistant(p ? `社区 · ${p.title}` : null);
+      openAssistant(p ? `Community · ${p.title}` : null);
       break;
     }
     case 'mode':
@@ -2302,7 +2302,7 @@ document.addEventListener('click', (e) => {
       S.scenario = el.dataset.scenario || 'medical';
       S.translateMode = 'offline';
       render();
-      toast('已切到离线语句库', 'download');
+      toast('Switched to the offline phrasebook', 'download');
       break;
     case 'mic':
       toggleMic();
@@ -2323,7 +2323,7 @@ document.addEventListener('click', (e) => {
       copyText(el.dataset.text || '');
       break;
     case 'favorite-phrase':
-      toast('已收藏到离线语句', 'heart');
+      toast('Saved to offline phrases', 'heart');
       break;
     case 'phrase': {
       const p = PHRASES[Number(el.dataset.index)];
@@ -2335,7 +2335,7 @@ document.addEventListener('click', (e) => {
       if (key === 'notifications' || key === 'autoplay') {
         S[key] = !S[key];
         render();
-        toast(key === 'notifications' ? (S.notifications ? '行程提醒已开启' : '行程提醒已关闭') : (S.autoplay ? '自动朗读已开启' : '自动朗读已关闭'), key === 'notifications' ? 'bell' : 'speaker');
+        toast(key === 'notifications' ? (S.notifications ? 'Trip reminders on' : 'Trip reminders off') : (S.autoplay ? 'Auto-play on' : 'Auto-play off'), key === 'notifications' ? 'bell' : 'speaker');
       }
       break;
     }
@@ -2344,15 +2344,15 @@ document.addEventListener('click', (e) => {
       break;
     case 'check-action': {
       const item = S.checklist.find((c) => c.id === el.dataset.id);
-      if (item) toast(`已打开「${item.title}」· ${item.action}`, 'check');
+      if (item) toast(`Opened “${item.title}” · ${item.action}`, 'check');
       break;
     }
     case 'check-cat':
-      S.checklistCat = el.dataset.cat || '全部';
+      S.checklistCat = el.dataset.cat || 'All';
       renderSheet();
       break;
     case 'checklist-assistant':
-      openAssistant('清单 · 还缺什么');
+      openAssistant('Checklist · what is missing');
       break;
     case 'move-stop':
       moveStop(Number(el.dataset.index), Number(el.dataset.dir));
@@ -2361,12 +2361,12 @@ document.addEventListener('click', (e) => {
       publishEvent();
       break;
     case 'save-note':
-      toast('海报已保存到相册', 'download');
+      toast('Poster saved to Photos', 'download');
       break;
     case 'note-to-forum':
       closeSheet();
       go('forum');
-      toast('笔记已发到社区', 'sparkle');
+      toast('Note posted to the community', 'sparkle');
       break;
     case 'quick':
     case 'send-chat': {
@@ -2379,10 +2379,10 @@ document.addEventListener('click', (e) => {
       closeSheet();
       S.tab = 'trip';
       render(true);
-      toast('已打开故宫预约入口', 'ticket');
+      toast('Opened Forbidden City booking', 'ticket');
       break;
     case 'toast':
-      toast(el.dataset.text || '已完成', el.dataset.icon || 'check');
+      toast(el.dataset.text || 'Done', el.dataset.icon || 'check');
       break;
     default:
       break;
@@ -2398,7 +2398,7 @@ document.addEventListener('input', (e) => {
     const clear = $('.forum-search .clear');
     if (!clear && S.search) {
       const wrap = $('.forum-search');
-      if (wrap) wrap.insertAdjacentHTML('beforeend', `<button class="clear" data-act="search-clear" aria-label="清空搜索">${icon('x', 8)}</button>`);
+      if (wrap) wrap.insertAdjacentHTML('beforeend', `<button class="clear" data-act="search-clear" aria-label="Clear search">${icon('x', 8)}</button>`);
     }
     if (clear && !S.search) clear.remove();
   }
@@ -2455,9 +2455,9 @@ function boot() {
   render(true);
   setTimeout(() => {
     try {
-      if (!sessionStorage.getItem('lucia-hint')) {
-        sessionStorage.setItem('lucia-hint', '1');
-        toast('试试计划页的「调点位」，拖动编号圆点', 'hand');
+      if (!sessionStorage.getItem('roamchina-hint')) {
+        sessionStorage.setItem('roamchina-hint', '1');
+        toast('Try Adjust stops on the Plan tab, then drag a numbered dot', 'hand');
       }
     } catch (e) { /* storage unavailable */ }
   }, 1100);

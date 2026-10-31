@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
-<title>Lucia · 出行，不必慌张 — 可交互 App</title>
-<meta name="description" content="Lucia 是一个原生 SwiftUI 旅行助手。这里是在浏览器里能点的版本：五个 Tab、可拖动的 Citywalk 点位、社区频道、拍照翻译和随叫随到的 AI 助手。">
+<title>RoamChina · Travel, unhurried — Interactive App</title>
+<meta name="description" content="RoamChina is a native SwiftUI travel companion. This is the clickable browser edition: five tabs, draggable citywalk stops, community channels, camera translation and an AI assistant on call.">
 <meta name="theme-color" content="#F4ECDC">
 <link rel="icon" href="AppIcon-256.png">
 <link rel="apple-touch-icon" href="AppIcon.png">
@@ -12,21 +12,21 @@
 </head>
 <body>
 <div class="stage">
-  <aside class="side" aria-label="关于这个原型">
+  <aside class="side" aria-label="About this prototype">
     <div class="side-sticker">PLAYABLE PROTOTYPE</div>
     <div class="brand">
-      <span class="brand-mark">L</span>
-      <span>LUCIA</span>
+      <span class="brand-mark">R</span>
+      <span>ROAMCHINA</span>
       <span class="brand-dot"></span>
     </div>
-    <h2>把一趟北京<em>装进口袋。</em></h2>
-    <p>这是 Lucia 的可交互版本：下面机身里不是截图，五个 Tab、路线点位、扫描识别和社区发布都能真的点。</p>
+    <h2>A whole Beijing,<em>in your pocket.</em></h2>
+    <p>This is the interactive edition of RoamChina. What sits in the phone below is not a screenshot: all five tabs, the route stops, scanning and community posting really work.</p>
     <ul class="tips">
-      <li><b>01</b><span>计划页点「调点位」，拖动编号圆点，路线会跟着重算。</span></li>
-      <li><b>02</b><span>翻译页按快门，走完一次拍照扫描与识别的流程。</span></li>
-      <li><b>03</b><span>社区 → 活动，发一场自己的 Citywalk 活动。</span></li>
+      <li><b>01</b><span>On the Plan tab, choose Adjust stops and drag a numbered dot — the route recalculates.</span></li>
+      <li><b>02</b><span>On the Translate tab, press the shutter to run a full photo scan and recognition flow.</span></li>
+      <li><b>03</b><span>Community → Events: post a citywalk of your own.</span></li>
     </ul>
-    <div class="side-note">原生 SwiftUI 源码在 <a href="https://github.com/wangwangbobo/ios-app-demo/tree/main/Lucia" target="_blank" rel="noopener">Lucia/</a>，这里是把它的界面与流程搬进浏览器的版本。地图、社区、翻译均为本地演示数据。</div>
+    <div class="side-note">The native SwiftUI source lives in <a href="https://github.com/wangwangbobo/ios-app-demo/tree/main/Lucia" target="_blank" rel="noopener">Lucia/</a>; this is that interface and those flows rebuilt for the browser. Maps, community and translation all use local demo data.</div>
   </aside>
 
   <div class="device" id="device">
@@ -43,7 +43,7 @@
     <div class="app" id="app">
       <main class="view" id="view" aria-live="polite"></main>
 
-      <nav class="dock" id="dock" aria-label="主导航"></nav>
+      <nav class="dock" id="dock" aria-label="Main navigation"></nav>
       <div class="toast" id="toast" role="status"></div>
       <div class="sheet-layer" id="sheetLayer" aria-modal="true" role="dialog"></div>
     </div>

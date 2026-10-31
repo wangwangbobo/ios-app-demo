@@ -17,7 +17,7 @@ final class AppModel: ObservableObject {
     @Published var toast: Toast?
 
     // MARK: Plan
-    @Published var routeName = "北京中轴线 · 草稿"
+    @Published var routeName = "Central Axis · Draft"
     @Published var stops: [RouteStop]
     @Published var selectedStopID: UUID?
     @Published var layer: MapLayer = .mine
@@ -56,62 +56,62 @@ final class AppModel: ObservableObject {
 
     // MARK: Static demo content
     let forumRoutes: [ForumRoute] = [
-        ForumRoute(title: "2 天胡同慢走 · 8 站", author: "@Lina", meta: "4.8 分 · 收藏 1.2k", tags: ["轻松", "咖啡", "拍照"], stops: 8, distance: "6.4 km", likes: "1.2k"),
-        ForumRoute(title: "北京中轴线 · 半日", author: "@Ken", meta: "4.9 分 · 收藏 2.1k", tags: ["经典", "步行", "日落"], stops: 6, distance: "4.2 km", likes: "2.1k"),
-        ForumRoute(title: "鼓楼到后海 · 夜走", author: "@阿哲", meta: "4.7 分 · 收藏 968", tags: ["夜游", "酒吧", "轻松"], stops: 5, distance: "3.8 km", likes: "968")
+        ForumRoute(title: "Two days in the hutongs · 8 stops", author: "@Lina", meta: "4.8 · 1.2k saves", tags: ["Easy", "Coffee", "Photo spots"], stops: 8, distance: "6.4 km", likes: "1.2k"),
+        ForumRoute(title: "Central Axis · Half day", author: "@Ken", meta: "4.9 · 2.1k saves", tags: ["Classic", "Walk", "Sunset"], stops: 6, distance: "4.2 km", likes: "2.1k"),
+        ForumRoute(title: "Drum Tower to Houhai · After dark", author: "@Zhe", meta: "4.7 · 968 saves", tags: ["Night", "Bars", "Easy"], stops: 5, distance: "3.8 km", likes: "968")
     ]
 
     let forumPlaces: [ForumPlace] = [
-        ForumPlace(title: "四季民福 · 故宫店", subtitle: "11:00 前到不排队 · 烤鸭", price: "¥150", tags: ["家庭", "本地人常去"], kind: .restaurant, likes: "2.3k", symbol: "fork.knife", tint: 0, heat: 96, area: "东城 · 故宫", note: "下午三点以后去几乎不用等位，鸭皮还是脆的。", bestTime: "11:00 前 / 15:00 后"),
-        ForumPlace(title: "满恒记 · 牛街", subtitle: "手切鲜羊肉 · 铜锅涮肉", price: "¥95", tags: ["本地", "排队"], kind: .restaurant, likes: "1.9k", symbol: "flame", tint: 6, heat: 93, area: "西城 · 牛街", note: "手切羊肉配麻酱，本地人排队也愿意等。", bestTime: "17:00 前取号"),
-        ForumPlace(title: "胖妹面庄 · 北新桥", subtitle: "小面 · 现炸酥肉", price: "¥45", tags: ["本地", "快吃"], kind: .restaurant, likes: "886", symbol: "takeoutbag.and.cup.and.straw", tint: 1, heat: 88, area: "东城 · 北新桥", note: "小面要少辣，酥肉现炸的最好吃。", bestTime: "工作日 14:00"),
-        ForumPlace(title: "Metal Hands · 前门", subtitle: "胡同咖啡 · 自家烘焙", price: "¥45", tags: ["咖啡", "安静"], kind: .restaurant, likes: "1.1k", symbol: "cup.and.saucer.fill", tint: 5, heat: 81, area: "东城 · 前门", note: "巷子里的安静咖啡馆，下午光线最好。", bestTime: "15:00–17:00"),
-        ForumPlace(title: "稻香村 · 本地人伴手礼", subtitle: "避开网红款 · 8 件", price: "¥50–120", tags: ["伴手礼", "可托运"], kind: .gift, likes: "1.7k", symbol: "gift", tint: 2, heat: 86, area: "各城区门店", note: "散装点心比礼盒更值得买，记得要新鲜日期。", bestTime: "上午补货"),
-        ForumPlace(title: "故宫文创 · 冰箱贴", subtitle: "角楼系列 · 限定色", price: "¥39", tags: ["轻便", "限定"], kind: .gift, likes: "604", symbol: "sparkles", tint: 3, heat: 78, area: "故宫 · 神武门", note: "角楼冰箱贴经常断货，进门先买。", bestTime: "开馆后 1 小时"),
-        ForumPlace(title: "同仁堂 · 酸梅汤原料", subtitle: "煮一壶老北京的夏天", price: "¥38", tags: ["可托运", "轻便"], kind: .gift, likes: "512", symbol: "leaf", tint: 7, heat: 74, area: "东城 · 大栅栏", note: "夏天煮一壶，比瓶装饮料更像北京。", bestTime: "任何时间"),
-        ForumPlace(title: "景山看日落", subtitle: "17:00 前上山 · 万春亭", price: "免费", tags: ["日落", "俯拍故宫"], kind: .spot, likes: "3.4k", symbol: "sun.horizon", tint: 4, heat: 94, area: "东城 · 景山", note: "17:00 前上万春亭，能拍到故宫全景。", bestTime: "日落前 40 分钟"),
-        ForumPlace(title: "天坛公园", subtitle: "回音壁 · 古柏与祈年殿", price: "¥34", tags: ["建筑", "人少"], kind: .spot, likes: "2.8k", symbol: "building.columns", tint: 8, heat: 90, area: "东城 · 天坛", note: "从南门进，回音壁人少的时候最有意思。", bestTime: "开园后 1 小时"),
-        ForumPlace(title: "北海公园", subtitle: "划船看白塔 · 亲子友好", price: "¥10", tags: ["亲子", "划船"], kind: .spot, likes: "2.1k", symbol: "sailboat", tint: 9, heat: 82, area: "西城 · 北海", note: "租一条船，从湖上看白塔最舒服。", bestTime: "15:00 后")
+        ForumPlace(title: "Siji Minfu · Forbidden City", subtitle: "Arrive before 11:00 · Peking duck", price: "¥150", tags: ["Family", "Local favorite"], kind: .restaurant, likes: "2.3k", symbol: "fork.knife", tint: 0, heat: 96, area: "Dongcheng · Forbidden City", note: "After 3pm there's barely a wait, and the skin stays crisp.", bestTime: "Before 11:00 / after 15:00"),
+        ForumPlace(title: "Man Heng Ji · Niujie", subtitle: "Hand-cut lamb · copper-pot hotpot", price: "¥95", tags: ["Local", "Queue"], kind: .restaurant, likes: "1.9k", symbol: "flame", tint: 6, heat: 93, area: "Xicheng · Niujie", note: "Hand-cut lamb with sesame dip — even locals happily queue.", bestTime: "Take a number before 17:00"),
+        ForumPlace(title: "Pangmei Noodles · Beixinqiao", subtitle: "Chongqing noodles · crispy pork", price: "¥45", tags: ["Local", "Quick bite"], kind: .restaurant, likes: "886", symbol: "takeoutbag.and.cup.and.straw", tint: 1, heat: 88, area: "Dongcheng · Beixinqiao", note: "Ask for mild heat; the crispy pork is best fresh from the wok.", bestTime: "Weekdays 14:00"),
+        ForumPlace(title: "Metal Hands · Qianmen", subtitle: "Hutong coffee · house roast", price: "¥45", tags: ["Coffee", "Quiet"], kind: .restaurant, likes: "1.1k", symbol: "cup.and.saucer.fill", tint: 5, heat: 81, area: "Dongcheng · Qianmen", note: "A quiet café down a side lane, best light in the afternoon.", bestTime: "15:00–17:00"),
+        ForumPlace(title: "Daoxiangcun · Local gifts", subtitle: "Skip the gift boxes · 8 picks", price: "¥50–120", tags: ["Gifts", "Check-in"], kind: .gift, likes: "1.7k", symbol: "gift", tint: 2, heat: 86, area: "Branches citywide", note: "Loose pastries beat the gift boxes — check the date.", bestTime: "Morning restock"),
+        ForumPlace(title: "Palace Museum Shop · Magnets", subtitle: "Corner-tower series · limited colors", price: "¥39", tags: ["Light", "Limited"], kind: .gift, likes: "604", symbol: "sparkles", tint: 3, heat: 78, area: "Forbidden City · Shenwu Gate", note: "The corner-tower magnet sells out, so buy it on the way in.", bestTime: "1 hr after opening"),
+        ForumPlace(title: "Tongrentang · Sour plum mix", subtitle: "Brew a Beijing summer", price: "¥38", tags: ["Check-in", "Light"], kind: .gift, likes: "512", symbol: "leaf", tint: 7, heat: 74, area: "Dongcheng · Dashilar", note: "Brewed at home, it tastes more like Beijing than any bottle.", bestTime: "Any time"),
+        ForumPlace(title: "Sunset at Jingshan", subtitle: "Up before 17:00 · Wanchun Pavilion", price: "Free", tags: ["Sunset", "Palace views"], kind: .spot, likes: "3.4k", symbol: "sun.horizon", tint: 4, heat: 94, area: "Dongcheng · Jingshan", note: "Reach Wanchun Pavilion before 17:00 for the full palace view.", bestTime: "40 min before sunset"),
+        ForumPlace(title: "Temple of Heaven", subtitle: "Echo Wall · old cypresses", price: "¥34", tags: ["Architecture", "Quiet"], kind: .spot, likes: "2.8k", symbol: "building.columns", tint: 8, heat: 90, area: "Dongcheng · Temple of Heaven", note: "Enter from the south gate; the Echo Wall is best when quiet.", bestTime: "1 hr after opening"),
+        ForumPlace(title: "Beihai Park", subtitle: "Boats and the White Dagoba", price: "¥10", tags: ["Family", "Boating"], kind: .spot, likes: "2.1k", symbol: "sailboat", tint: 9, heat: 82, area: "Xicheng · Beihai", note: "Rent a boat — the White Dagoba looks best from the water.", bestTime: "After 15:00")
     ]
 
     let forumEvent = ForumEvent(
-        title: "胡同夜市 · 免费入场",
-        subtitle: "手作、黑胶与小吃，本地摊主出摊",
-        date: "10/18 周六 · 18:00",
-        place: "钟鼓楼广场 · 距酒店 35 分钟",
+        title: "Hutong Night Market · Free entry",
+        subtitle: "Handmade goods, vinyl and snacks from local stalls",
+        date: "10/18 Sat · 18:00",
+        place: "Drum & Bell Towers square · 35 min from hotel",
         attendees: 128
     )
 
     let similarRoutes: [SimilarRoute] = [
         SimilarRoute(
-            title: "北京中轴线 · 经典半日",
+            title: "Central Axis · Classic half day",
             author: "@Ken",
             match: 94,
             stops: 6,
             distance: "4.2 km",
-            duration: "约 5 小时",
-            tags: ["经典", "步行", "日落"],
-            highlight: "和你的 6 个点位重合 5 个，故宫段顺序一致。"
+            duration: "~5 hr",
+            tags: ["Classic", "Walk", "Sunset"],
+            highlight: "Matches 5 of your 6 stops, with the palace section in the same order."
         ),
         SimilarRoute(
-            title: "胡同咖啡慢走 · 8 站",
+            title: "Hutong coffee crawl · 8 stops",
             author: "@Lina",
             match: 87,
             stops: 8,
             distance: "6.4 km",
-            duration: "约一整天",
-            tags: ["咖啡", "拍照", "轻松"],
-            highlight: "把南锣鼓巷换成 3 家咖啡店，适合下午出发。"
+            duration: "~a full day",
+            tags: ["Coffee", "Photo spots", "Easy"],
+            highlight: "Swaps Nanluoguxiang for three coffee shops — good for an afternoon start."
         ),
         SimilarRoute(
-            title: "景山落日 + 什刹海夜走",
-            author: "@阿哲",
+            title: "Jingshan sunset + Shichahai at night",
+            author: "@Zhe",
             match: 79,
             stops: 5,
             distance: "3.8 km",
-            duration: "约 3 小时",
-            tags: ["夜游", "日落", "本地"],
-            highlight: "保留你的景山日落，回程沿什刹海走，少一次折返。"
+            duration: "~3 hr",
+            tags: ["Night", "Sunset", "Local"],
+            highlight: "Keeps your Jingshan sunset, then walks back along Shichahai — one backtrack fewer."
         )
     ]
 
@@ -156,7 +156,7 @@ final class AppModel: ObservableObject {
             tab = .plan
             mapEditMode = true
             aiSuggestionVisible = false
-            selectedStopID = stops.first(where: { $0.name == "故宫博物院" })?.id
+            selectedStopID = stops.first(where: { $0.name == "Forbidden City" })?.id
         }
         if args.contains("-forum") { tab = .forum }
         if args.contains("-translate") { tab = .translate }
@@ -237,31 +237,31 @@ final class AppModel: ObservableObject {
         withAnimation(.easeInOut(duration: 0.2)) { checklist[index].status = .done }
         Haptics.success()
         persistChecklist()
-        toast("已完成 · \(item.title)", icon: "checkmark.seal.fill")
+        toast("Done · \(item.title)", icon: "checkmark.seal.fill")
     }
 
     func bookForbiddenCity() {
-        if let index = checklist.firstIndex(where: { $0.title.hasPrefix("故宫门票") }) {
+        if let index = checklist.firstIndex(where: { $0.title.hasPrefix("Forbidden City tickets") }) {
             withAnimation { checklist[index].status = .done }
             persistChecklist()
         }
         Haptics.success()
-        toast("已锁定 10/15 09:00 · 成人 ×2", icon: "ticket.fill")
+        toast("Booked 10/15 09:00 · 2 adults", icon: "ticket.fill")
     }
 
     func aiRecheck() {
         let open = checklist.filter { $0.status != .done }.count
         Haptics.success()
         if open == 0 {
-            toast("12 项全部核对完成", icon: "checkmark.seal.fill")
+            toast("All 12 checks complete", icon: "checkmark.seal.fill")
         } else {
-            toast("复查完成 · \(open) 项待处理，已排好顺序", icon: "sparkles")
+            toast("Recheck done · \(open) to go, reordered", icon: "sparkles")
         }
     }
 
     func addToChecklist(title: String, meta: String, category: ChecklistCategory = .tickets, phase: ChecklistPhase = .before) {
         guard !checklist.contains(where: { $0.title == title }) else {
-            toast("清单里已有这一项", icon: "checkmark.circle.fill")
+            toast("Already on your list", icon: "checkmark.circle.fill")
             return
         }
         withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
@@ -272,22 +272,22 @@ final class AppModel: ObservableObject {
                     category: category,
                     phase: phase,
                     status: .action,
-                    actionLabel: "查看",
-                    tag: "新增",
+                    actionLabel: "View",
+                    tag: "New",
                     tagStyle: .accent
                 )
             )
         }
         Haptics.success()
         persistChecklist()
-        toast("已加入行前清单", icon: "text.badge.plus")
+        toast("Added to your pre-trip list", icon: "text.badge.plus")
     }
 
     var checklistSummary: String {
         let lines = checklist.map { item -> String in
             "\(item.status == .done ? "✓" : "○") \(item.title) — \(item.meta)"
         }
-        return "Lucia · 北京 4 天 3 晚 行前清单\n进度 \(doneCount)/\(totalCount)\n\n" + lines.joined(separator: "\n")
+        return "Lucia · Beijing 4 days, 3 nights · Pre-trip checklist\nProgress \(doneCount)/\(totalCount)\n\n" + lines.joined(separator: "\n")
     }
 
     private func persistChecklist() {
@@ -321,7 +321,7 @@ final class AppModel: ObservableObject {
         }
         Haptics.tap()
         if mapEditMode {
-            toast("编辑点位 · 直接拖动地图上的编号", icon: "hand.draw.fill")
+            toast("Edit stops · drag the numbered pins", icon: "hand.draw.fill")
         }
     }
 
@@ -333,11 +333,11 @@ final class AppModel: ObservableObject {
 
     func didFinishMovingStop() {
         Haptics.success()
-        toast("点位已更新 · 路线已重新连好", icon: "map.fill")
+        toast("Stops updated · route redrawn", icon: "map.fill")
     }
 
     func applyRouteSuggestion() {
-        let order = ["天安门广场", "故宫博物院", "什刹海", "景山公园", "南锣鼓巷", "钟鼓楼"]
+        let order = ["Tiananmen Square", "Forbidden City", "Shichahai", "Jingshan Park", "Nanluoguxiang", "Drum & Bell Towers"]
         let times = ["09:00", "09:40", "13:00", "14:30", "16:00", "17:00"]
         var reordered: [RouteStop] = []
         for (index, name) in order.enumerated() {
@@ -352,13 +352,13 @@ final class AppModel: ObservableObject {
             aiSuggestionVisible = false
         }
         Haptics.success()
-        toast("已应用 · 路线重算完成，少走 1.2 km", icon: "arrow.triangle.swap")
+        toast("Applied · route recalculated, 1.2 km shorter", icon: "arrow.triangle.swap")
     }
 
     func moveStops(from source: IndexSet, to destination: Int) {
         stops.move(fromOffsets: source, toOffset: destination)
         renumberStops()
-        toast("顺序已更新", icon: "arrow.up.arrow.down")
+        toast("Order updated", icon: "arrow.up.arrow.down")
     }
 
     private func renumberStops() {
@@ -374,24 +374,24 @@ final class AppModel: ObservableObject {
     }
 
     func copyRoute(named name: String) {
-        routeName = name + " · 副本"
+        routeName = name + " · Copy"
         routeApplied = false
         aiSuggestionVisible = true
         tab = .plan
         selectedStopID = stops.first?.id
         Haptics.success()
-        toast("已套用并生成独立副本", icon: "doc.on.doc.fill")
+        toast("Copied to your own route", icon: "doc.on.doc.fill")
     }
 
     func shareRoute() {
-        toast("路线分享链接已复制", icon: "link")
+        toast("Route link copied", icon: "link")
     }
 
     var routeSummary: String {
         let lines = stops.enumerated().map { index, stop in
             "\(index + 1). \(stop.name) · \(stop.time) · \(stop.duration)"
         }
-        return "\(routeName)\n6 站 · 4.2 km · 约 5 小时\n\n" + lines.joined(separator: "\n") + "\n\n来自 Lucia · 北京旅行计划"
+        return "\(routeName)\n6 stops · 4.2 km · ~5 hr\n\n" + lines.joined(separator: "\n") + "\n\nFrom Lucia · Beijing trip plan"
     }
 
     // MARK: Forum
@@ -411,7 +411,7 @@ final class AppModel: ObservableObject {
             savedPostIDs.insert(post.id)
             Haptics.tap()
         }
-        toast(savedPostIDs.contains(post.id) ? "已收藏笔记 · 可在「我的」查看" : "已取消收藏", icon: "bookmark.fill")
+        toast(savedPostIDs.contains(post.id) ? "Saved · find it in Me" : "Removed from saved", icon: "bookmark.fill")
     }
 
     // MARK: Attractions
@@ -433,7 +433,7 @@ final class AppModel: ObservableObject {
             attractions[index].code = Self.makeBookingCode()
         }
         Haptics.success()
-        toast("已预约 \(attraction.title) · 刷身份证入园", icon: "ticket.fill")
+        toast("Booked \(attraction.title) · scan your ID at the gate", icon: "ticket.fill")
     }
 
     func bookAllAttractions() {
@@ -446,11 +446,11 @@ final class AppModel: ObservableObject {
             }
         }
         Haptics.success()
-        toast("已一键预约 \(count) 个景点 · 凭证已生成", icon: "checkmark.seal.fill")
+        toast("Booked \(count) sights · passes ready", icon: "checkmark.seal.fill")
     }
 
     private static func makeBookingCode() -> String {
-        "LUCIA-" + String((0..<4).map { _ in "ABCDEFGHJKLMNPQRSTUVWXYZ23456789".randomElement()! })
+        "ROAMCHINA-" + String((0..<4).map { _ in "ABCDEFGHJKLMNPQRSTUVWXYZ23456789".randomElement()! })
     }
 
     func joinEvent() {
@@ -458,7 +458,7 @@ final class AppModel: ObservableObject {
             joinedEvent.toggle()
         }
         Haptics.success()
-        toast(joinedEvent ? "已报名 · 已同步 10/18 行程" : "已取消报名", icon: joinedEvent ? "checkmark.circle.fill" : "xmark.circle")
+        toast(joinedEvent ? "Joined · added to your 10/18 plan" : "Left event", icon: joinedEvent ? "checkmark.circle.fill" : "xmark.circle")
     }
 
     func toggleJoin(_ event: LocalEvent) {
@@ -469,7 +469,7 @@ final class AppModel: ObservableObject {
             Haptics.success()
         }
         toast(
-            joinedEventIDs.contains(event.id) ? "已报名 · \(event.title)" : "已取消报名",
+            joinedEventIDs.contains(event.id) ? "Joined · \(event.title)" : "Left event",
             icon: joinedEventIDs.contains(event.id) ? "checkmark.circle.fill" : "xmark.circle"
         )
     }
@@ -477,12 +477,12 @@ final class AppModel: ObservableObject {
     func publishEvent(title: String, date: String, time: String, place: String, fee: String, note: String) {
         let event = LocalEvent(
             title: title,
-            subtitle: note.isEmpty ? "社区成员发起 · 欢迎来玩" : note,
+            subtitle: note.isEmpty ? "Hosted by a community member · all welcome" : note,
             date: date,
             time: time,
             place: place,
-            host: "@王博",
-            fee: fee.isEmpty ? "免费" : fee,
+            host: "@Wang Bo",
+            fee: fee.isEmpty ? "Free" : fee,
             attendees: 1,
             isMine: true,
             tint: 1
@@ -491,14 +491,14 @@ final class AppModel: ObservableObject {
             localEvents.insert(event, at: 0)
             forumPosts.insert(
                 ForumPost(
-                    author: "王博",
+                    author: "Wang Bo",
                     avatar: "W",
                     tint: 5,
-                    time: "刚刚",
+                    time: "Just now",
                     kind: .event,
                     title: title,
-                    body: note.isEmpty ? "由你发起 · 欢迎同行" : note,
-                    tags: [date, fee.isEmpty ? "免费" : fee],
+                    body: note.isEmpty ? "Started by you · all welcome" : note,
+                    tags: [date, fee.isEmpty ? "Free" : fee],
                     likes: "0",
                     saves: "0",
                     symbol: "sun.horizon.fill",
@@ -506,14 +506,14 @@ final class AppModel: ObservableObject {
                     height: 150,
                     eventTitle: title,
                     comments: 0,
-                    comment: "由你发起 · 欢迎同行",
+                    comment: "Started by you · all welcome",
                     isMine: true
                 ),
                 at: 0
             )
         }
         Haptics.success()
-        toast("活动已发布 · 已进入社区审核", icon: "calendar.badge.plus")
+        toast("Event published · in community review", icon: "calendar.badge.plus")
     }
 
     // MARK: Assistant
@@ -527,21 +527,21 @@ final class AppModel: ObservableObject {
     }
 
     var quickPrompts: [String] {
-        if assistantContext.contains("门票") || assistantContext.contains("故宫") {
-            return ["故宫怎么预约", "还有余票吗", "附近怎么走"]
+        if assistantContext.contains("Ticket") || assistantContext.contains("Forbidden City") {
+            return ["How do I book the Forbidden City?", "Any tickets left?", "How do I get there?"]
         }
-        if assistantContext.contains("翻译") {
-            return ["就医怎么说", "帮我放大", "打车怎么说"]
+        if assistantContext.contains("Translate") {
+            return ["How do I say 'doctor'?", "Make the text bigger", "How do I ask for a taxi?"]
         }
-        if assistantContext.contains("清单") {
-            return ["还差什么", "VPN 怎么弄", "eSIM 选哪个"]
+        if assistantContext.contains("Checklist") {
+            return ["What's still missing?", "How do I set up a VPN?", "Which eSIM should I get?"]
         }
         switch tab {
-        case .trip: return ["故宫门票怎么约", "住哪个区域方便", "10 月穿什么"]
-        case .plan: return ["帮我重排路线", "附近有咖啡吗", "生成可视化笔记"]
-        case .forum: return ["哪家烤鸭不排队", "带什么伴手礼", "有本地活动吗"]
-        case .translate: return ["就医怎么说", "帮我叫车", "放大给店员看"]
-        case .me: return ["离线包怎么用", "怎么开 VPN", "导出我的行程"]
+        case .trip: return ["How do I book the Forbidden City?", "Which area should I stay in?", "What should I wear in October?"]
+        case .plan: return ["Rework my route", "Any coffee nearby?", "Make a visual note"]
+        case .forum: return ["Which duck place has no queue?", "What gifts should I bring?", "Any local events?"]
+        case .translate: return ["How do I say 'doctor'?", "Call me a taxi", "Show staff a bigger text"]
+        case .me: return ["How do offline packs work?", "How do I set up a VPN?", "Export my trip"]
         }
     }
 
@@ -550,31 +550,31 @@ final class AppModel: ObservableObject {
         var card: AssistantCardKind? = nil
         let text: String
 
-        if context.contains("门票") || context.contains("故宫") {
-            text = "故宫 10/15 上午还有 812 张余票，成人 ¥60，实名预约、刷身份证入场。要我直接锁定 09:00 的 2 个名额吗？"
+        if context.contains("Ticket") || context.contains("Forbidden City") {
+            text = "The Forbidden City still has 812 tickets for the morning of 10/15. ¥60 per adult, booked under your real name, ID at the gate. Want me to lock two spots for 09:00?"
             card = .ticket
-        } else if context.contains("翻译") {
-            text = "就医场景我准备了 4 句，最常用的是「我食物过敏，需要去医院」。你可以放大给店员看，或者让我读出来。"
+        } else if context.contains("Translate") {
+            text = "I've lined up four phrases for the clinic. The one you'll use most: “I have a food allergy and need a hospital.” You can enlarge it for staff, or let me read it aloud."
             card = .translate
-        } else if context.contains("清单") {
-            text = "我对照天气、闭馆日和余票重新排了一遍：先办 eSIM 和 VPN，再约故宫与长城。新增的 3 项已经放进清单。"
+        } else if context.contains("Checklist") {
+            text = "I rechecked against the weather, closing days and ticket stock: do eSIM and VPN first, then book the palace and the Great Wall. The three new items are already on your list."
             card = .checklist
         } else {
             switch tab {
             case .trip:
-                text = "早上好，王博。我看过你 10/15–18 的行程：白天 22℃、早晚 11℃，故宫周一闭馆，建议把故宫放在 15 号上午。要先锁门票，还是先重排路线？"
+                text = "Good morning, Wang Bo. I've read your 10/15–18 trip: 22°C by day, 11°C at night, and the Forbidden City closes on Mondays — so keep it on the morning of the 15th. Lock tickets first, or reorder the route?"
                 card = .route
             case .plan:
-                text = "这版中轴线目前 5.2 km，什刹海排在故宫后面会折返一次。把什刹海挪到 13:00、景山挪到 14:30，能少走 1.2 km。要直接应用吗？"
+                text = "This Central Axis version runs 5.2 km, and putting Shichahai after the palace means one backtrack. Move Shichahai to 13:00 and Jingshan to 14:30 and you save 1.2 km. Apply it?"
                 card = .route
             case .forum:
-                text = "社区里「北京中轴线 · 半日」和你现在的路线重合 4 站，可以直接套用成副本。需要我再对比一下两家烤鸭店吗？"
+                text = "The community route “Central Axis · Half day” overlaps four of your stops and can be copied as-is. Want me to compare the two duck restaurants while we're here?"
                 card = .route
             case .translate:
-                text = "离线语句库已经下载好，86 句覆盖找路、就餐、就医和打车。需要我把就医的 4 句放大，还是先听一遍发音？"
+                text = "Your offline phrasebook is downloaded — 86 phrases for directions, dining, medical and taxis. Shall I enlarge the four medical phrases, or play the pronunciation first?"
                 card = .translate
             case .me:
-                text = "你的北京离线包已下载。出发前建议再确认 VPN 和 eSIM——这两项最容易在落地后卡住，需要我一步步带你设置吗？"
+                text = "Your Beijing offline pack is ready. Before you fly, double-check VPN and eSIM — those are what tend to trip people up on arrival. Want me to walk you through it?"
                 card = .checklist
             }
         }
@@ -604,31 +604,32 @@ final class AppModel: ObservableObject {
     }
 
     private func reply(to text: String) -> ChatMessage {
-        if text.contains("票") || text.contains("预约") || text.contains("故宫") {
-            return ChatMessage(role: .assistant, text: "故宫 10/15 上午还有 812 张余票，成人 ¥60。实名预约后刷身份证入场，我把 09:00 两个成人的时段记在清单里，先锁定吗？", card: .ticket)
+        let lower = text.lowercased()
+        if lower.contains("ticket") || lower.contains("book") || lower.contains("forbidden city") {
+            return ChatMessage(role: .assistant, text: "The Forbidden City still has 812 tickets for the morning of 10/15, ¥60 per adult. Book under your real name and scan your ID at the gate — I've noted 09:00 for two adults. Lock it in?", card: .ticket)
         }
-        if text.contains("酒店") || text.contains("住") || text.contains("民宿") {
-            return ChatMessage(role: .assistant, text: "按你的景点分布，王府井最均衡：到故宫步行 12 分钟，去南锣鼓巷地铁 2 站。我按预算筛了三个区域，可以参考：", card: .hotels)
+        if lower.contains("hotel") || lower.contains("stay") || lower.contains("hostel") {
+            return ChatMessage(role: .assistant, text: "Given where your sights sit, Wangfujing is the best balance: 12 minutes on foot to the palace, two metro stops to Nanluoguxiang. I've filtered three areas by budget:", card: .hotels)
         }
-        if text.contains("天气") || text.contains("穿") || text.contains("冷") || text.contains("热") {
-            return ChatMessage(role: .assistant, text: "10/15–17 北京白天 22℃、早晚 11℃，建议薄外套 + 长裤，故宫石板路多带一双软底鞋。18 号可能有小雨，我会在前一晚提醒你。")
+        if lower.contains("weather") || lower.contains("wear") || lower.contains("cold") || lower.contains("hot") {
+            return ChatMessage(role: .assistant, text: "10/15–17 in Beijing: 22°C by day, 11°C at night. A light jacket and trousers will do, plus soft shoes for the palace's stone paths. There may be light rain on the 18th — I'll remind you the night before.")
         }
-        if text.contains("路线") || text.contains("重排") || text.contains("怎么走") || text.contains("绕") {
-            return ChatMessage(role: .assistant, text: "我按「少折返」重排了：天安门 → 故宫 → 什刹海 → 景山 → 南锣鼓巷 → 钟鼓楼。能少走 1.2 km，日落刚好在钟鼓楼。", card: .route)
+        if lower.contains("route") || lower.contains("reorder") || lower.contains("get there") || lower.contains("detour") {
+            return ChatMessage(role: .assistant, text: "I've reordered it to cut backtracks: Tiananmen → Forbidden City → Shichahai → Jingshan → Nanluoguxiang → Drum & Bell Towers. That's 1.2 km less, with sunset landing at the towers.", card: .route)
         }
-        if text.contains("清单") || text.contains("准备") || text.contains("VPN") || text.contains("eSIM") || text.contains("电话") {
-            return ChatMessage(role: .assistant, text: "行前清单里还差 6 项。我挑出最容易卡住的三项：eSIM 套餐、VPN 安装、故宫门票。要一并加进清单吗？", card: .checklist)
+        if lower.contains("checklist") || lower.contains("prepare") || lower.contains("vpn") || lower.contains("esim") || lower.contains("phone") {
+            return ChatMessage(role: .assistant, text: "Six items are still open on your pre-trip list. The three most likely to trip you up: an eSIM plan, a VPN install, and palace tickets. Add all three?", card: .checklist)
         }
-        if text.contains("翻译") || text.contains("怎么说") || text.contains("说") || text.contains("英语") {
-            return ChatMessage(role: .assistant, text: "我把这句整理成了可以直接给店员看的中英对照，也能播放中文语音。", card: .translate)
+        if lower.contains("translate") || lower.contains("say") || lower.contains("english") {
+            return ChatMessage(role: .assistant, text: "I've turned that into a side-by-side line you can show staff, and it can play the Chinese aloud.", card: .translate)
         }
-        if text.contains("吃") || text.contains("餐") || text.contains("烤鸭") || text.contains("咖啡") {
-            return ChatMessage(role: .assistant, text: "四季民福故宫店 11:00 前到基本不排队；想快一点可以去胖妹面庄，人均 ¥45。两家都在你 15 号的路线附近。")
+        if lower.contains("eat") || lower.contains("food") || lower.contains("duck") || lower.contains("coffee") || lower.contains("restaurant") {
+            return ChatMessage(role: .assistant, text: "Siji Minfu's palace branch rarely queues before 11:00. For something quicker, Pangmei Noodles is about ¥45 a head. Both sit near your route on the 15th.")
         }
-        if text.contains("医院") || text.contains("过敏") || text.contains("紧急") || text.contains("就医") {
-            return ChatMessage(role: .assistant, text: "别担心。离线就医语句里有 4 句可以直接放大给医生看，急救电话是 120。需要我把最近的医院也标在地图上吗？")
+        if lower.contains("hospital") || lower.contains("allergy") || lower.contains("emergency") || lower.contains("doctor") {
+            return ChatMessage(role: .assistant, text: "Don't worry. Four offline medical phrases can be enlarged for a doctor, and the emergency number is 120. Want me to mark the nearest hospital on the map too?")
         }
-        return ChatMessage(role: .assistant, text: "我可以帮你查余票、排路线、加清单、翻语句，或者解释附近的吃喝。你想先处理哪一件？")
+        return ChatMessage(role: .assistant, text: "I can check ticket stock, rework your route, add checklist items, translate a line, or explain where to eat nearby. What shall we start with?")
     }
 
     // MARK: Translate
@@ -703,121 +704,121 @@ final class AppModel: ObservableObject {
     // MARK: Seed data
     private static func makeChecklist() -> [ChecklistItem] {
         [
-            ChecklistItem(title: "护照有效期 ≥ 6 个月", meta: "已确认 · 2027/03 到期", category: .docs, phase: .before, status: .done, trailing: "已核验"),
-            ChecklistItem(title: "往返机票 & 酒店", meta: "已出票 · 王府井 3 晚", category: .docs, phase: .before, status: .done, trailing: "查看"),
-            ChecklistItem(title: "旅行保险 · 生效中", meta: "安联 · 保额 ¥80 万", category: .docs, phase: .before, status: .done, trailing: "已生效"),
-            ChecklistItem(title: "故宫门票 · 10/15 09:00", meta: "成人 ×2 · ¥120 · 余票 812", category: .tickets, phase: .before, status: .action, actionLabel: "去预约", tag: "余票紧张", tagStyle: .warn),
-            ChecklistItem(title: "长城 · 10/16 08:30", meta: "八达岭 · 需预约缆车", category: .tickets, phase: .before, status: .action, actionLabel: "预约", tag: "待预约", tagStyle: .neutral),
-            ChecklistItem(title: "颐和园 · 10/17 09:00", meta: "联票 ¥60 / 人", category: .tickets, phase: .before, status: .todo, actionLabel: "购票"),
-            ChecklistItem(title: "国家博物馆 · 10/17 14:00", meta: "免费 · 需实名预约", category: .tickets, phase: .before, status: .todo, actionLabel: "预约"),
-            ChecklistItem(title: "eSIM / 中国手机号", meta: "3 家方案对比 · 从 ¥29 起", category: .connectivity, phase: .arrival, status: .action, actionLabel: "选套餐"),
-            ChecklistItem(title: "VPN", meta: "境内应用商店无法下载", category: .connectivity, phase: .arrival, status: .action, actionLabel: "教程", tag: "提前装", tagStyle: .warn),
-            ChecklistItem(title: "离线地图与翻译包", meta: "北京 · 86 句应急表达", category: .connectivity, phase: .arrival, status: .done, trailing: "已下载"),
-            ChecklistItem(title: "支付宝 / 微信支付", meta: "已绑定 VISA · 单笔 ≤ ¥5,000", category: .transit, phase: .arrival, status: .done, trailing: "已完成"),
-            ChecklistItem(title: "交通卡 / 地铁乘车码", meta: "Apple 钱包 · 已开通", category: .transit, phase: .arrival, status: .done, trailing: "已开通")
+            ChecklistItem(title: "Passport valid 6+ months", meta: "Confirmed · expires 03/2027", category: .docs, phase: .before, status: .done, trailing: "Verified"),
+            ChecklistItem(title: "Flights & hotel booked", meta: "Ticketed · Wangfujing, 3 nights", category: .docs, phase: .before, status: .done, trailing: "View"),
+            ChecklistItem(title: "Travel insurance · active", meta: "Allianz · ¥800k cover", category: .docs, phase: .before, status: .done, trailing: "Active"),
+            ChecklistItem(title: "Forbidden City tickets · 10/15 09:00", meta: "2 adults · ¥120 · 812 left", category: .tickets, phase: .before, status: .action, actionLabel: "Book", tag: "Selling fast", tagStyle: .warn),
+            ChecklistItem(title: "Great Wall · 10/16 08:30", meta: "Badaling · cable car needs booking", category: .tickets, phase: .before, status: .action, actionLabel: "Book", tag: "To book", tagStyle: .neutral),
+            ChecklistItem(title: "Summer Palace · 10/17 09:00", meta: "Combined ticket ¥60 / person", category: .tickets, phase: .before, status: .todo, actionLabel: "Buy"),
+            ChecklistItem(title: "National Museum · 10/17 14:00", meta: "Free · real-name booking", category: .tickets, phase: .before, status: .todo, actionLabel: "Book"),
+            ChecklistItem(title: "eSIM / China number", meta: "3 plans compared · from ¥29", category: .connectivity, phase: .arrival, status: .action, actionLabel: "Choose plan"),
+            ChecklistItem(title: "VPN", meta: "Not on China's App Store", category: .connectivity, phase: .arrival, status: .action, actionLabel: "Guide", tag: "Install early", tagStyle: .warn),
+            ChecklistItem(title: "Offline maps & phrases", meta: "Beijing · 86 emergency phrases", category: .connectivity, phase: .arrival, status: .done, trailing: "Downloaded"),
+            ChecklistItem(title: "Alipay / WeChat Pay", meta: "VISA linked · ¥5,000 per payment", category: .transit, phase: .arrival, status: .done, trailing: "Done"),
+            ChecklistItem(title: "Transit card / metro QR", meta: "Apple Wallet · active", category: .transit, phase: .arrival, status: .done, trailing: "Active")
         ]
     }
 
     private static func makeStops() -> [RouteStop] {
         [
-            RouteStop(name: "天安门广场", time: "09:00", duration: "30 分钟", x: 0.49, y: 0.86, tag: "拍照"),
-            RouteStop(name: "故宫博物院", time: "09:40", duration: "3 小时", x: 0.52, y: 0.67, tag: "已订", tagStyle: .ok),
-            RouteStop(name: "景山公园", time: "13:00", duration: "1 小时", x: 0.57, y: 0.56, tag: "登高"),
-            RouteStop(name: "什刹海", time: "15:00", duration: "1.5 小时", x: 0.37, y: 0.38, tag: "AI 建议", tagStyle: .accent),
-            RouteStop(name: "南锣鼓巷", time: "16:30", duration: "45 分钟", x: 0.61, y: 0.31, tag: "咖啡"),
-            RouteStop(name: "钟鼓楼", time: "17:30", duration: "45 分钟", x: 0.50, y: 0.20, tag: "日落")
+            RouteStop(name: "Tiananmen Square", time: "09:00", duration: "30 min", x: 0.49, y: 0.86, tag: "Photo"),
+            RouteStop(name: "Forbidden City", time: "09:40", duration: "3 hr", x: 0.52, y: 0.67, tag: "Booked", tagStyle: .ok),
+            RouteStop(name: "Jingshan Park", time: "13:00", duration: "1 hr", x: 0.57, y: 0.56, tag: "Views"),
+            RouteStop(name: "Shichahai", time: "15:00", duration: "1.5 hr", x: 0.37, y: 0.38, tag: "Lucia pick", tagStyle: .accent),
+            RouteStop(name: "Nanluoguxiang", time: "16:30", duration: "45 min", x: 0.61, y: 0.31, tag: "Coffee"),
+            RouteStop(name: "Drum & Bell Towers", time: "17:30", duration: "45 min", x: 0.50, y: 0.20, tag: "Sunset")
         ]
     }
 
     private static func makeForumPosts() -> [ForumPost] {
         [
-            ForumPost(author: "林小满", avatar: "林", tint: 5, time: "2 小时前", kind: .spot,
-                      title: "景山万春亭的落日，比照片还好看",
-                      body: "17:00 上山刚好，故宫金顶被夕阳点亮。机位在东侧栏杆，记得早点占。",
-                      tags: ["景山", "日落", "机位"], likes: "3.4k", saves: "862",
+            ForumPost(author: "Xiaoman", avatar: "X", tint: 5, time: "2 hr ago", kind: .spot,
+                      title: "Sunset at Jingshan's Wanchun Pavilion beats the photos",
+                      body: "Get up there by 17:00 and the palace roofs turn gold. The east railing is the shot — claim it early.",
+                      tags: ["Jingshan", "Sunset", "Viewpoint"], likes: "3.4k", saves: "862",
                       symbol: "sun.horizon.fill", artTint: 3, height: 174,
-                      placeTitle: "景山看日落", comment: "@阿哲：周三去的，17:10 太阳刚好落到屋脊上。"),
-            ForumPost(author: "Ken", avatar: "K", tint: 4, time: "4 小时前", kind: .route,
-                      title: "中轴线一日：从永定门走到钟鼓楼",
-                      body: "6 站 4.2 km，下午三点出发正好赶上景山日落。沿途都有地铁备份。",
-                      tags: ["中轴线", "步行", "路线"], likes: "2.1k", saves: "1.2k",
+                      placeTitle: "Sunset at Jingshan", comment: "@Zhe: Went on Wednesday — the sun hit the ridge at 17:10."),
+            ForumPost(author: "Ken", avatar: "K", tint: 4, time: "4 hr ago", kind: .route,
+                      title: "The Central Axis in a day: Yongdingmen to the Drum Tower",
+                      body: "6 stops, 4.2 km. Start at 3pm and you land at Jingshan for sunset. The metro is a backup the whole way.",
+                      tags: ["Central Axis", "Walk", "Route"], likes: "2.1k", saves: "1.2k",
                       symbol: "point.topleft.down.to.point.bottomright.curvepath", artTint: 4, height: 120,
-                      routeIndex: 1, comment: "@Lina：按这条走完，脚还行，咖啡补了两次。"),
-            ForumPost(author: "阿哲", avatar: "哲", tint: 3, time: "5 小时前", kind: .restaurant,
-                      title: "四季民福 11 点前到，真的不排队",
-                      body: "鸭皮蘸白糖先吃，点半只就够两个人。下午三点以后基本不用等位。",
-                      tags: ["烤鸭", "故宫", "排队"], likes: "2.3k", saves: "708",
+                      routeIndex: 1, comment: "@Lina: Finished it — feet survived, two coffee stops helped."),
+            ForumPost(author: "Zhe", avatar: "Z", tint: 3, time: "5 hr ago", kind: .restaurant,
+                      title: "Siji Minfu before 11 — no queue, really",
+                      body: "Dip the duck skin in sugar first; half a bird feeds two. After 3pm you rarely wait at all.",
+                      tags: ["Duck", "Forbidden City", "Queue"], likes: "2.3k", saves: "708",
                       symbol: "fork.knife", artTint: 0, height: 146,
-                      placeTitle: "四季民福 · 故宫店", comment: "@周周：亲测 10:40 到，直接进。"),
-            ForumPost(author: "Lina", avatar: "L", tint: 0, time: "昨天", kind: .restaurant,
-                      title: "前门胡同咖啡，下午三点光线最好",
-                      body: "Metal Hands 藏在后巷，窗边两张桌子最安静。手冲偏酸，配可颂刚好。",
-                      tags: ["咖啡", "胡同", "下午"], likes: "1.1k", saves: "433",
+                      placeTitle: "Siji Minfu · Forbidden City", comment: "@Zhou: Got there at 10:40 and walked straight in."),
+            ForumPost(author: "Lina", avatar: "L", tint: 0, time: "Yesterday", kind: .restaurant,
+                      title: "Qianmen hutong coffee, best light at 3pm",
+                      body: "Metal Hands hides in a back lane; the two window tables are the quietest. The pour-over runs bright — pair it with a croissant.",
+                      tags: ["Coffee", "Hutong", "Afternoon"], likes: "1.1k", saves: "433",
                       symbol: "cup.and.saucer.fill", artTint: 1, height: 162,
-                      placeTitle: "Metal Hands · 前门", comment: "@小北：周日去坐了俩小时，没人赶。"),
-            ForumPost(author: "周周", avatar: "周", tint: 2, time: "昨天", kind: .spot,
-                      title: "天坛的清晨，几乎没有游客",
-                      body: "从南门进，回音壁九点前最空。古柏树影落在红墙上，随便拍都好看。",
-                      tags: ["天坛", "清晨", "建筑"], likes: "2.8k", saves: "610",
+                      placeTitle: "Metal Hands · Qianmen", comment: "@Bei: Sat there two hours on Sunday, nobody rushed us."),
+            ForumPost(author: "Zhou", avatar: "Z", tint: 2, time: "Yesterday", kind: .spot,
+                      title: "Early morning at the Temple of Heaven, almost empty",
+                      body: "Enter from the south gate; the Echo Wall is quietest before nine. Cypress shadows fall on red walls — every shot works.",
+                      tags: ["Temple of Heaven", "Morning", "Architecture"], likes: "2.8k", saves: "610",
                       symbol: "building.columns.fill", artTint: 2, height: 130,
-                      placeTitle: "天坛公园", comment: "@胡同档案：本地人晨练时段，别大声。"),
-            ForumPost(author: "胡同档案", avatar: "胡", tint: 3, time: "2 天前", kind: .event,
-                      title: "周六钟鼓楼夜市，摊主名单更新",
-                      body: "手作、黑胶和热红酒，19:00 后人最多。地铁 8 号线什刹海站 A 口。",
-                      tags: ["夜市", "钟鼓楼", "周末"], likes: "986", saves: "241",
+                      placeTitle: "Temple of Heaven", comment: "@Hutong Files: Locals do tai chi then — keep your voice down."),
+            ForumPost(author: "Hutong Files", avatar: "H", tint: 3, time: "2 days ago", kind: .event,
+                      title: "Saturday night market at the Drum Tower: stall list updated",
+                      body: "Handmade goods, vinyl and mulled wine; busiest after 19:00. Metro Line 8, Shichahai exit A.",
+                      tags: ["Night market", "Drum & Bell Towers", "Weekend"], likes: "986", saves: "241",
                       symbol: "moon.stars.fill", artTint: 3, height: 154,
-                      eventTitle: "胡同夜市 · 免费入场", comment: "@Ken：报名了，到时候一起逛。"),
-            ForumPost(author: "老赵", avatar: "赵", tint: 1, time: "2 天前", kind: .gift,
-                      title: "稻香村散装 vs 礼盒，本地人这么买",
-                      body: "散装点心按斤称，日期新、能拼口味。礼盒适合送人，自己吃没必要。",
-                      tags: ["伴手礼", "稻香村", "省钱"], likes: "1.7k", saves: "529",
+                      eventTitle: "Hutong Night Market · Free entry", comment: "@Ken: Signed up — see you there."),
+            ForumPost(author: "Zhao", avatar: "Z", tint: 1, time: "2 days ago", kind: .gift,
+                      title: "Daoxiangcun loose pastries vs gift boxes: how locals buy",
+                      body: "Loose pastries are sold by weight — fresher, and you can mix flavors. Boxes are for giving; no need for yourself.",
+                      tags: ["Gifts", "Daoxiangcun", "Save money"], likes: "1.7k", saves: "529",
                       symbol: "gift.fill", artTint: 5, height: 138,
-                      placeTitle: "稻香村 · 本地人伴手礼", comment: "@林小满：枣泥和牛舌饼必买。"),
-            ForumPost(author: "阿哲", avatar: "哲", tint: 3, time: "3 天前", kind: .route,
-                      title: "什刹海夜走 5 站，沿途 3 家小酒馆",
-                      body: "银锭桥开始，沿后海北沿走到鼓楼。九点以后人少，风大记得带外套。",
-                      tags: ["夜游", "什刹海", "小酒馆"], likes: "860", saves: "377",
+                      placeTitle: "Daoxiangcun · Local gifts", comment: "@Xiaoman: Get the date paste and ox-tongue pastry."),
+            ForumPost(author: "Zhe", avatar: "Z", tint: 3, time: "3 days ago", kind: .route,
+                      title: "Shichahai after dark: 5 stops, 3 small bars",
+                      body: "Start at Yinding Bridge and follow the north shore to the Drum Tower. Quieter after nine; bring a jacket, it's windy.",
+                      tags: ["Night", "Shichahai", "Bars"], likes: "860", saves: "377",
                       symbol: "figure.walk", artTint: 2, height: 126,
-                      routeIndex: 2, comment: "@Lina：银锭桥边上那家精酿不错。"),
-            ForumPost(author: "小北", avatar: "北", tint: 0, time: "3 天前", kind: .gift,
-                      title: "角楼冰箱贴补货了，进门先买",
-                      body: "神武门文创店上午补货，角楼系列经常断。限购两个，别等到闭馆。",
-                      tags: ["故宫文创", "冰箱贴", "限定"], likes: "604", saves: "188",
+                      routeIndex: 2, comment: "@Lina: The brewpub by Yinding Bridge is solid."),
+            ForumPost(author: "Bei", avatar: "B", tint: 0, time: "3 days ago", kind: .gift,
+                      title: "Corner-tower magnets are back — buy on the way in",
+                      body: "The Shenwu Gate shop restocks in the morning and the corner-tower series sells out. Two per person — don't wait for closing.",
+                      tags: ["Palace shop", "Magnets", "Limited"], likes: "604", saves: "188",
                       symbol: "sparkles", artTint: 0, height: 112,
-                      placeTitle: "故宫文创 · 冰箱贴", comment: "@周周：昨天还有日落色，冲。"),
-            ForumPost(author: "阿May", avatar: "M", tint: 5, time: "4 天前", kind: .restaurant,
-                      title: "满恒记排队 40 分钟，值不值？",
-                      body: "手切羊肉配麻酱，铜锅一开就知道没白等。17:00 前取号能少排一半。",
-                      tags: ["涮肉", "牛街", "排队"], likes: "1.9k", saves: "522",
+                      placeTitle: "Palace Museum Shop · Magnets", comment: "@Zhou: They had the sunset color yesterday. Go."),
+            ForumPost(author: "May", avatar: "M", tint: 5, time: "4 days ago", kind: .restaurant,
+                      title: "40 minutes in line at Man Heng Ji — worth it?",
+                      body: "Hand-cut lamb with sesame dip; once the copper pot boils you know the wait paid off. Take a number before 17:00 and halve it.",
+                      tags: ["Hotpot", "Niujie", "Queue"], likes: "1.9k", saves: "522",
                       symbol: "flame.fill", artTint: 3, height: 140,
-                      placeTitle: "满恒记 · 牛街", comment: "@老赵：值。糖蒜记得加一份。"),
-            ForumPost(author: "Lina", avatar: "L", tint: 0, time: "5 天前", kind: .spot,
-                      title: "北海划船，从湖上看白塔最舒服",
-                      body: "下午四点后太阳不晒，租一条脚踏船一小时刚好。风大时会停船。",
-                      tags: ["北海", "划船", "亲子"], likes: "2.1k", saves: "498",
+                      placeTitle: "Man Heng Ji · Niujie", comment: "@Zhao: Worth it. Order extra sweet garlic."),
+            ForumPost(author: "Lina", avatar: "L", tint: 0, time: "5 days ago", kind: .spot,
+                      title: "Boating at Beihai: the White Dagoba from the water",
+                      body: "After 4pm the sun softens; a pedal boat for an hour is just right. They stop rentals when it's windy.",
+                      tags: ["Beihai", "Boating", "Family"], likes: "2.1k", saves: "498",
                       symbol: "sailboat.fill", artTint: 1, height: 148,
-                      placeTitle: "北海公园", comment: "@小北：带小孩的话选电动船。")
+                      placeTitle: "Beihai Park", comment: "@Bei: With kids, take the electric boat.")
         ]
     }
 
     private static func makeAttractions() -> [AttractionBooking] {
         [
             AttractionBooking(
-                title: "故宫博物院", date: "10/15", time: "09:00 – 12:00",
-                price: "¥60 · 成人 ×2", symbol: "building.columns.fill", tint: 3,
-                booked: true, code: "LUCIA-7Q2K"
+                title: "Forbidden City", date: "10/15", time: "09:00 – 12:00",
+                price: "¥60 · 2 adults", symbol: "building.columns.fill", tint: 3,
+                booked: true, code: "ROAMCHINA-7Q2K"
             ),
             AttractionBooking(
-                title: "八达岭长城", date: "10/16", time: "08:30 集合",
-                price: "¥40 · 含缆车", symbol: "mountain.2.fill", tint: 2
+                title: "Badaling Great Wall", date: "10/16", time: "08:30 meet",
+                price: "¥40 · cable car included", symbol: "mountain.2.fill", tint: 2
             ),
             AttractionBooking(
-                title: "颐和园", date: "10/17", time: "09:00 – 12:00",
-                price: "¥60 · 联票", symbol: "leaf.fill", tint: 4
+                title: "Summer Palace", date: "10/17", time: "09:00 – 12:00",
+                price: "¥60 · combined ticket", symbol: "leaf.fill", tint: 4
             ),
             AttractionBooking(
-                title: "国家博物馆", date: "10/17", time: "14:00 – 16:30",
-                price: "免费 · 实名预约", symbol: "building.columns", tint: 1
+                title: "National Museum of China", date: "10/17", time: "14:00 – 16:30",
+                price: "Free · real-name booking", symbol: "building.columns", tint: 1
             )
         ]
     }
@@ -825,33 +826,33 @@ final class AppModel: ObservableObject {
     private static func makeLocalEvents() -> [LocalEvent] {
         [
             LocalEvent(
-                title: "胡同夜市 · 免费入场",
-                subtitle: "手作、黑胶与小吃，本地摊主出摊",
-                date: "10/18 周六",
+                title: "Hutong Night Market · Free entry",
+                subtitle: "Handmade goods, vinyl and snacks from local stalls",
+                date: "10/18 Sat",
                 time: "18:00 – 22:00",
-                place: "钟鼓楼广场 · 距酒店 35 分钟",
-                host: "@Lucia 社区",
-                fee: "免费",
+                place: "Drum & Bell Towers square · 35 min from hotel",
+                host: "@Lucia Community",
+                fee: "Free",
                 attendees: 128,
                 tint: 0
             ),
             LocalEvent(
-                title: "白塔寺旧物市集",
-                subtitle: "老相机、旧书与手冲咖啡，摊主多是本地藏家",
-                date: "11/01 周六",
+                title: "Baita Temple flea market",
+                subtitle: "Old cameras, second-hand books and pour-over coffee, run by local collectors",
+                date: "11/01 Sat",
                 time: "13:00 – 19:00",
-                place: "白塔寺东夹道 · 距酒店 20 分钟",
-                host: "@胡同档案",
-                fee: "免费",
+                place: "Baita Temple east lane · 20 min from hotel",
+                host: "@Hutong Files",
+                fee: "Free",
                 attendees: 64,
                 tint: 1
             ),
             LocalEvent(
-                title: "中轴线夜骑 · 自备车",
-                subtitle: "从永定门骑到钟鼓楼，领队讲城楼故事",
-                date: "11/02 周日",
+                title: "Central Axis night ride · BYO bike",
+                subtitle: "Yongdingmen to the Drum Tower with a guide on the old city gates",
+                date: "11/02 Sun",
                 time: "19:00",
-                place: "永定门公园北门",
+                place: "Yongdingmen Park, north gate",
                 host: "@Ken",
                 fee: "¥20",
                 attendees: 37,

@@ -10,11 +10,11 @@ enum Tab: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .trip: return "行程"
-        case .plan: return "计划"
-        case .forum: return "论坛"
-        case .translate: return "翻译"
-        case .me: return "我的"
+        case .trip: return "Trip"
+        case .plan: return "Plan"
+        case .forum: return "Community"
+        case .translate: return "Translate"
+        case .me: return "Me"
         }
     }
 
@@ -30,11 +30,11 @@ enum Tab: String, CaseIterable, Identifiable {
 
     var assistantContext: String {
         switch self {
-        case .trip: return "行程 · 10/15 故宫"
-        case .plan: return "计划 · 北京中轴线"
-        case .forum: return "论坛 · 餐厅与路线"
-        case .translate: return "翻译 · 应急语句"
-        case .me: return "我的 · 订单与离线包"
+        case .trip: return "Trip · Forbidden City 10/15"
+        case .plan: return "Plan · Central Axis"
+        case .forum: return "Forum · Food & routes"
+        case .translate: return "Translate · Emergency phrases"
+        case .me: return "Me · Bookings & offline packs"
         }
     }
 
@@ -56,19 +56,19 @@ enum ChecklistCategory: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .docs: return "证件票务"
-        case .connectivity: return "网络通讯"
-        case .tickets: return "门票预约"
-        case .transit: return "支付交通"
+        case .docs: return "Documents"
+        case .connectivity: return "Connectivity"
+        case .tickets: return "Tickets"
+        case .transit: return "Transit"
         }
     }
 
     var short: String {
         switch self {
-        case .docs: return "证件"
-        case .connectivity: return "网络"
-        case .tickets: return "门票"
-        case .transit: return "交通"
+        case .docs: return "Docs"
+        case .connectivity: return "Data"
+        case .tickets: return "Tickets"
+        case .transit: return "Transit"
         }
     }
 }
@@ -80,8 +80,8 @@ enum ChecklistPhase: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .before: return "出发前"
-        case .arrival: return "落地当天"
+        case .before: return "Before you fly"
+        case .arrival: return "Arrival day"
         }
     }
 }
@@ -168,9 +168,9 @@ enum MapLayer: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .mine: return "我的路线"
-        case .community: return "社区 3"
-        case .crowd: return "客流"
+        case .mine: return "My route"
+        case .community: return "Community 3"
+        case .crowd: return "Crowds"
         }
     }
 }
@@ -184,12 +184,12 @@ enum Scenario: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .route: return "找路"
-        case .dining: return "就餐"
-        case .medical: return "就医"
-        case .taxi: return "打车"
-        case .shopping: return "购物"
-        case .emergency: return "紧急求助"
+        case .route: return "Directions"
+        case .dining: return "Dining"
+        case .medical: return "Medical"
+        case .taxi: return "Taxi"
+        case .shopping: return "Shopping"
+        case .emergency: return "Emergency"
         }
     }
 
@@ -238,9 +238,9 @@ enum TranslateMode: String, CaseIterable, Identifiable {
     var id: String { rawValue }
     var title: String {
         switch self {
-        case .live: return "实时对话"
-        case .offline: return "应急语句"
-        case .photo: return "拍照翻译"
+        case .live: return "Live"
+        case .offline: return "Offline"
+        case .photo: return "Camera"
         }
     }
 }
@@ -251,8 +251,8 @@ enum PhotoSample: String, CaseIterable, Identifiable {
     var id: String { rawValue }
     var title: String {
         switch self {
-        case .menu: return "菜单招牌"
-        case .sign: return "路牌"
+        case .menu: return "Menu"
+        case .sign: return "Street sign"
         }
     }
 
@@ -279,12 +279,12 @@ enum ForumFilter: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .all: return "全部"
-        case .restaurant: return "餐厅"
-        case .spot: return "景点"
-        case .route: return "路线"
-        case .gift: return "伴手礼"
-        case .event: return "活动"
+        case .all: return "All"
+        case .restaurant: return "Food"
+        case .spot: return "Sights"
+        case .route: return "Routes"
+        case .gift: return "Gifts"
+        case .event: return "Events"
         }
     }
 }
@@ -296,12 +296,12 @@ enum ForumPostKind: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .all: return "全部"
-        case .restaurant: return "餐厅"
-        case .spot: return "景点"
-        case .route: return "路线"
-        case .gift: return "伴手礼"
-        case .event: return "活动"
+        case .all: return "All"
+        case .restaurant: return "Food"
+        case .spot: return "Sights"
+        case .route: return "Routes"
+        case .gift: return "Gifts"
+        case .event: return "Events"
         }
     }
 

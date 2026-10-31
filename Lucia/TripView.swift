@@ -23,18 +23,20 @@ struct TripView: View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
-                    Eyebrow(text: "我的旅行 / BEIJING")
+                    Eyebrow(text: "MY TRIP / BEIJING")
                     DoodleView(kind: .sparkle, color: Palette.accent)
                         .frame(width: 9, height: 9)
                 }
                 HStack(alignment: .firstTextBaseline, spacing: 9) {
-                    Text("北京")
+                    Text("Beijing")
                         .font(.system(size: 44, weight: .black))
                         .tracking(-1)
                         .foregroundStyle(Palette.ink)
-                    TagView(text: "4 天 3 晚", style: .accent)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.85)
+                    TagView(text: "4 days · 3 nights", style: .accent)
                 }
-                Text("10/15 – 10/18 · 2 人同行")
+                Text("10/15 – 10/18 · 2 travelers")
                     .font(.system(size: 10.5, weight: .medium, design: .monospaced))
                     .foregroundStyle(Palette.ink2)
             }
@@ -42,7 +44,7 @@ struct TripView: View {
             VStack(alignment: .trailing, spacing: 8) {
                 HStack(spacing: 7) {
                     IconCircleButton(icon: "bell", size: 36) {
-                        model.openAssistant("行程 · 通知与提醒")
+                        model.openAssistant("Trip · Alerts & reminders")
                     }
                     .overlay(alignment: .topTrailing) {
                         Circle()
@@ -53,7 +55,7 @@ struct TripView: View {
                     }
                     AvatarView(name: "W", size: 36, fill: Palette.lime)
                 }
-                Text("今天 · 第 1 天")
+                Text("Today · Day 1")
                     .font(.system(size: 9, weight: .bold, design: .monospaced))
                     .foregroundStyle(Palette.ink2)
             }
@@ -64,7 +66,7 @@ struct TripView: View {
 
     private var todaySection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            SectionHeading(title: "当日信息", index: "01", trailing: "10/15 · 周三")
+            SectionHeading(title: "Today at a glance", index: "01", trailing: "10/15 · Wed")
 
             VStack(spacing: 0) {
                 ZStack(alignment: .topLeading) {
@@ -77,7 +79,7 @@ struct TripView: View {
                                 .foregroundStyle(Palette.accent)
                             Text("22°")
                                 .font(.system(size: 12, weight: .black))
-                            Text("晴 · 11–22°")
+                            Text("Clear · 11–22°")
                                 .font(.system(size: 9.5, weight: .medium))
                                 .opacity(0.7)
                         }
@@ -89,7 +91,7 @@ struct TripView: View {
 
                         Spacer()
 
-                        TagView(text: "今天 · 第 1 天 / 4", style: .dark)
+                        TagView(text: "Day 1 of 4", style: .dark)
                     }
                     .padding(12)
                 }
@@ -98,13 +100,13 @@ struct TripView: View {
 
                 HStack(alignment: .center, spacing: 12) {
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("中轴线 · 故宫与胡同")
+                        Text("Central Axis · Palace & hutongs")
                             .font(.system(size: 17, weight: .heavy))
                             .foregroundStyle(Palette.ink)
                         HStack(spacing: 12) {
-                            Label("6 站", systemImage: "mappin.and.ellipse")
+                            Label("6 stops", systemImage: "mappin.and.ellipse")
                             Label("4.2 km", systemImage: "figure.walk")
-                            Label("约 5 小时", systemImage: "clock")
+                            Label("~5 hr", systemImage: "clock")
                         }
                         .font(.system(size: 9.5, weight: .semibold, design: .monospaced))
                         .foregroundStyle(Palette.ink2)
@@ -136,16 +138,16 @@ struct TripView: View {
                     .frame(height: 1.1)
 
                 HStack(spacing: 0) {
-                    todayFact(icon: "ticket", title: "故宫 09:00", detail: "已预约 · 午门进") {
-                        model.openAssistant("门票 · 故宫 10/15 09:00")
+                    todayFact(icon: "ticket", title: "Forbidden City", detail: "09:00 · Meridian") {
+                        model.openAssistant("Ticket · Forbidden City 10/15 09:00")
                     }
                     factDivider
-                    todayFact(icon: "sun.max", title: "11° – 22°", detail: "早晚温差 11℃") {
-                        model.openAssistant("天气 · 北京 10/15")
+                    todayFact(icon: "sun.max", title: "11° – 22°", detail: "11°C day–night") {
+                        model.openAssistant("Weather · Beijing 10/15")
                     }
                     factDivider
-                    todayFact(icon: "clock", title: "日落 17:18", detail: "景山万春亭") {
-                        model.openAssistant("行程 · 今日日落 17:18")
+                    todayFact(icon: "clock", title: "Sunset 17:18", detail: "Wanchun Pavilion") {
+                        model.openAssistant("Trip · Sunset today 17:18")
                     }
                 }
                 .background(Palette.paperWarm)
@@ -203,8 +205,8 @@ struct TripView: View {
 
     private var plansSection: some View {
         VStack(alignment: .leading, spacing: 10) {
-            SectionHeading(title: "旅行计划", index: "02", trailing: "问 Lucia") {
-                model.openAssistant("行程 · 调整旅行计划")
+            SectionHeading(title: "Your days", index: "02", trailing: "Ask Lucia") {
+                model.openAssistant("Trip · Adjust the plan")
             }
 
             VStack(spacing: 9) {
@@ -319,7 +321,7 @@ struct TripView: View {
                             }
                         } label: {
                             HStack(spacing: 3) {
-                                Text("打开地图")
+                                Text("Open map")
                                 Image(systemName: "arrow.up.right")
                                     .font(.system(size: 8, weight: .black))
                             }
@@ -333,10 +335,10 @@ struct TripView: View {
 
                         Button {
                             Haptics.tap()
-                            model.openAssistant("行程 · \(plan.title)")
+                            model.openAssistant("Trip · \(plan.title)")
                         } label: {
                             HStack(spacing: 3) {
-                                Text("问 Lucia")
+                                Text("Ask Lucia")
                                 Image(systemName: "sparkles")
                                     .font(.system(size: 8, weight: .black))
                             }
@@ -351,7 +353,7 @@ struct TripView: View {
 
                         Spacer(minLength: 0)
 
-                        Text("\(plan.stops.count) 个停留点")
+                        Text("\(plan.stops.count) stops")
                             .font(.system(size: 7.5, weight: .medium, design: .monospaced))
                             .foregroundStyle(Palette.ink3)
                     }
@@ -403,56 +405,56 @@ private struct TripPlanDay: Identifiable {
 
 private let tripPlanDays: [TripPlanDay] = [
     TripPlanDay(
-        date: "10/15", week: "周三", day: 1,
-        title: "中轴线 · 故宫与胡同",
-        meta: "6 站 · 4.2 km · 约 5 小时",
-        tag: "今天", tagStyle: .accent,
+        date: "10/15", week: "Wed", day: 1,
+        title: "Central Axis · Palace & hutongs",
+        meta: "6 stops · 4.2 km · ~5 hr",
+        tag: "Today", tagStyle: .accent,
         stops: [
-            TripStop(name: "天安门广场", time: "09:00"),
-            TripStop(name: "故宫博物院", time: "09:40"),
-            TripStop(name: "景山万春亭", time: "12:30"),
-            TripStop(name: "什刹海", time: "15:00"),
-            TripStop(name: "南锣鼓巷", time: "16:30"),
-            TripStop(name: "钟鼓楼", time: "17:30")
+            TripStop(name: "Tiananmen Square", time: "09:00"),
+            TripStop(name: "Forbidden City", time: "09:40"),
+            TripStop(name: "Jingshan · Wanchun Pavilion", time: "12:30"),
+            TripStop(name: "Shichahai", time: "15:00"),
+            TripStop(name: "Nanluoguxiang", time: "16:30"),
+            TripStop(name: "Drum & Bell Towers", time: "17:30")
         ],
-        note: "故宫 09:00 已预约 · 午门进，神武门出"
+        note: "Palace booked for 09:00 · in at Meridian Gate, out at Shenwu Gate"
     ),
     TripPlanDay(
-        date: "10/16", week: "周四", day: 2,
-        title: "长城一日 · 八达岭",
-        meta: "3 站 · 包车往返 · 约全天",
-        tag: "已约车", tagStyle: .blue,
+        date: "10/16", week: "Thu", day: 2,
+        title: "Great Wall day · Badaling",
+        meta: "3 stops · private car · full day",
+        tag: "Car booked", tagStyle: .blue,
         stops: [
-            TripStop(name: "酒店出发", time: "07:30"),
-            TripStop(name: "八达岭长城", time: "09:00"),
-            TripStop(name: "奥森公园", time: "16:30")
+            TripStop(name: "Hotel pickup", time: "07:30"),
+            TripStop(name: "Badaling Great Wall", time: "09:00"),
+            TripStop(name: "Olympic Forest Park", time: "16:30")
         ],
-        note: "带身份证 · 山上风大，加一件外套"
+        note: "Bring your passport · windy up there, pack an extra layer"
     ),
     TripPlanDay(
-        date: "10/17", week: "周五", day: 3,
-        title: "皇家园林 · 颐和园与国博",
-        meta: "4 站 · 地铁 4 号线 · 约 8 小时",
-        tag: "门票待约", tagStyle: .soft,
+        date: "10/17", week: "Fri", day: 3,
+        title: "Imperial gardens · Palace & museum",
+        meta: "4 stops · Metro Line 4 · ~8 hr",
+        tag: "Tickets to book", tagStyle: .soft,
         stops: [
-            TripStop(name: "颐和园", time: "09:00"),
-            TripStop(name: "五道口午餐", time: "12:30"),
-            TripStop(name: "国家博物馆", time: "14:00"),
-            TripStop(name: "前门大街", time: "18:00")
+            TripStop(name: "Summer Palace", time: "09:00"),
+            TripStop(name: "Lunch in Wudaokou", time: "12:30"),
+            TripStop(name: "National Museum of China", time: "14:00"),
+            TripStop(name: "Qianmen Street", time: "18:00")
         ],
-        note: "国博需提前实名预约，记得带身份证"
+        note: "The National Museum needs a real-name booking; bring your passport"
     ),
     TripPlanDay(
-        date: "10/18", week: "周六", day: 4,
-        title: "胡同慢走 · 返程",
-        meta: "4 站 · 步行 3.1 km · 约 4 小时",
-        tag: "返程", tagStyle: .ok,
+        date: "10/18", week: "Sat", day: 4,
+        title: "Slow hutongs · departure",
+        meta: "4 stops · 3.1 km walk · ~4 hr",
+        tag: "Departure", tagStyle: .ok,
         stops: [
-            TripStop(name: "南锣鼓巷", time: "09:30"),
-            TripStop(name: "钟鼓楼", time: "11:00"),
-            TripStop(name: "稻香村采购", time: "13:00"),
-            TripStop(name: "首都机场", time: "16:00")
+            TripStop(name: "Nanluoguxiang", time: "09:30"),
+            TripStop(name: "Drum & Bell Towers", time: "11:00"),
+            TripStop(name: "Daoxiangcun run", time: "13:00"),
+            TripStop(name: "Beijing Capital Airport", time: "16:00")
         ],
-        note: "航班 18:40 · 提前 2.5 小时到机场"
+        note: "Flight 18:40 · be at the airport 2.5 hr early"
     )
 ]

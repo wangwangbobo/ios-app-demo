@@ -29,7 +29,7 @@ struct AssistantView: View {
                                         .font(.system(size: 23, weight: .semibold))
                                         .foregroundStyle(Palette.ink.opacity(0.7))
                                 }
-                                Text("Lucia 已读过你的行程、天气\n和 4,208 条社区路线")
+                                Text("Lucia has read your trip, the weather\nand 4,208 community routes")
                                     .font(.system(size: 10.5, weight: .medium, design: .monospaced))
                                     .foregroundStyle(Palette.ink3)
                                     .multilineTextAlignment(.center)
@@ -97,10 +97,11 @@ struct AssistantView: View {
                         .foregroundStyle(Palette.ink)
                     HStack(spacing: 4) {
                         Circle().fill(Palette.ok).frame(width: 5, height: 5)
-                        Text("正在看 · \(model.assistantContext)")
+                        Text("Looking at · \(model.assistantContext)")
                             .font(.system(size: 9, weight: .medium, design: .monospaced))
                             .foregroundStyle(Palette.ink3)
                             .lineLimit(1)
+                            .minimumScaleFactor(0.8)
                     }
                 }
                 Spacer()
@@ -201,7 +202,7 @@ struct AssistantView: View {
                 ProgressView()
                     .tint(Palette.ink3)
                     .scaleEffect(0.7)
-                Text("正在整理…")
+                Text("Thinking…")
                     .font(.system(size: 10.5, weight: .medium, design: .monospaced))
                     .foregroundStyle(Palette.ink3)
             }
@@ -237,10 +238,10 @@ struct AssistantView: View {
             HStack(spacing: 8) {
                 IconBadge(icon: "building.columns", tint: Palette.accent, background: Palette.accentSoft.opacity(0.6), size: 32)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("故宫博物院")
+                    Text("Forbidden City")
                         .font(.system(size: 11.5, weight: .semibold))
                         .foregroundStyle(Palette.ink)
-                    Text("10/15 09:00 · 成人 ×2")
+                    Text("10/15 09:00 · 2 adults")
                         .font(.system(size: 9.5))
                         .foregroundStyle(Palette.ink3)
                 }
@@ -250,15 +251,15 @@ struct AssistantView: View {
                     .foregroundStyle(Palette.ink)
             }
             HStack(spacing: 5) {
-                TagView(text: "余票 812", style: .warn)
-                TagView(text: "实名预约", style: .neutral)
-                TagView(text: "刷身份证入场", style: .soft)
+                TagView(text: "812 left", style: .warn)
+                TagView(text: "ID required", style: .neutral)
+                TagView(text: "Scan ID to enter", style: .soft)
             }
             Button {
                 model.bookForbiddenCity()
-                confirm("已锁定 10/15 09:00 的 2 个成人名额，二维码在「我的 · 订单」里。")
+                confirm("Seats locked for 10/15 09:00 — 2 adults. Your QR code is in Me · Bookings.")
             } label: {
-                Text("锁定名额")
+                Text("Lock seats")
                     .font(.system(size: 10.5, weight: .semibold))
                     .foregroundStyle(Palette.paper)
                     .frame(maxWidth: .infinity)
@@ -274,16 +275,16 @@ struct AssistantView: View {
 
     private var hotelsCard: some View {
         VStack(alignment: .leading, spacing: 8) {
-            hotelRow(title: "王府井", price: "¥680 起", note: "步行 12 分到故宫", recommended: true)
+            hotelRow(title: "Wangfujing", price: "From ¥680", note: "12 min walk to the Forbidden City", recommended: true)
             SoftDivider()
-            hotelRow(title: "南锣鼓巷", price: "¥520 起", note: "胡同里，夜里安静", recommended: false)
+            hotelRow(title: "Nanluoguxiang", price: "From ¥520", note: "In the hutongs · quiet at night", recommended: false)
             SoftDivider()
-            hotelRow(title: "国贸", price: "¥760 起", note: "地铁直达，适合商务", recommended: false)
+            hotelRow(title: "Guomao", price: "From ¥760", note: "Direct metro · good for business", recommended: false)
             Button {
-                model.addToChecklist(title: "酒店 · 王府井", meta: "10/15–18 · 3 晚 · 含早", category: .docs, phase: .before)
-                confirm("已把「王府井 3 晚」加入行前清单。")
+                model.addToChecklist(title: "Hotel · Wangfujing", meta: "10/15–18 · 3 nights · Breakfast", category: .docs, phase: .before)
+                confirm("Wangfujing, 3 nights, added to your prep list.")
             } label: {
-                Text("就住王府井")
+                Text("Stay in Wangfujing")
                     .font(.system(size: 10.5, weight: .semibold))
                     .foregroundStyle(Palette.paper)
                     .frame(maxWidth: .infinity)
@@ -319,18 +320,18 @@ struct AssistantView: View {
 
     private var checklistCard: some View {
         VStack(alignment: .leading, spacing: 8) {
-            checkRow(title: "eSIM / 中国手机号", meta: "3 家方案对比 · 从 ¥29 起")
+            checkRow(title: "eSIM / Chinese number", meta: "3 plans compared · From ¥29")
             SoftDivider()
-            checkRow(title: "VPN 安装", meta: "境内应用商店无法下载")
+            checkRow(title: "Install a VPN", meta: "Not on China's app stores")
             SoftDivider()
-            checkRow(title: "故宫门票", meta: "10/15 09:00 · 余票 812")
+            checkRow(title: "Forbidden City tickets", meta: "10/15 09:00 · 812 left")
             Button {
-                model.addToChecklist(title: "eSIM / 中国手机号", meta: "3 家方案对比 · 从 ¥29 起", category: .connectivity, phase: .arrival)
-                model.addToChecklist(title: "VPN 安装教程", meta: "出发前装好 · 落地即用", category: .connectivity, phase: .arrival)
-                model.addToChecklist(title: "故宫门票 · 10/15", meta: "成人 ×2 · 实名预约", category: .tickets, phase: .before)
-                confirm("3 项已加入行前清单，可以在「行程」里逐项打勾。")
+                model.addToChecklist(title: "eSIM / Chinese number", meta: "3 plans compared · From ¥29", category: .connectivity, phase: .arrival)
+                model.addToChecklist(title: "Install a VPN", meta: "Set up before you fly · Works on arrival", category: .connectivity, phase: .arrival)
+                model.addToChecklist(title: "Forbidden City tickets · 10/15", meta: "2 adults · ID booking", category: .tickets, phase: .before)
+                confirm("3 items added to your prep list — tick them off under Trip.")
             } label: {
-                Text("全部加入清单")
+                Text("Add all to list")
                     .font(.system(size: 10.5, weight: .semibold))
                     .foregroundStyle(Palette.paper)
                     .frame(maxWidth: .infinity)
@@ -368,11 +369,11 @@ struct AssistantView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
 
             HStack(spacing: 5) {
-                TagView(text: "少走 1.2 km", style: .accent)
-                TagView(text: "6 站", style: .neutral)
-                TagView(text: "约 5 小时", style: .neutral)
+                TagView(text: "1.2 km less", style: .accent)
+                TagView(text: "6 stops", style: .neutral)
+                TagView(text: "~5 hr", style: .neutral)
             }
-            Text("天安门 → 故宫 → 什刹海 → 景山 → 南锣鼓巷 → 钟鼓楼")
+            Text("Tiananmen Square → Forbidden City → Shichahai → Jingshan → Nanluoguxiang → Drum & Bell Towers")
                 .font(.system(size: 10))
                 .foregroundStyle(Palette.ink2)
                 .lineSpacing(2)
@@ -380,9 +381,9 @@ struct AssistantView: View {
             Button {
                 model.applyRouteSuggestion()
                 model.tab = .plan
-                confirm("已应用新的顺序，路线少走 1.2 km。地图上已经更新。")
+                confirm("New order applied — 1.2 km shorter. The map is updated.")
             } label: {
-                Text("应用调整")
+                Text("Apply changes")
                     .font(.system(size: 10.5, weight: .semibold))
                     .foregroundStyle(Palette.paper)
                     .frame(maxWidth: .infinity)
@@ -412,7 +413,7 @@ struct AssistantView: View {
                     HStack(spacing: 4) {
                         Image(systemName: "speaker.wave.2.fill")
                             .font(.system(size: 9, weight: .semibold))
-                        Text("播放")
+                        Text("Play")
                             .font(.system(size: 10, weight: .medium))
                     }
                     .foregroundStyle(Palette.ink)
@@ -429,7 +430,7 @@ struct AssistantView: View {
                     model.tab = .translate
                     dismiss()
                 } label: {
-                    Text("打开语句库")
+                    Text("Open phrase pack")
                         .font(.system(size: 10, weight: .semibold))
                         .foregroundStyle(Palette.paper)
                         .frame(maxWidth: .infinity)
@@ -474,7 +475,7 @@ struct AssistantView: View {
                     Image(systemName: "sparkles")
                         .font(.system(size: 11, weight: .bold))
                         .foregroundStyle(Palette.ink2)
-                    TextField("问 Lucia，比如「明早有早餐店吗」", text: $model.chatDraft)
+                    TextField("Ask Lucia, e.g. “Any breakfast spots nearby?”", text: $model.chatDraft)
                         .font(.system(size: 12))
                         .textFieldStyle(.plain)
                         .focused($composerFocused)

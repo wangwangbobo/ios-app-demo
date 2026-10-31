@@ -99,7 +99,7 @@ struct AssistantOrb: View {
             .shadow(color: Palette.ink.opacity(0.18), radius: 0, x: 0, y: 3)
         }
         .buttonStyle(PressableButtonStyle(scale: 0.92))
-        .accessibilityLabel("打开 Lucia 助手")
+        .accessibilityLabel("Open Lucia assistant")
         .onAppear {
             withAnimation(.easeOut(duration: 2.6).repeatForever(autoreverses: false)) {
                 breathe = true
@@ -354,7 +354,7 @@ struct CityScape: View {
             context.fill(stamp, with: .color(Palette.coral))
             context.stroke(stamp, with: .color(Palette.ink), lineWidth: 1.2)
             context.draw(
-                Text("京")
+                Text("R")
                     .font(.system(size: 16, weight: .bold, design: .serif))
                     .foregroundColor(Palette.paper),
                 at: CGPoint(x: stampRect.midX, y: stampRect.midY),

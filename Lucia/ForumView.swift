@@ -117,15 +117,15 @@ struct ForumView: View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 5) {
                 HStack(spacing: 6) {
-                    Eyebrow(text: "社区 / BEIJING")
+                    Eyebrow(text: "COMMUNITY / BEIJING")
                     DoodleView(kind: .flower, color: Palette.mustard)
                         .frame(width: 12, height: 12)
                 }
-                Text("大家的北京")
+                Text("Our Beijing")
                     .font(.system(size: 36, weight: .black))
                     .tracking(-0.8)
                     .foregroundStyle(Palette.ink)
-                Text("4,208 条笔记 · 今天新增 126 条 · 本地人也在发")
+                Text("4,208 notes · 126 today · Locals post too")
                     .font(.system(size: 9.5, weight: .medium, design: .monospaced))
                     .foregroundStyle(Palette.ink2)
             }
@@ -153,7 +153,7 @@ struct ForumView: View {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 12, weight: .bold))
                 .foregroundStyle(Palette.ink)
-            TextField("搜笔记、地点、作者", text: $model.forumSearch)
+            TextField("Search notes, places, people", text: $model.forumSearch)
                 .font(.system(size: 12, weight: .medium))
                 .textFieldStyle(.plain)
                 .submitLabel(.search)
@@ -197,11 +197,11 @@ struct ForumView: View {
                 .fill(Palette.accent)
                 .frame(width: 6, height: 6)
                 .overlay(Circle().strokeBorder(Palette.ink, lineWidth: 0.7))
-            Text(feedFilter == .all ? "最新笔记" : "\(feedFilter.title) 笔记")
+            Text(feedFilter == .all ? "Latest notes" : "\(feedFilter.title) notes")
                 .font(.system(size: 16, weight: .heavy))
                 .foregroundStyle(Palette.ink)
             Spacer()
-            Text("\(feedPosts.count) 篇 · 按发布时间")
+            Text("\(feedPosts.count) posts · Newest first")
                 .font(.system(size: 8.5, weight: .medium, design: .monospaced))
                 .foregroundStyle(Palette.ink3)
         }
@@ -210,12 +210,12 @@ struct ForumView: View {
 
     private var searchHeading: some View {
         HStack(alignment: .firstTextBaseline) {
-            Text("搜索 “\(query)”")
+            Text("Search “\(query)”")
                 .font(.system(size: 16, weight: .heavy))
                 .foregroundStyle(Palette.ink)
                 .lineLimit(1)
             Spacer()
-            Text("\(feedPosts.count) 条笔记")
+            Text("\(feedPosts.count) notes")
                 .font(.system(size: 8.5, weight: .medium, design: .monospaced))
                 .foregroundStyle(Palette.ink3)
         }
@@ -319,10 +319,10 @@ struct ForumView: View {
 
     private var feedEnd: some View {
         VStack(spacing: 4) {
-            Text("已经到底了")
+            Text("You're all caught up")
                 .font(.system(size: 9.5, weight: .bold))
                 .foregroundStyle(Palette.ink3)
-            Text("4,208 条笔记 · 下拉刷新试试")
+            Text("4,208 notes · Pull to refresh")
                 .font(.system(size: 8, weight: .medium, design: .monospaced))
                 .foregroundStyle(Palette.ink3.opacity(0.75))
         }
@@ -334,14 +334,14 @@ struct ForumView: View {
         VStack(spacing: 9) {
             DoodleView(kind: .squiggle, color: Palette.ink.opacity(0.4), lineWidth: 1.5)
                 .frame(width: 42, height: 12)
-            Text(query.isEmpty ? "这里还没有笔记" : "没有找到「\(query)」")
+            Text(query.isEmpty ? "No notes yet" : "Nothing for “\(query)”")
                 .font(.system(size: 13, weight: .bold))
                 .foregroundStyle(Palette.ink)
-            Text("换个分类，或者去「活动」发起一次 Citywalk。")
+            Text("Try another category, or start a citywalk under Events.")
                 .font(.system(size: 10, weight: .medium))
                 .foregroundStyle(Palette.ink3)
-            LuciaLimeButton(title: "问问 Lucia", icon: "sparkles") {
-                model.openAssistant("社区 · 找点灵感")
+            LuciaLimeButton(title: "Ask Lucia", icon: "sparkles") {
+                model.openAssistant("Community · Find inspiration")
             }
             .padding(.top, 2)
         }
@@ -400,12 +400,12 @@ struct PostDetailSheet: View {
                         Text(post.author)
                             .font(.system(size: 12, weight: .bold))
                             .foregroundStyle(Palette.ink)
-                        Text("\(post.time) · 在北京")
+                        Text("\(post.time) · Beijing")
                             .font(.system(size: 8.5, weight: .medium, design: .monospaced))
                             .foregroundStyle(Palette.ink3)
                     }
                     Spacer()
-                    TagView(text: post.tags.first ?? "笔记", style: .soft)
+                    TagView(text: post.tags.first ?? "Note", style: .soft)
                 }
 
                 Text(post.title)
@@ -433,14 +433,14 @@ struct PostDetailSheet: View {
                 HStack(spacing: 14) {
                     Label(post.likes, systemImage: "heart")
                     Label(post.saves, systemImage: "bookmark")
-                    Label(post.comments == 0 ? "还没有评论" : "\(post.comments) 条评论", systemImage: "bubble.left")
+                    Label(post.comments == 0 ? "No comments yet" : "\(post.comments) comments", systemImage: "bubble.left")
                 }
                 .font(.system(size: 9, weight: .semibold, design: .monospaced))
                 .foregroundStyle(Palette.ink2)
 
                 if !post.comment.isEmpty {
                     VStack(alignment: .leading, spacing: 5) {
-                        Text(post.comments == 0 ? "作者留言" : "评论 · \(post.comments)")
+                        Text(post.comments == 0 ? "From the author" : "Comments · \(post.comments)")
                             .font(.system(size: 8.5, weight: .bold, design: .monospaced))
                             .tracking(0.6)
                             .foregroundStyle(Palette.ink3)
@@ -460,7 +460,7 @@ struct PostDetailSheet: View {
                         model.toggleSavedPost(post)
                     } label: {
                         postActionLabel(
-                            title: saved ? "已收藏" : "收藏",
+                            title: saved ? "Saved" : "Save",
                             icon: saved ? "bookmark.fill" : "heart",
                             fill: Palette.lime
                         )
@@ -471,7 +471,7 @@ struct PostDetailSheet: View {
                         Button {
                             selectedPlace = linkedPlace
                         } label: {
-                            postActionLabel(title: "地点详情", icon: "mappin.and.ellipse", fill: Palette.paper)
+                            postActionLabel(title: "Place details", icon: "mappin.and.ellipse", fill: Palette.paper)
                         }
                         .buttonStyle(PressableButtonStyle())
                     }
@@ -480,7 +480,7 @@ struct PostDetailSheet: View {
                         Button {
                             applyRoute()
                         } label: {
-                            postActionLabel(title: "套用路线", icon: "point.topleft.down.to.point.bottomright.curvepath", fill: Palette.paper)
+                            postActionLabel(title: "Use route", icon: "point.topleft.down.to.point.bottomright.curvepath", fill: Palette.paper)
                         }
                         .buttonStyle(PressableButtonStyle())
                     }
@@ -489,7 +489,7 @@ struct PostDetailSheet: View {
                         Button {
                             openEventChannel()
                         } label: {
-                            postActionLabel(title: "看活动", icon: "calendar", fill: Palette.paper)
+                            postActionLabel(title: "View event", icon: "calendar", fill: Palette.paper)
                         }
                         .buttonStyle(PressableButtonStyle())
                     }
@@ -501,7 +501,7 @@ struct PostDetailSheet: View {
                     HStack(spacing: 6) {
                         Image(systemName: "sparkles")
                             .font(.system(size: 10, weight: .bold))
-                        Text("问 Lucia 这条值不值得去")
+                        Text("Ask Lucia if it's worth it")
                             .font(.system(size: 11.5, weight: .bold))
                     }
                     .foregroundStyle(Palette.paper)
@@ -513,7 +513,7 @@ struct PostDetailSheet: View {
                 .buttonStyle(PressableButtonStyle())
                 .padding(.top, 2)
 
-                Text(post.isMine ? "由你发布 · 内容展示给社区成员" : "发布于 Lucia 社区 · 内容来自平台用户")
+                Text(post.isMine ? "Posted by you · Visible to the community" : "Posted in RoamChina Community · From community members")
                     .font(.system(size: 8.5, weight: .medium))
                     .foregroundStyle(Palette.ink3)
                     .frame(maxWidth: .infinity)
@@ -537,8 +537,8 @@ struct PostDetailSheet: View {
     private var header: some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 4) {
-                Eyebrow(text: "\(post.kind.label) · 平台笔记")
-                Text("\(post.author) 的笔记")
+                Eyebrow(text: "\(post.kind.label) · COMMUNITY NOTE")
+                Text("\(post.author)'s notes")
                     .font(.system(size: 22, weight: .black))
                     .tracking(-0.3)
                     .foregroundStyle(Palette.ink)
@@ -604,7 +604,7 @@ struct PostDetailSheet: View {
         Task { @MainActor in
             dismiss()
             try? await Task.sleep(nanoseconds: 250_000_000)
-            model.openAssistant("社区 · \(post.title)")
+            model.openAssistant("Community · \(post.title)")
         }
     }
 }
