@@ -154,6 +154,27 @@ const TRIP_PLANS = [
   }
 ];
 
+const EXTRA_TRIP_PLANS = [
+  {
+    date: '10/19', week: 'Mon', day: 5, title: 'Temple of Heaven & Beihai',
+    meta: '4 stops · 5.1 km · ~6 hr', tag: 'Pico pick', tagStyle: 'lime',
+    stops: [
+      { name: 'Temple of Heaven', time: '09:00' }, { name: 'Lunch in Qianmen', time: '12:30' },
+      { name: 'Beihai Park', time: '15:00' }, { name: 'Shichahai at dusk', time: '18:00' }
+    ],
+    note: 'Enter the Temple of Heaven from the south gate · rent a boat if the weather holds'
+  },
+  {
+    date: '10/20', week: 'Tue', day: 6, title: 'Museum morning · Departure',
+    meta: '3 stops · 2.4 km · ~5 hr', tag: 'Departure', tagStyle: 'ok',
+    stops: [
+      { name: 'National Museum of China', time: '09:30' }, { name: 'Lunch in Qianmen', time: '12:30' },
+      { name: 'Beijing Capital Airport', time: '16:00' }
+    ],
+    note: 'Real-name booking needed for the museum · flight at 18:40'
+  }
+];
+
 /* swipeable photo strip on the today card — real Beijing shots */
 const TRIP_HERO = [
   { src: 'img/trip/today-hero.jpg', name: 'Hall of Supreme Harmony', credit: 'Photo N509FZ / CC BY-SA 4.0' },
@@ -538,13 +559,25 @@ function go(tab, channel = null) {
 }
 
 /* ================= TRIP ================= */
+function tripDayCount() {
+  return S.planBuilt ? planLength() : 4;
+}
+
+function tripPlans() {
+  const count = tripDayCount();
+  const all = TRIP_PLANS.concat(EXTRA_TRIP_PLANS);
+  return all.slice(0, count);
+}
+
 function tripView() {
+  const dayCount = tripDayCount();
+  const persona = quizPersona();
   return `
     <header class="top">
       <div>
         <div class="eyebrow"><span class="eyebrow-line"></span>My trip / BEIJING ${sparkleIcon(8)}</div>
-        <div class="h1row"><div class="h1">Beijing</div>${tag('4 days, 3 nights', 'coral')}</div>
-        <div class="meta">10/15 – 10/18 · 2 travelers</div>
+        <div class="h1row"><div class="h1">Beijing</div>${tag(`${dayCount} days, ${dayCount - 1} nights`, 'coral')}</div>
+        <div class="meta">10/15 – 10/${14 + dayCount} · 2 travelers</div>
       </div>
       <div class="top-right">
         <div class="row">
@@ -553,6 +586,12 @@ function tripView() {
         <div class="meta">Today · Day 1</div>
       </div>
     </header>
+
+    ${S.planBuilt ? `<button class="plan-strip" data-act="assistant" data-ctx="${esc(S.assistantContext)}">
+      <span class="ps-ico">${sparkleIcon(12)}</span>
+      <span class="grow"><b>Pico built this plan</b><small>${esc(persona ? persona.title : 'Your travel plan')} · ${dayCount} days</small></span>
+      <span class="ps-act">Adjust ${icon('arrowur', 8)}</span>
+    </button>` : ''}
 
     <div class="section-title" style="margin-top:18px">
       <div class="st-left"><span class="idx idx-logo">${icon('sun', 11)}</span><h2>Today at a glance</h2></div>
@@ -572,7 +611,7 @@ function tripView() {
         </div>
         <div class="scene-chips">
           <span class="weather">${icon('sun', 12)}22° <small>Clear · 11–22°</small></span>
-          ${tag('Today · Day 1 of 4', 'dark')}
+          ${tag(`Today · Day 1 of ${dayCount}`, 'dark')}
         </div>
         <div class="hero-pager">
           <span class="hero-count"><b data-hero-index>${S.hero + 1}</b> / ${TRIP_HERO.length}</span>
@@ -611,7 +650,7 @@ function tripView() {
     </div>
 
     <div class="trip-plans">
-      ${TRIP_PLANS.map((p, i) => tripPlanCard(p, i)).join('')}
+      ${tripPlans().map((p, i) => tripPlanCard(p, i)).join('')}
     </div>
 
     <div class="section-title">
@@ -1827,7 +1866,7 @@ function planSummaryHTML() {
       ${rows.map(([d, t]) => `<div class="pr-row"><b>${esc(d)}</b><span>${esc(t)}</span></div>`).join('')}
       ${days > 4 ? `<div class="pr-more">+ ${days - 4} more days, saved to your trip</div>` : ''}
     </div>
-    <button class="pr-open" data-act="open-plan">${icon('map', 10)} Open my plan ${icon('arrowr', 10)}</button>
+    <button class="pr-open" data-act="open-trip">${icon('map', 10)} View my trip ${icon('arrowr', 10)}</button>
   </div>`;
 }
 
@@ -1870,8 +1909,15 @@ function generatePlan() {
   S.chatTimer = setTimeout(() => {
     S.thinking = false;
     S.messages.push({ role: 'assistant', text: planNarrative(persona), plan: true });
-    refreshChat();
-    toast('Plan ready · your travel title is unlocked', 'sparkle');
+    if (S.sheet === 'assistant') {
+      refreshChat();
+      closeSheet();
+      S.tab = 'trip';
+      render(true);
+      toast(`Plan ready · ${days} days on your trip`, 'sparkle');
+    } else {
+      toast('Plan ready · open Trip to see it', 'sparkle');
+    }
   }, 1250);
 }
 
@@ -2514,10 +2560,10 @@ document.addEventListener('click', (e) => {
     case 'generate-plan':
       generatePlan();
       break;
-    case 'open-plan':
+    case 'open-trip':
       closeSheet();
-      go('plan');
-      toast(`Your plan is on the map · ${planLength()} days`, 'map');
+      go('trip');
+      toast(`Your plan · ${planLength()} days`, 'map');
       break;
     case 'quiz-reset':
       S.quiz = { days: null, style: null, theme: null };

@@ -1057,6 +1057,21 @@ img{max-width:100%;display:block}
 }
 .pr-open svg{width:10px;height:10px}
 
+/* Pico-built plan marker on the trip page */
+.plan-strip{
+  display:flex;align-items:center;gap:9px;width:100%;margin-top:12px;padding:9px 11px;
+  border-radius:15px;border:1px dashed rgba(25,23,16,.5);background:var(--paper-warm);text-align:left;
+}
+.plan-strip .ps-ico{
+  width:30px;height:30px;border-radius:50%;background:var(--lime);border:1px solid var(--ink);
+  display:grid;place-items:center;flex:none;
+}
+.plan-strip .ps-ico svg{width:12px;height:12px}
+.plan-strip b{display:block;font-size:10.5px;font-weight:800;letter-spacing:-.1px}
+.plan-strip small{display:block;font-size:8px;color:var(--ink3);margin-top:1px;font-family:var(--mono)}
+.plan-strip .ps-act{display:inline-flex;align-items:center;gap:3px;font-size:8px;font-weight:800;color:var(--ink2);flex:none}
+.plan-strip .ps-act svg{width:8px;height:8px}
+
 /* assistant context card */
 .assist-card{
   margin-left:28px;max-width:calc(88% + 28px);

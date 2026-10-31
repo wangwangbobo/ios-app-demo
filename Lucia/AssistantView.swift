@@ -667,13 +667,13 @@ struct AssistantView: View {
 
             Button {
                 Haptics.success()
-                model.tab = .plan
+                model.tab = .trip
                 model.assistantOpen = false
             } label: {
                 HStack(spacing: 5) {
                     Image(systemName: "map")
                         .font(.system(size: 9, weight: .bold))
-                    Text("Open my plan")
+                    Text("View my trip")
                         .font(.system(size: 10, weight: .bold))
                     Image(systemName: "arrow.right")
                         .font(.system(size: 9, weight: .black))

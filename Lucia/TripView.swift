@@ -22,6 +22,9 @@ struct TripView: View {
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 20) {
                     header
+                    if model.planBuilt {
+                        planBanner
+                    }
                     todaySection
                     plansSection
                     quizSection
@@ -37,6 +40,14 @@ struct TripView: View {
                         proxy.scrollTo("quiz-result", anchor: .center)
                     }
                 }
+            }
+            .onAppear {
+                #if DEBUG
+                guard ProcessInfo.processInfo.arguments.contains("-tripbottom") else { return }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) {
+                    proxy.scrollTo("quiz-result", anchor: .bottom)
+                }
+                #endif
             }
         }
         .onChange(of: heroIndex) { _, _ in
@@ -81,9 +92,9 @@ struct TripView: View {
                         .foregroundStyle(Palette.ink)
                         .lineLimit(1)
                         .minimumScaleFactor(0.85)
-                    TagView(text: "4 days · 3 nights", style: .accent)
+                    TagView(text: "\(planDayCount) days · \(planDayCount - 1) nights", style: .accent)
                 }
-                Text("10/15 – 10/18 · 2 travelers")
+                Text("10/15 – 10/\(14 + planDayCount) · 2 travelers")
                     .font(.system(size: 10.5, weight: .medium, design: .monospaced))
                     .foregroundStyle(Palette.ink2)
             }
@@ -95,6 +106,67 @@ struct TripView: View {
                     .foregroundStyle(Palette.ink2)
             }
         }
+    }
+
+    // MARK: Plan data
+
+    private var planDayCount: Int {
+        model.planBuilt ? model.planLength : 4
+    }
+
+    private var tripPlanDays: [TripPlanDay] {
+        if planDayCount <= baseTripPlanDays.count {
+            return Array(baseTripPlanDays.prefix(planDayCount))
+        }
+        return baseTripPlanDays + extraTripPlanDays
+    }
+
+    private var planBanner: some View {
+        Button {
+            Haptics.tap()
+            model.openAssistant("Trip · Adjust the plan")
+        } label: {
+            HStack(spacing: 9) {
+                ZStack {
+                    Circle().fill(Palette.lime)
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(Palette.ink)
+                }
+                .frame(width: 30, height: 30)
+                .overlay(Circle().strokeBorder(Palette.ink, lineWidth: 1))
+
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("PICO BUILT THIS PLAN")
+                        .font(.system(size: 7.5, weight: .bold, design: .monospaced))
+                        .tracking(0.8)
+                        .foregroundStyle(Palette.ink3)
+                    Text("\(model.quizPersona?.title ?? "Your travel plan") · \(planDayCount) days")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(Palette.ink)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.85)
+                }
+
+                Spacer(minLength: 4)
+
+                HStack(spacing: 3) {
+                    Text("Adjust")
+                    Image(systemName: "arrow.up.right")
+                        .font(.system(size: 8, weight: .black))
+                }
+                .font(.system(size: 9, weight: .bold))
+                .foregroundStyle(Palette.ink2)
+            }
+            .padding(.horizontal, 11)
+            .padding(.vertical, 9)
+            .background(RoundedRectangle(cornerRadius: 15, style: .continuous).fill(Palette.paperWarm))
+            .overlay(
+                RoundedRectangle(cornerRadius: 15, style: .continuous)
+                    .strokeBorder(Palette.ink.opacity(0.5), style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
+            )
+        }
+        .buttonStyle(PressableButtonStyle(scale: 0.99))
     }
 
     // MARK: Today
@@ -154,7 +226,7 @@ struct TripView: View {
 
                         Spacer()
 
-                        TagView(text: "Day 1 of 4", style: .dark)
+                        TagView(text: "Day 1 of \(planDayCount)", style: .dark)
                     }
                     .padding(12)
                     .allowsHitTesting(false)
@@ -665,7 +737,7 @@ private struct TripPlanDay: Identifiable {
     let note: String
 }
 
-private let tripPlanDays: [TripPlanDay] = [
+private let baseTripPlanDays: [TripPlanDay] = [
     TripPlanDay(
         date: "10/15", week: "Wed", day: 1,
         title: "Central Axis · Palace & hutongs",
@@ -718,5 +790,33 @@ private let tripPlanDays: [TripPlanDay] = [
             TripStop(name: "Beijing Capital Airport", time: "16:00")
         ],
         note: "Flight 18:40 · be at the airport 2.5 hr early"
+    )
+]
+
+private let extraTripPlanDays: [TripPlanDay] = [
+    TripPlanDay(
+        date: "10/19", week: "Mon", day: 5,
+        title: "Temple of Heaven & Beihai",
+        meta: "4 stops · 5.1 km · ~6 hr",
+        tag: "Pico pick", tagStyle: .accent,
+        stops: [
+            TripStop(name: "Temple of Heaven", time: "09:00"),
+            TripStop(name: "Lunch in Qianmen", time: "12:30"),
+            TripStop(name: "Beihai Park", time: "15:00"),
+            TripStop(name: "Shichahai at dusk", time: "18:00")
+        ],
+        note: "Enter the Temple of Heaven from the south gate · rent a boat if the weather holds"
+    ),
+    TripPlanDay(
+        date: "10/20", week: "Tue", day: 6,
+        title: "Museum morning · departure",
+        meta: "3 stops · 2.4 km · ~5 hr",
+        tag: "Departure", tagStyle: .ok,
+        stops: [
+            TripStop(name: "National Museum of China", time: "09:30"),
+            TripStop(name: "Lunch in Qianmen", time: "12:30"),
+            TripStop(name: "Beijing Capital Airport", time: "16:00")
+        ],
+        note: "Real-name booking needed for the museum · flight at 18:40"
     )
 ]

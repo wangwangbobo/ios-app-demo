@@ -227,6 +227,16 @@ final class AppModel: ObservableObject {
             quizStyle = quizStyle ?? "Food first"
             quizTheme = quizTheme ?? "Hutongs & coffee"
         }
+        if args.contains("-plantrip") {
+            tab = .trip
+            quizDays = "6+ days"
+            quizStyle = "Food first"
+            quizTheme = "Hutongs & coffee"
+            onboarding = false
+            planBuilt = true
+            assistantContext = "Plan · Central Axis · \(planLength) days"
+            routeName = "Central Axis · New plan"
+        }
         if args.contains("-planbuilt") {
             quizDays = "4–5 days"
             quizStyle = "Food first"
@@ -248,6 +258,18 @@ final class AppModel: ObservableObject {
             assistantContext = onboarding ? "New trip · Planning with Pico" : tab.assistantContext
             seedAssistant()
             assistantOpen = true
+        }
+        if args.contains("-autobuild") {
+            quizDays = "4–5 days"
+            quizStyle = "Food first"
+            quizTheme = "Hutongs & coffee"
+            assistantContext = "New trip · Planning with Pico"
+            seedAssistant()
+            assistantOpen = true
+            Task { @MainActor [weak self] in
+                try? await Task.sleep(for: .milliseconds(900))
+                self?.buildPlan()
+            }
         }
         if args.contains("-place") || args.contains("-compose") { tab = .forum }
         if args.contains("-reorder") { tab = .plan }
@@ -664,7 +686,12 @@ final class AppModel: ObservableObject {
                 self.chatMessages.append(ChatMessage(role: .assistant, text: self.planNarrative(persona), card: .plan))
             }
             Haptics.success()
-            self.toast("Plan ready · your travel title is unlocked", icon: "sparkles")
+            if self.assistantOpen {
+                self.tab = .trip
+                self.assistantOpen = false
+                try? await Task.sleep(for: .milliseconds(360))
+            }
+            self.toast("Plan ready · \(self.planLength) days on your trip", icon: "sparkles")
         }
     }
 
