@@ -1324,6 +1324,12 @@ img{max-width:100%;display:block}
 .qr-go svg{width:8px;height:8px}
 .quiz-empty{display:flex;align-items:center;gap:5px;font-size:7.5px;color:var(--ink3);line-height:1.5}
 .quiz-empty svg{width:9px;height:9px;flex:none}
+.quiz-retake{display:inline-flex;align-items:center;gap:3px;border:1px solid rgba(25,23,16,.35);background:var(--paper);border-radius:999px;padding:4px 8px;font:700 7px var(--mono);color:var(--ink2);font-family:inherit;flex:none}
+.quiz-retake svg{width:7px;height:7px}
+.quiz-retake:active{transform:scale(.96)}
+.quiz-card.done{gap:8px;padding-bottom:10px}
+.quiz-card.done .quiz-result{padding:9px}
+.quiz-card.done .quiz-result em{white-space:normal;line-height:1.4}
 
 /* ---------- journey archive ---------- */
 .jr-card{border:1.1px solid var(--ink);border-radius:16px;background:var(--paper);box-shadow:0 2px 0 rgba(25,23,16,.1);overflow:hidden}

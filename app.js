@@ -172,7 +172,7 @@ function quizPersona() {
   };
   const base = titles[q.style] || titles['Slow culture'];
   const fit = q.theme === 'Imperial history' || q.theme === 'Hutongs & coffee' ? 'Central Axis' : 'Imperial Gardens';
-  return { ...base, meta: `${q.days} · ${q.theme}`, fit };
+  return { ...base, meta: `${q.days} · ${q.style} · ${q.theme}`, fit };
 }
 
 /* archived trip reports — the fun end-of-journey wrap-up */
@@ -559,24 +559,26 @@ function quizAnswered() {
 
 function quizCard() {
   const persona = quizPersona();
-  return `<article class="card quiz-card">
+  return `<article class="card quiz-card${persona ? ' done' : ''}">
     <div class="quiz-top">
       <span class="quiz-badge">${icon('sparkle', 10)} Trip match</span>
-      <span class="quiz-hintline">${persona ? 'Saved to your profile' : 'Answer all three for your title'}</span>
+      ${persona
+        ? `<button class="quiz-retake" data-act="quiz-reset">Retake ${icon('arrowur', 7)}</button>`
+        : `<span class="quiz-hintline">Answer all three for your title</span>`}
     </div>
-    ${QUIZ.map((q) => `<div class="quiz-q">
-      <div class="quiz-label">${esc(q.label)}</div>
-      <div class="quiz-opts">
-        ${q.options.map((o) => `<button class="qchip ${S.quiz[q.key] === o ? 'on' : ''}" data-act="quiz" data-key="${q.key}" data-val="${esc(o)}" aria-pressed="${S.quiz[q.key] === o}">${esc(o)}</button>`).join('')}
-      </div>
-    </div>`).join('')}
     ${persona
       ? `<div class="quiz-result">
           <span class="qr-ico">${icon(persona.icon, 14)}</span>
           <span class="grow"><small>YOUR TRAVEL TITLE</small><b>${esc(persona.title)}</b><em>${esc(persona.meta)}</em></span>
           <button class="qr-go" data-act="tab" data-tab="plan">${icon('map', 9)}${esc(persona.fit)}</button>
         </div>`
-      : `<div class="quiz-empty">${icon('info', 9)} Pick one per question — it only changes your suggestion, never the plan.</div>`}
+      : `${QUIZ.map((q) => `<div class="quiz-q">
+          <div class="quiz-label">${esc(q.label)}</div>
+          <div class="quiz-opts">
+            ${q.options.map((o) => `<button class="qchip ${S.quiz[q.key] === o ? 'on' : ''}" data-act="quiz" data-key="${q.key}" data-val="${esc(o)}" aria-pressed="${S.quiz[q.key] === o}">${esc(o)}</button>`).join('')}
+          </div>
+        </div>`).join('')}
+        <div class="quiz-empty">${icon('info', 9)} Pick one per question — it only changes your suggestion, never the plan.</div>`}
   </article>`;
 }
 
@@ -2329,6 +2331,13 @@ document.addEventListener('click', (e) => {
       }
       break;
     }
+    case 'quiz-reset':
+      S.quiz = { days: null, style: null, theme: null };
+      render();
+      requestAnimationFrame(() => {
+        document.querySelector('.quiz-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+      break;
     case 'report':
       openSheet('report', el.dataset.id);
       break;

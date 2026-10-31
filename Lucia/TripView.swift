@@ -246,7 +246,7 @@ struct TripView: View {
         ]
         let base = map[style] ?? ("The Slow Culture Wanderer", "safari")
         let fit = (theme == "Imperial history" || theme == "Hutongs & coffee") ? "Central Axis" : "Imperial Gardens"
-        return TravelPersona(title: base.0, icon: base.1, meta: "\(days) · \(theme)", fit: fit)
+        return TravelPersona(title: base.0, icon: base.1, meta: "\(days) · \(style) · \(theme)", fit: fit)
     }
 
     private var quizSection: some View {
@@ -257,68 +257,38 @@ struct TripView: View {
                 HStack(spacing: 8) {
                     TagView(text: "Trip match", style: .accent)
                     Spacer()
-                    Text(quizPersona == nil ? "Answer all three for your title" : "Saved to your profile")
-                        .font(.system(size: 8, weight: .medium, design: .monospaced))
-                        .foregroundStyle(Palette.ink3)
-                }
-
-                quizQuestion("How many days do you like?", options: ["2–3 days", "4–5 days", "6+ days"], selection: $quizDays)
-                quizQuestion("Your kind of holiday", options: ["Slow culture", "Food first", "Outdoors", "Night owl"], selection: $quizStyle)
-                quizQuestion("A theme, or none?", options: ["Imperial history", "Hutongs & coffee", "Art & design", "No theme"], selection: $quizTheme)
-
-                if let persona = quizPersona {
-                    HStack(spacing: 9) {
-                        Image(systemName: persona.icon)
-                            .font(.system(size: 13, weight: .bold))
-                            .foregroundStyle(Palette.ink)
-                            .frame(width: 30, height: 30)
-                            .background(Circle().fill(Palette.lime))
-                            .overlay(Circle().strokeBorder(Palette.ink, lineWidth: 1))
-                        VStack(alignment: .leading, spacing: 1) {
-                            Text("YOUR TRAVEL TITLE")
-                                .font(.system(size: 7, weight: .bold, design: .monospaced))
-                                .tracking(0.8)
-                                .foregroundStyle(Palette.ink3)
-                            Text(persona.title)
-                                .font(.system(size: 13, weight: .black))
-                                .tracking(-0.2)
-                                .foregroundStyle(Palette.ink)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.8)
-                            Text(persona.meta)
-                                .font(.system(size: 8.5, weight: .semibold, design: .monospaced))
-                                .foregroundStyle(Palette.ink2)
-                                .lineLimit(1)
-                        }
-                        Spacer(minLength: 4)
+                    if quizPersona == nil {
+                        Text("Answer all three for your title")
+                            .font(.system(size: 8, weight: .medium, design: .monospaced))
+                            .foregroundStyle(Palette.ink3)
+                    } else {
                         Button {
-                            Haptics.tap()
-                            withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
-                                model.tab = .plan
-                            }
+                            resetQuiz()
                         } label: {
-                            HStack(spacing: 4) {
-                                Image(systemName: "map")
-                                    .font(.system(size: 8, weight: .black))
-                                Text(persona.fit)
-                                    .font(.system(size: 9.5, weight: .bold))
+                            HStack(spacing: 3) {
+                                Text("Retake")
+                                Image(systemName: "arrow.up.right")
+                                    .font(.system(size: 6, weight: .black))
                             }
-                            .foregroundStyle(Palette.paper)
-                            .padding(.horizontal, 10)
-                            .frame(height: 29)
-                            .background(Capsule().fill(Palette.ink))
+                            .font(.system(size: 8, weight: .bold, design: .monospaced))
+                            .foregroundStyle(Palette.ink2)
+                            .padding(.horizontal, 8)
+                            .frame(height: 23)
+                            .background(Capsule().fill(Palette.paper))
+                            .overlay(Capsule().strokeBorder(Palette.ink.opacity(0.35), lineWidth: 0.9))
                         }
                         .buttonStyle(PressableButtonStyle(scale: 0.95))
                     }
-                    .padding(9)
-                    .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Palette.paperWarm))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .strokeBorder(Palette.ink.opacity(0.35), style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
-                    )
-                    .transition(.opacity.combined(with: .move(edge: .bottom)))
-                    .id("quiz-result")
+                }
+
+                if let persona = quizPersona {
+                    personaBanner(persona)
+                        .transition(.opacity)
                 } else {
+                    quizQuestion("How many days do you like?", options: ["2–3 days", "4–5 days", "6+ days"], selection: $quizDays)
+                    quizQuestion("Your kind of holiday", options: ["Slow culture", "Food first", "Outdoors", "Night owl"], selection: $quizStyle)
+                    quizQuestion("A theme, or none?", options: ["Imperial history", "Hutongs & coffee", "Art & design", "No theme"], selection: $quizTheme)
+
                     HStack(spacing: 5) {
                         Image(systemName: "info.circle")
                             .font(.system(size: 9, weight: .bold))
@@ -337,6 +307,68 @@ struct TripView: View {
             )
             .compositingGroup()
             .shadow(color: Palette.ink.opacity(0.1), radius: 0, x: 0, y: 2.5)
+        }
+    }
+
+    private func personaBanner(_ persona: TravelPersona) -> some View {
+        HStack(spacing: 9) {
+            Image(systemName: persona.icon)
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(Palette.ink)
+                .frame(width: 30, height: 30)
+                .background(Circle().fill(Palette.lime))
+                .overlay(Circle().strokeBorder(Palette.ink, lineWidth: 1))
+            VStack(alignment: .leading, spacing: 1) {
+                Text("YOUR TRAVEL TITLE")
+                    .font(.system(size: 7, weight: .bold, design: .monospaced))
+                    .tracking(0.8)
+                    .foregroundStyle(Palette.ink3)
+                Text(persona.title)
+                    .font(.system(size: 13, weight: .black))
+                    .tracking(-0.2)
+                    .foregroundStyle(Palette.ink)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                Text(persona.meta)
+                    .font(.system(size: 8, weight: .semibold, design: .monospaced))
+                    .foregroundStyle(Palette.ink2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 4)
+            Button {
+                Haptics.tap()
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                    model.tab = .plan
+                }
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "map")
+                        .font(.system(size: 8, weight: .black))
+                    Text(persona.fit)
+                        .font(.system(size: 9.5, weight: .bold))
+                }
+                .foregroundStyle(Palette.paper)
+                .padding(.horizontal, 10)
+                .frame(height: 29)
+                .background(Capsule().fill(Palette.ink))
+            }
+            .buttonStyle(PressableButtonStyle(scale: 0.95))
+        }
+        .padding(9)
+        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Palette.paperWarm))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(Palette.ink.opacity(0.35), style: StrokeStyle(lineWidth: 1, dash: [4, 3]))
+        )
+        .id("quiz-result")
+    }
+
+    private func resetQuiz() {
+        Haptics.tap()
+        withAnimation(.easeOut(duration: 0.2)) {
+            quizDays = nil
+            quizStyle = nil
+            quizTheme = nil
         }
     }
 
