@@ -13,6 +13,15 @@ struct TripView: View {
     @State private var quizDays: String? = nil
     @State private var quizStyle: String? = nil
     @State private var quizTheme: String? = nil
+    @State private var heroIndex = 0
+
+    private let heroPhotos: [(image: String, name: String, credit: String)] = [
+        ("today-hero", "Hall of Supreme Harmony", "Photo N509FZ / CC BY-SA 4.0"),
+        ("hero-2", "Forbidden City from Jingshan", "Photo EditQ / CC BY-SA 4.0"),
+        ("hero-3", "Houhai after dark", "Photo Morio / CC BY-SA 4.0"),
+        ("hero-4", "Drum Tower, 17:30 stop", "Photo Marek Śliwecki / CC BY-SA 4.0"),
+        ("hero-5", "Corner Tower in moonlight", "Photo Morio / CC BY-SA 4.0")
+    ]
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -99,21 +108,29 @@ struct TripView: View {
 
             VStack(spacing: 0) {
                 ZStack(alignment: .topLeading) {
-                    GeometryReader { geo in
-                        Image("today-hero")
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: geo.size.width, height: 196)
-                            .clipped()
+                    TabView(selection: $heroIndex) {
+                        ForEach(Array(heroPhotos.enumerated()), id: \.offset) { index, photo in
+                            GeometryReader { geo in
+                                Image(photo.image)
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(width: geo.size.width, height: 196)
+                                    .clipped()
+                            }
+                            .tag(index)
+                        }
                     }
+                    .tabViewStyle(.page(indexDisplayMode: .never))
                     .frame(height: 196)
+                    .accessibilityLabel("Today's photos")
+                    .accessibilityHint("Swipe left or right for more photos")
 
                     LinearGradient(
                         colors: [
                             Palette.ink.opacity(0.24),
                             .clear,
                             .clear,
-                            Palette.ink.opacity(0.42)
+                            Palette.ink.opacity(0.48)
                         ],
                         startPoint: .top,
                         endPoint: .bottom
@@ -143,16 +160,39 @@ struct TripView: View {
                         TagView(text: "Day 1 of 4", style: .dark)
                     }
                     .padding(12)
+                    .allowsHitTesting(false)
 
                     VStack {
                         Spacer()
-                        HStack {
-                            Text("HALL OF SUPREME HARMONY · PHOTO N509FZ / CC BY-SA 4.0")
-                                .font(.system(size: 7, weight: .semibold, design: .monospaced))
-                                .tracking(0.4)
-                                .foregroundStyle(Palette.paper.opacity(0.86))
-                                .shadow(color: Palette.ink.opacity(0.5), radius: 2, y: 1)
+                        HStack(alignment: .bottom) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(heroPhotos[heroIndex].name.uppercased())
+                                    .font(.system(size: 8, weight: .heavy, design: .monospaced))
+                                    .tracking(0.5)
+                                    .foregroundStyle(Palette.paper)
+                                Text(heroPhotos[heroIndex].credit.uppercased())
+                                    .font(.system(size: 6.5, weight: .semibold, design: .monospaced))
+                                    .tracking(0.4)
+                                    .foregroundStyle(Palette.paper.opacity(0.74))
+                            }
+                            .shadow(color: Palette.ink.opacity(0.55), radius: 2, y: 1)
+
                             Spacer()
+
+                            HStack(spacing: 6) {
+                                Text("\(heroIndex + 1) / \(heroPhotos.count)")
+                                    .font(.system(size: 7.5, weight: .bold, design: .monospaced))
+                                    .foregroundStyle(Palette.paper.opacity(0.84))
+                                    .shadow(color: Palette.ink.opacity(0.5), radius: 2, y: 1)
+                                HStack(spacing: 3) {
+                                    ForEach(heroPhotos.indices, id: \.self) { i in
+                                        Capsule()
+                                            .fill(i == heroIndex ? Palette.paper : Palette.paper.opacity(0.45))
+                                            .frame(width: i == heroIndex ? 13 : 5, height: 5)
+                                            .animation(.easeInOut(duration: 0.2), value: heroIndex)
+                                    }
+                                }
+                            }
                         }
                     }
                     .padding(.horizontal, 12)

@@ -48,4 +48,4 @@ build-ipa.sh         Device build + icon injection + IPA packaging
 - Map pins, community posts, events, restaurant rankings and translation results are local demo data — no live services.
 - Camera translation is a local simulation and does not open the camera or run OCR. Assistant replies are scripted locally.
 - Design language: cream paper `#F4ECDC`, ink outlines, hard offset shadows, highlighter blocks and sticker doodles.
-- Community covers and the Trip "Today at a glance" hero are real photos of Beijing and its food from Wikimedia Commons, each credited on the card and listed in [`img/posts/CREDITS.md`](img/posts/CREDITS.md). User-written notes without a photo fall back to the drawn sticker style.
+- Community covers and the swipeable Trip photo strip are real photos of Beijing and its food from Wikimedia Commons, each credited on the card and listed in [`img/posts/CREDITS.md`](img/posts/CREDITS.md). User-written notes without a photo fall back to the drawn sticker style.

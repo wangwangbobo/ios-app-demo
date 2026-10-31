@@ -154,6 +154,15 @@ const TRIP_PLANS = [
   }
 ];
 
+/* swipeable photo strip on the today card — real Beijing shots */
+const TRIP_HERO = [
+  { src: 'img/trip/today-hero.jpg', name: 'Hall of Supreme Harmony', credit: 'Photo N509FZ / CC BY-SA 4.0' },
+  { src: 'img/trip/hero-2.jpg', name: 'Forbidden City from Jingshan', credit: 'Photo EditQ / CC BY-SA 4.0' },
+  { src: 'img/trip/hero-3.jpg', name: 'Houhai after dark', credit: 'Photo Morio / CC BY-SA 4.0' },
+  { src: 'img/trip/hero-4.jpg', name: 'Drum Tower, 17:30 stop', credit: 'Photo Marek Śliwecki / CC BY-SA 4.0' },
+  { src: 'img/trip/hero-5.jpg', name: 'Corner Tower in moonlight', credit: 'Photo Morio / CC BY-SA 4.0' }
+];
+
 /* travel-style check on the trip page */
 const QUIZ = [
   { key: 'days', label: 'How many days do you like?', options: ['2–3 days', '4–5 days', '6+ days'] },
@@ -268,6 +277,7 @@ const S = {
   routeName: 'Central Axis · Draft',
   aiVisible: true,
   expandedPlan: 0,
+  hero: 0,
   quiz: { days: null, style: null, theme: null },
   applied: false,
   forumChannel: null,
@@ -456,6 +466,28 @@ const screens = {
   me: meView
 };
 
+function initHeroCarousel() {
+  const track = $('#heroTrack');
+  if (!track) return;
+  const dots = $$('.hero-dot', track.parentElement);
+  const label = $('[data-hero-index]', track.parentElement);
+  const apply = (i) => {
+    S.hero = clamp(i, 0, TRIP_HERO.length - 1);
+    dots.forEach((d, j) => {
+      d.classList.toggle('on', j === S.hero);
+      d.setAttribute('aria-current', j === S.hero ? 'true' : 'false');
+    });
+    if (label) label.textContent = String(S.hero + 1);
+  };
+  if (S.hero && track.clientWidth) track.scrollLeft = track.clientWidth * S.hero;
+  apply(S.hero);
+  let raf = 0;
+  track.addEventListener('scroll', () => {
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(() => apply(Math.round(track.scrollLeft / Math.max(1, track.clientWidth))));
+  }, { passive: true });
+}
+
 function render(resetScroll = false) {
   const v = $('#view');
   const old = v.scrollTop;
@@ -466,6 +498,7 @@ function render(resetScroll = false) {
   renderDock();
   if (S.sheet) renderSheet();
   if (S.tab === 'plan') initMapDrag();
+  if (S.tab === 'trip') initHeroCarousel();
   updateHash();
 }
 
@@ -507,12 +540,25 @@ function tripView() {
 
     <article class="card today-card">
       <div class="cityscape">
-        <img class="today-photo" src="img/trip/today-hero.jpg" alt="Hall of Supreme Harmony at the Forbidden City, Beijing" loading="lazy">
+        <div class="hero-track" id="heroTrack" aria-label="Trip photos">
+          ${TRIP_HERO.map((h, i) => `<figure class="hero-slide">
+            <img class="today-photo" src="${h.src}" alt="${esc(h.name)}, Beijing" ${i ? 'loading="lazy"' : ''} draggable="false">
+            <figcaption class="hero-caption">
+              <b>${esc(h.name)}</b>
+              <span>${esc(h.credit)}</span>
+            </figcaption>
+          </figure>`).join('')}
+        </div>
         <div class="scene-chips">
           <span class="weather">${icon('sun', 12)}22° <small>Clear · 11–22°</small></span>
           ${tag('Today · Day 1 of 4', 'dark')}
         </div>
-        <span class="photo-credit">Hall of Supreme Harmony · Photo N509FZ / CC BY-SA 4.0</span>
+        <div class="hero-pager">
+          <span class="hero-count"><b data-hero-index>${S.hero + 1}</b> / ${TRIP_HERO.length}</span>
+          <div class="hero-dots">
+            ${TRIP_HERO.map((_, i) => `<button class="hero-dot${i === S.hero ? ' on' : ''}" data-act="hero-go" data-hero="${i}" aria-label="Photo ${i + 1} of ${TRIP_HERO.length}" aria-current="${i === S.hero ? 'true' : 'false'}"></button>`).join('')}
+          </div>
+        </div>
       </div>
       <div class="hero-foot">
         <div class="grow">
@@ -2339,6 +2385,12 @@ document.addEventListener('click', (e) => {
         document.querySelector('.quiz-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       });
       break;
+    case 'hero-go': {
+      const track = $('#heroTrack');
+      const i = Number(el.dataset.hero) || 0;
+      if (track) track.scrollTo({ left: track.clientWidth * i, behavior: 'smooth' });
+      break;
+    }
     case 'report':
       openSheet('report', el.dataset.id);
       break;
