@@ -1112,6 +1112,7 @@ function render(resetScroll = false) {
   renderDock();
   if (S.sheet) renderSheet();
   if (S.tab === 'plan') initMapDrag();
+  if (S.tab === 'plan') initPlanStopDrag();
   if (S.tab === 'trip' && S.tripEdit && !S.tripLive) {
     initMapDrag('#tripMapBody', activeDay().stops);
     initTripStopDrag();
@@ -1736,7 +1737,7 @@ function planView() {
         <button data-act="apply-ai">Apply</button>
       </div>` : ''}
 
-      <div class="stops" id="stopList">
+      <div class="stops${S.editMode ? ' edit' : ''}" id="stopList">
         ${stops.map((s, i) => stopRowHTML(s, i)).join('')}
       </div>
 
@@ -1767,11 +1768,14 @@ function pinHTML(stop, index) {
 function stopRowHTML(stop, index) {
   const colors = ['var(--mustard)', 'var(--pink)', 'var(--mint)', 'var(--peri)', 'var(--lime)', 'var(--sky)'];
   const selected = S.selected === stop.id;
-  return `<button class="stop-row ${selected ? 'on' : ''}" data-act="select-stop" data-id="${stop.id}">
+  const grip = S.editMode
+    ? `<span class="grip" data-plan-grip="${stop.id}" title="${S.lang === 'zh' ? '拖动排序' : 'Drag to reorder'}">${icon('grip', 11)}</span>`
+    : `<span class="grip">${icon(selected ? 'arrowur' : 'sliders', 10)}</span>`;
+  return `<button class="stop-row ${selected ? 'on' : ''}" data-act="select-stop" data-id="${stop.id}" data-index="${index}">
     <span class="time">${esc(stop.time)}</span>
     <span class="num" style="background:${colors[index % colors.length]}">${index + 1}</span>
     <span class="info"><b>${esc(stop.name)} ${stop.tag ? tag(stop.tag, stop.tagStyle || 'soft') : ''}</b><small>${esc(stop.duration)} · 6 min walk</small></span>
-    <span class="grip">${icon(selected ? 'arrowur' : 'sliders', 10)}</span>
+    ${grip}
   </button>`;
 }
 function communityOverlay() {
@@ -3512,6 +3516,91 @@ function onTripGripEnd(event) {
   markPlanEdited();
   render();
   toast('Order updated · route recalculated', 'refresh');
+}
+
+/* ---------- drag plan stop rows ---------- */
+let planStopDrag = null;
+
+function initPlanStopDrag() {
+  if (!S.editMode) return;
+  $$('#stopList [data-plan-grip]').forEach((grip) => {
+    grip.addEventListener('pointerdown', onPlanGripDown);
+  });
+}
+
+function onPlanGripDown(event) {
+  if (event.button !== undefined && event.button !== 0) return;
+  const grip = event.currentTarget;
+  const row = grip.closest('.stop-row');
+  if (!row) return;
+  event.preventDefault();
+  event.stopPropagation();
+  const rows = $$('#stopList .stop-row');
+  planStopDrag = {
+    row,
+    grip,
+    rows,
+    index: Number(row.dataset.index),
+    pointerId: event.pointerId,
+    startY: event.clientY,
+    target: Number(row.dataset.index),
+    active: false
+  };
+  try { grip.setPointerCapture(event.pointerId); } catch (_) {}
+  grip.addEventListener('pointermove', onPlanGripMove, { passive: false });
+  grip.addEventListener('pointerup', onPlanGripEnd);
+  grip.addEventListener('pointercancel', onPlanGripEnd);
+}
+
+function onPlanGripMove(event) {
+  const drag = planStopDrag;
+  if (!drag || event.pointerId !== drag.pointerId) return;
+  const dy = event.clientY - drag.startY;
+  if (!drag.active) {
+    if (Math.abs(dy) < 4) return;
+    drag.active = true;
+    drag.row.classList.add('dragging');
+    drag.rows.forEach((r) => { if (r !== drag.row) r.style.transition = 'background .15s, border-color .15s'; });
+  }
+  event.preventDefault();
+  drag.row.style.transform = `translateY(${dy}px)`;
+  let target = 0;
+  drag.rows.forEach((r) => {
+    if (r === drag.row) return;
+    const rect = r.getBoundingClientRect();
+    if (event.clientY > rect.top + rect.height / 2) target += 1;
+  });
+  target = clamp(target, 0, drag.rows.length - 1);
+  if (target !== drag.target) {
+    drag.target = target;
+    drag.rows.forEach((r, i) => r.classList.toggle('drop-target', i === target && r !== drag.row));
+  }
+}
+
+function onPlanGripEnd(event) {
+  const drag = planStopDrag;
+  if (!drag || event.pointerId !== drag.pointerId) return;
+  planStopDrag = null;
+  drag.grip.removeEventListener('pointermove', onPlanGripMove);
+  drag.grip.removeEventListener('pointerup', onPlanGripEnd);
+  drag.grip.removeEventListener('pointercancel', onPlanGripEnd);
+  try { drag.grip.releasePointerCapture(event.pointerId); } catch (_) {}
+  if (!drag.active) return;
+  drag.row.style.transform = '';
+  drag.row.classList.remove('dragging');
+  drag.rows.forEach((r) => { r.classList.remove('drop-target'); r.style.transition = ''; });
+  const blockClick = (ev) => { ev.preventDefault(); ev.stopPropagation(); };
+  document.addEventListener('click', blockClick, { capture: true, once: true });
+  setTimeout(() => document.removeEventListener('click', blockClick, true), 400);
+  if (drag.target === drag.index) return;
+  const slots = S.stops.map((s) => s.time);
+  const [stop] = S.stops.splice(drag.index, 1);
+  if (!stop) return;
+  S.stops.splice(clamp(drag.target, 0, S.stops.length), 0, stop);
+  S.stops.forEach((s, i) => { if (slots[i] != null) s.time = slots[i]; });
+  markPlanEdited();
+  render();
+  toast(S.lang === 'zh' ? '顺序已更新 · 路线已重算' : 'Order updated · route recalculated', 'refresh');
 }
 
 /* ---------- reorder ---------- */

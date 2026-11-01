@@ -556,6 +556,19 @@ img{max-width:100%;display:block}
 .stop-row .info small{display:block;font-size:8px;color:var(--ink3);margin-top:1px}
 .stop-row .grip{opacity:.45}
 .stop-row .grip svg{width:10px;height:10px}
+.stops.edit{max-height:min(40vh,340px);padding-bottom:4px}
+.stops.edit .stop-row{position:relative;transition:background .15s,border-color .15s}
+.stops.edit .stop-row .grip{
+  opacity:.75;width:30px;height:30px;margin-right:-5px;flex:none;display:grid;place-items:center;
+  cursor:grab;touch-action:none;border-radius:9px;
+}
+.stops.edit .stop-row .grip:active{cursor:grabbing}
+.stops.edit .stop-row .grip svg{width:12px;height:12px;pointer-events:none}
+.stop-row.dragging{
+  z-index:5;background:var(--paper);border-color:var(--ink);border-radius:11px;
+  box-shadow:0 9px 20px rgba(25,23,16,.2);transition:none;
+}
+.stop-row.drop-target{background:var(--lime-soft);border-color:var(--coral);border-style:dashed}
 .panel-actions{display:flex;gap:5px;padding:0 12px}
 .pa{
   flex:1;height:40px;border-radius:999px;border:1.1px solid var(--ink);display:flex;align-items:center;justify-content:center;gap:4px;
