@@ -640,6 +640,9 @@ const ZH = {
   'Saved to offline phrases': '已存进离线常用语',
   'Note saved · find it under Me': '笔记已保存 · 在「我的」里查看',
   'Removed from saved': '已取消保存',
+  'Food & routes': '美食与路线',
+  'Emergency phrases': '紧急用语',
+  'Bookings & offline packs': '预约与离线包',
   // me
   'Journey reports': '旅程报告', 'Attraction bookings': '景点预约', 'Travel services': '旅行服务',
   'External info': '外部信息', 'Settings': '设置', 'Profile': '个人资料',
