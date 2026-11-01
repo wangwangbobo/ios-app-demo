@@ -811,6 +811,13 @@ img{max-width:100%;display:block}
 .mic svg{width:19px;height:19px;color:var(--paper)}
 .mic.listening{background:var(--lime)}
 .mic.listening svg{color:var(--ink)}
+.mic.busy{background:var(--paper);cursor:wait}
+.mic.busy svg{color:var(--ink2)}
+.mic.busy:after{
+  content:"";position:absolute;inset:-6px;border-radius:50%;border:1.4px dashed var(--ink2);
+  animation:spin 1.4s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
 .mic.listening:after{
   content:"";position:absolute;inset:-7px;border-radius:50%;border:1.4px solid var(--coral);
   animation:pulse 1.1s ease-out infinite;

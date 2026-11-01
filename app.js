@@ -369,7 +369,8 @@ const S = {
   draft: { title: '', date: '11/08 Sat', time: '14:00 – 18:00', place: '', fee: 'Free', note: '' },
   toastTimer: null,
   scanTimer: null,
-  micTimer: null,
+  micPartial: '',
+  micBusy: false,
   chatTimer: null
 };
 
@@ -620,7 +621,17 @@ const ZH = {
   'Translate': '翻译', 'Hold to talk': '按住说话', 'Scanning…': '识别中…',
   // translate chrome & photo
   'Listening… tap again to finish': '正在听… 再点一下结束',
-  'Recognizing offline · translates when you stop': '离线识别 · 停下后翻译',
+  'Speak now · translates when you stop': '开始说吧 · 说完自动翻译',
+  'Translating…': '翻译中…',
+  'Talking to Pico…': '正在请求 Pico…',
+  'Recognized and translated': '已识别并完成翻译',
+  "Couldn't translate just now — showing what we heard.": '翻译没成功，先展示识别到的内容。',
+  "Didn't catch that — try again.": '没听清，再试一次。',
+  'Microphone access is blocked — allow it in the browser address bar.': '麦克风权限被拦截，请在浏览器地址栏里允许。',
+  'Speech recognition hit a snag — try again.': '语音识别出了点小问题，再试一次。',
+  'Live speech needs Chrome or Edge. Safari can use the offline phrasebook below.': '实时语音需要 Chrome 或 Edge 浏览器；Safari 可以用下面的离线常用语。',
+  "Pico's live translator isn't connected on this page.": '这个页面没接通 Pico 实时翻译。',
+  'Speech is recognized in your browser and translated by Pico. Chrome or Edge works best — on Safari, use the offline phrasebook.': '语音在浏览器里识别，由 Pico 翻译。推荐 Chrome 或 Edge；Safari 可以用离线常用语。',
   'Tap to talk': '点一下说话',
   'Offline phrasebook': '离线常用语', 'Downloaded': '已下载', 'Play': '朗读',
   'Emergency · call first': '紧急情况 · 先打电话',
@@ -1358,10 +1369,11 @@ function updateHash() {
 }
 
 function go(tab, channel = null) {
-  if (S.micTimer) { clearTimeout(S.micTimer); S.micTimer = null; S.listening = false; }
+  stopMic();
+  S.listening = false;
+  S.micPartial = '';
   S.tab = tab;
   S.forumChannel = channel;
-  if (tab !== 'translate') S.listening = false;
   render(true);
 }
 
@@ -2556,13 +2568,13 @@ function liveSection() {
       </div>`).join('')}
       <div class="live-foot">
         <div class="live-hint">
-          <b>${S.listening ? 'Listening… tap again to finish' : 'Tap to start talking'}</b>
-          <span>${S.listening ? 'Recognizing offline · translates when you stop' : 'Two-way · detects Chinese and English'}</span>
+          <b>${S.micBusy ? tr('Translating…') : S.listening ? tr('Listening… tap again to finish') : tr('Tap to start talking')}</b>
+          <span>${S.listening ? (S.micPartial ? S.micPartial : tr('Speak now · translates when you stop')) : S.micBusy ? tr('Talking to Pico…') : tr('Two-way · detects Chinese and English')}</span>
         </div>
-        <button class="mic ${S.listening ? 'listening' : ''}" data-act="mic" aria-label="Tap to talk">${icon('mic', 19)}</button>
+        <button class="mic ${S.listening ? 'listening' : ''} ${S.micBusy ? 'busy' : ''}" data-act="mic" aria-label="Tap to talk">${icon('mic', 19)}</button>
       </div>
     </div>
-    <div class="tip-strip" style="margin-top:8px">${icon('info', 12)}<span>Works without a signal. Speech is recognized on device, then translated into English.</span></div>`;
+    <div class="tip-strip" style="margin-top:8px">${icon('info', 12)}<span>${tr('Speech is recognized in your browser and translated by Pico. Chrome or Edge works best — on Safari, use the offline phrasebook.')}</span></div>`;
 }
 
 function offlineSection() {
@@ -4201,29 +4213,125 @@ async function shareRoute() {
   copyText(location.href);
 }
 
-function toggleMic() {
-  if (S.listening) {
-    S.listening = false;
-    finishLive();
-    return;
-  }
-  S.listening = true;
-  render();
-  clearTimeout(S.micTimer);
-  S.micTimer = setTimeout(() => {
-    S.listening = false;
-    finishLive();
-  }, 2600);
+/* ---------- live speech translation ----------
+   Real browser speech recognition (Chrome/Edge) plus the hosted Pico
+   translate endpoint. Safari has no web speech API — it gets a pointer to
+   the offline phrasebook instead of a fake demo line. */
+const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition || null;
+const PICO_TRANSLATE_ENDPOINT = PICO_ENDPOINT ? PICO_ENDPOINT.replace(/\/chat$/, '/translate') : '';
+let micRecog = null;
+
+function stopMic() {
+  if (!micRecog) return;
+  const rec = micRecog;
+  micRecog = null;
+  try { rec.onend = null; rec.stop(); } catch (e) { /* already stopped */ }
 }
 
-function finishLive() {
-  const next = LIVE_MORE[(S.liveExtra || 0) % LIVE_MORE.length];
-  S.liveExtra = (S.liveExtra || 0) + 1;
-  S.live.push({ ...next });
-  S.listening = false;
+function toggleMic() {
+  if (S.micBusy) return;
+  if (S.listening) { stopMic(); finishListening(''); return; }
+  if (!SpeechRecognitionAPI) {
+    toast(tr('Live speech needs Chrome or Edge. Safari can use the offline phrasebook below.'), 'mic');
+    return;
+  }
+  if (!PICO_TRANSLATE_ENDPOINT) {
+    toast(tr("Pico's live translator isn't connected on this page."), 'mic');
+    return;
+  }
+  const rec = new SpeechRecognitionAPI();
+  rec.lang = 'zh-CN';
+  rec.interimResults = true;
+  rec.continuous = false;
+  let finalText = '';
+  rec.onresult = (event) => {
+    let interim = '';
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      const r = event.results[i];
+      if (r.isFinal) finalText += r[0].transcript;
+      else interim += r[0].transcript;
+    }
+    S.micPartial = (finalText + interim).trim();
+    updateMicHint();
+  };
+  rec.onerror = (event) => {
+    if (micRecog !== rec) return;
+    micRecog = null;
+    S.listening = false;
+    S.micPartial = '';
+    if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+      toast(tr('Microphone access is blocked — allow it in the browser address bar.'), 'mic');
+    } else if (event.error === 'no-speech') {
+      toast(tr("Didn't catch that — try again."), 'mic');
+    } else if (event.error !== 'aborted') {
+      toast(tr('Speech recognition hit a snag — try again.'), 'mic');
+    }
+    render();
+  };
+  rec.onend = () => {
+    if (micRecog !== rec) return;
+    micRecog = null;
+    finishListening(finalText);
+  };
+  micRecog = rec;
+  S.listening = true;
+  S.micPartial = '';
+  try { rec.start(); } catch (e) {
+    micRecog = null;
+    S.listening = false;
+    toast(tr('Speech recognition hit a snag — try again.'), 'mic');
+  }
   render();
-  toast('Recognized and translated into English', 'mic');
-  if (S.autoplay) speak(next.en, 'en');
+}
+
+function updateMicHint() {
+  const span = document.querySelector('.live-hint span');
+  if (span && S.listening) span.textContent = S.micPartial || tr('Speak now · translates when you stop');
+}
+
+async function finishListening(finalText) {
+  const text = String(finalText || S.micPartial || '').trim();
+  S.listening = false;
+  S.micPartial = '';
+  if (!text) { render(); return; }
+  const isZh = /[\u4e00-\u9fff]/.test(text);
+  const from = isZh ? 'zh' : 'en';
+  const to = isZh ? 'en' : 'zh';
+  S.micBusy = true;
+  render();
+  let translation = '';
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 45000);
+    const response = await fetch(PICO_TRANSLATE_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: text.slice(0, 500), from, to }),
+      signal: controller.signal
+    });
+    clearTimeout(timeout);
+    const data = await response.json().catch(() => null);
+    if (!response.ok || !data || data.ok !== true || !String(data.translation || '').trim()) throw new Error('bad_translation');
+    translation = data.translation.trim();
+  } catch (e) {
+    translation = '';
+  }
+  S.micBusy = false;
+  if (translation) {
+    S.live.push(isZh
+      ? { zh: text, en: translation, mine: true }
+      : { zh: translation, en: text, mine: true });
+    toast(tr('Recognized and translated'), 'mic');
+    if (S.autoplay) speak(translation, to);
+  } else {
+    S.live.push({ zh: text, en: text, mine: true, pending: true });
+    toast(tr("Couldn't translate just now — showing what we heard."), 'mic');
+  }
+  render();
+  requestAnimationFrame(() => {
+    const card = document.querySelector('.live-card .bubble-row:last-of-type');
+    if (card) card.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  });
 }
 
 function startScan() {
@@ -4875,6 +4983,6 @@ function bootstrap() {
   }
   renderLangSwitch();
   boot();
-  window.RC = { S, openRecap, closeRecap, recapGo, recapJump, setLang, render, toast };
+  window.RC = { S, openRecap, closeRecap, recapGo, recapJump, setLang, render, toast, toggleMic, finishListening };
 }
 })();
