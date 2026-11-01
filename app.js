@@ -486,6 +486,7 @@ const ZH = {
   'Sunset at Jingshan': '景山日落',
   'PICO BUILT THIS PLAN': 'PICO 为你规划', 'Pico built this plan': 'Pico 为你规划',
   'Ask Pico': '问 Pico', 'Your travel plan': '你的旅行计划',
+  "Hi, I'm Pico. Tell me what kind of trip you like and I'll build your first Beijing plan — route order, timing and all.": '嗨，我是 Pico。告诉我你喜欢什么样的旅行，我来搭好第一份北京计划——顺序、时间都算好。',
   'Start here': '从这里开始', 'on the route': '在路线上',
   'Answer all three for your title': '答完三题解锁称号',
   'Retake': '重测',
@@ -783,6 +784,12 @@ const ZH_RULES = [
   }],
   [/^Dates moved · (.+) · 2 travelers$/, '日期已更新 · $1 · 2 位旅行者'],
   [/^(\d+) days on the trip$/, '行程共 $1 天'],
+  [/^Plan · (.+?) · (\d+) days$/, (m, name, count) => `计划 · ${tr(name)} · ${count} 天`],
+  [/^Trip · (.+)$/, (m, name) => `行程 · ${tr(name)}`],
+  [/^Live · (.+)$/, (m, name) => `现场 · ${tr(name)}`],
+  [/^Community · (.+)$/, (m, name) => `社区 · ${tr(name)}`],
+  [/^Translate · (.+)$/, (m, name) => `翻译 · ${tr(name)}`],
+  [/^(\d+–\d+ days|6\+ days|Surprise me) · (.+?) · (.+)$/, (m, days, style, theme) => `${tr(days)} · ${tr(style)} · ${tr(theme)}`],
   [/^(.+?) · (\d+) days$/, (m, name, count) => `${tr(name)} · ${count} 天`],
   [/^([\d\/]+) · (Beijing|Chengdu|Shanghai) · (\d+) travelers · ([\d.]+) km$/, '$1 · $2 · $3 位旅行者 · $4 公里'],
   [/^(\d+) stops · Day (\d+) of (\d+)$/, '$1 站 · 第 $2 天 / 共 $3 天'],
@@ -2663,6 +2670,7 @@ function refreshChat() {
   const c = $('#chat');
   if (c) {
     c.innerHTML = chatHTML();
+    zhify(c);
     requestAnimationFrame(() => { c.scrollTop = c.scrollHeight; });
   }
   const input = $('#chatInput');
