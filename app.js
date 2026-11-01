@@ -55,6 +55,8 @@ const ICONS = {
   sliders: '<path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/>',
   grip: '<path d="M5 7h14M5 12h14M5 17h14"/>',
   updown: '<path d="M8 4v16M4.5 7.5 8 4l3.5 3.5M16 20V4M12.5 16.5 16 20l3.5-3.5"/>',
+  expand: '<path d="M9 4H4v5M15 4h5v5M9 20H4v-5M15 20h5v-5"/>',
+  contract: '<path d="M4 9h5V4M20 9h-5V4M4 15h5v5M20 15h-5v5"/>',
   move: '<path d="M12 3v18M3 12h18M9 6l3-3 3 3M9 18l3 3 3-3M6 9l-3 3 3 3M18 9l3 3-3 3"/>',
   star: '<path d="m12 3 2.8 5.8 6.2.9-4.5 4.4 1 6.2-5.5-3-5.5 3 1-6.2L3 9.7l6.2-.9L12 3z"/>',
   fork: '<path d="M7 3v6a2.5 2.5 0 0 0 5 0V3M9.5 11.5V21M16.5 3c-1.5 1.6-2 3.4-2 5.5 0 2 .8 2.8 2 2.8V21"/>',
@@ -357,6 +359,7 @@ const S = {
   tripDays: null,
   tripDay: 0,
   tripEdit: false,
+  mapExpanded: false,
   tripSaved: false,
   tripDirty: false,
   tripLive: false,
@@ -528,6 +531,8 @@ const ZH = {
   'Cities': '城市', 'Post': '发布', 'Publish': '发布', 'Follow': '关注', 'Following': '已关注',
   'All posts': '全部帖子', 'Nearby posts': '附近帖子', 'Ask Pico to plan it': '让 Pico 规划',
   'Save this walk': '收藏这条路线', 'Open in map': '在地图中打开',
+  'Zoom in': '放大地图', 'Zoom out': '缩小地图', 'Reset zoom': '重置缩放',
+  'Expand map': '展开地图框', 'Collapse map': '收起地图框',
   // community feed content
   'Where to eat': '去哪儿吃', 'Trending · 4 spots': '热门 · 4 家',
   'What to see': '看什么', 'This week · 3 places': '本周 · 3 处',
@@ -1077,6 +1082,103 @@ function miniMap(stops = S.stops, tint = 'var(--coral)') {
     <polyline points="${pts}" fill="none" stroke="${tint}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
   </svg>`;
 }
+/* ---------- map zoom / pan ---------- */
+const MAPVIEW = { zoom: 1, panX: 0, panY: 0 };
+
+function applyMapView() {
+  const inner = $('.map-inner');
+  if (!inner) return;
+  if (MAPVIEW.zoom <= 1.001) { MAPVIEW.zoom = 1; MAPVIEW.panX = 0; MAPVIEW.panY = 0; }
+  inner.style.transformOrigin = '0 0';
+  inner.style.transform = `translate(${MAPVIEW.panX.toFixed(1)}px, ${MAPVIEW.panY.toFixed(1)}px) scale(${MAPVIEW.zoom})`;
+}
+
+function clampMapPan(host) {
+  const w = host.clientWidth, h = host.clientHeight;
+  MAPVIEW.panX = clamp(MAPVIEW.panX, Math.min(0, w - w * MAPVIEW.zoom), 0);
+  MAPVIEW.panY = clamp(MAPVIEW.panY, Math.min(0, h - h * MAPVIEW.zoom), 0);
+}
+
+function setMapZoom(z, cx, cy) {
+  const inner = $('.map-inner');
+  if (!inner) return;
+  const host = inner.parentElement;
+  const nz = clamp(z, 1, 4);
+  const k = nz / MAPVIEW.zoom;
+  const px = cx == null ? host.clientWidth / 2 : cx;
+  const py = cy == null ? host.clientHeight / 2 : cy;
+  MAPVIEW.panX = px - (px - MAPVIEW.panX) * k;
+  MAPVIEW.panY = py - (py - MAPVIEW.panY) * k;
+  MAPVIEW.zoom = nz;
+  clampMapPan(host);
+  applyMapView();
+}
+
+function mapZoomBtns() {
+  return `<div class="map-zoom" aria-label="Map zoom controls">
+    <button type="button" data-act="map-zoom-in" aria-label="Zoom in">+</button>
+    <button type="button" data-act="map-zoom-out" aria-label="Zoom out">−</button>
+    <button type="button" data-act="map-zoom-reset" aria-label="Reset zoom">1×</button>
+  </div>`;
+}
+
+function bindMapZooms() {
+  const host = $('.map, .tmap');
+  const inner = $('.map-inner');
+  if (!host || !inner) return;
+  applyMapView();
+  host.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const r = host.getBoundingClientRect();
+    setMapZoom(MAPVIEW.zoom * Math.exp(-(e.deltaY || e.deltaX) * 0.0016), e.clientX - r.left, e.clientY - r.top);
+  }, { passive: false });
+  const ptrs = new Map();
+  let panStart = null;
+  let pinch = null;
+  const pinchInfo = () => {
+    const pts = [...ptrs.values()];
+    const r = host.getBoundingClientRect();
+    const a = pts[0], b = pts[1];
+    return {
+      d: Math.hypot(a.x - b.x, a.y - b.y) || 1,
+      cx: (a.x + b.x) / 2 - r.left,
+      cy: (a.y + b.y) / 2 - r.top,
+    };
+  };
+  host.addEventListener('pointerdown', (e) => {
+    if (e.target.closest('.pin, .pin-label, .lpin, .you-tag, .map-zoom, button, a, input, textarea, .map-hint, .collab')) return;
+    ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    try { host.setPointerCapture(e.pointerId); } catch (err) {}
+    if (ptrs.size === 2) { pinch = pinchInfo(); panStart = null; }
+    else panStart = { x: e.clientX - MAPVIEW.panX, y: e.clientY - MAPVIEW.panY };
+  });
+  host.addEventListener('pointermove', (e) => {
+    if (!ptrs.has(e.pointerId)) return;
+    ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (ptrs.size === 2 && pinch) {
+      const cur = pinchInfo();
+      setMapZoom(MAPVIEW.zoom * (cur.d / pinch.d), cur.cx, cur.cy);
+      MAPVIEW.panX += cur.cx - pinch.cx;
+      MAPVIEW.panY += cur.cy - pinch.cy;
+      clampMapPan(host);
+      applyMapView();
+      pinch = pinchInfo();
+    } else if (panStart && MAPVIEW.zoom > 1) {
+      MAPVIEW.panX = e.clientX - panStart.x;
+      MAPVIEW.panY = e.clientY - panStart.y;
+      clampMapPan(host);
+      applyMapView();
+    }
+  });
+  const drop = (e) => {
+    ptrs.delete(e.pointerId);
+    if (ptrs.size < 2) pinch = null;
+    if (!ptrs.size) panStart = null;
+  };
+  host.addEventListener('pointerup', drop);
+  host.addEventListener('pointercancel', drop);
+}
+
 function cityscape() {
   return `<svg viewBox="0 0 360 200" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
     <rect width="360" height="200" fill="var(--sky-soft)"/>
@@ -1240,6 +1342,7 @@ function render(resetScroll = false) {
   }
   clearInterval(heroTimer);
   if (S.tab === 'trip') initHeroCarousel();
+  if (S.tab === 'plan' || S.tab === 'trip') bindMapZooms();
   renderWelcome();
   renderRecap();
   zhify(v);
@@ -1490,20 +1593,24 @@ function tripView() {
         </button>`).join('')}
       </div>
 
-      <div class="tmap">
-        ${mapBase()}
-        <div class="map-wash"></div>
-        <div class="map-body" id="tripMapBody">
-          <svg class="route-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-            <path d="${routePathD(stops)}" fill="none" stroke="var(--ink)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
-            <path d="${routePathD(stops)}" fill="none" stroke="var(--coral)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
-          </svg>
-          ${stops.map((s, i) => pinHTML(s, i)).join('')}
+      <div class="tmap${S.mapExpanded ? ' expanded' : ''}">
+        <div class="map-inner">
+          ${mapBase()}
+          <div class="map-wash"></div>
+          <div class="map-body" id="tripMapBody">
+            <svg class="route-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+              <path d="${routePathD(stops)}" fill="none" stroke="var(--ink)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+              <path d="${routePathD(stops)}" fill="none" stroke="var(--coral)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+            </svg>
+            ${stops.map((s, i) => pinHTML(s, i)).join('')}
+          </div>
         </div>
         <div class="tmap-tools">
           <button class="small-chip ${S.tripEdit ? 'on' : ''}" data-act="trip-edit">${icon(S.tripEdit ? 'check' : 'hand', 9)}${S.tripEdit ? 'Done' : 'Edit pins'}</button>
           <button class="small-chip" data-act="reorder">${icon('updown', 9)}Reorder</button>
+          <button class="small-chip ${S.mapExpanded ? 'on' : ''}" data-act="map-expand" aria-label="${S.mapExpanded ? 'Collapse map' : 'Expand map'}">${icon(S.mapExpanded ? 'contract' : 'expand', 9)}${S.mapExpanded ? 'Collapse' : 'Expand'}</button>
         </div>
+        ${mapZoomBtns()}
       </div>
 
       <div class="rc-head">
@@ -1647,17 +1754,20 @@ function liveTripView() {
     </article>
 
     <article class="tmap live-map">
-      ${mapBase()}
-      <div class="map-wash"></div>
-      <div class="map-body">
-        <svg class="route-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-          <path d="${routePathD(stops)}" fill="none" stroke="rgba(25,23,16,.32)" stroke-width="3" stroke-dasharray="6 5" vector-effect="non-scaling-stroke"/>
-          ${S.liveStop > 0 ? `<path d="${routePathD(stops.slice(0, Math.min(S.liveStop + 1, n)))}" fill="none" stroke="var(--coral)" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>` : ''}
-        </svg>
-        ${stops.map((s, i) => livePin(s, i)).join('')}
-        ${done ? '' : `<span class="you-tag" style="left:${stop.x * 100}%;top:${stop.y * 100}%">You are here</span>`}
+      <div class="map-inner">
+        ${mapBase()}
+        <div class="map-wash"></div>
+        <div class="map-body">
+          <svg class="route-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+            <path d="${routePathD(stops)}" fill="none" stroke="rgba(25,23,16,.32)" stroke-width="3" stroke-dasharray="6 5" vector-effect="non-scaling-stroke"/>
+            ${S.liveStop > 0 ? `<path d="${routePathD(stops.slice(0, Math.min(S.liveStop + 1, n)))}" fill="none" stroke="var(--coral)" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>` : ''}
+          </svg>
+          ${stops.map((s, i) => livePin(s, i)).join('')}
+          ${done ? '' : `<span class="you-tag" style="left:${stop.x * 100}%;top:${stop.y * 100}%">You are here</span>`}
+        </div>
       </div>
       <div class="live-map-tag">${icon('pin', 8)} ${lat}° N, ${lng}° E</div>
+      ${mapZoomBtns()}
     </article>
 
     ${done ? `
@@ -1794,23 +1904,26 @@ function planView() {
   const stops = S.stops;
   return `<div class="plan">
     <div class="map">
-      ${mapBase()}
-      <div class="map-wash"></div>
-      <span class="map-label" style="left:20%;top:31%">Shichahai</span>
-      <span class="map-label" style="left:71%;top:27%">Nanluoguxiang</span>
-      <span class="map-label" style="left:68%;top:50%">Forbidden City</span>
-      <span class="map-label" style="left:71%;top:40%">Jingshan</span>
-      ${collaborator('Lina', 'left:74%;top:33%')}
-      ${collaborator('Zhou', 'left:27%;top:58%', true)}
-      <div class="map-body" id="mapBody">
-        ${communityOverlay()}
-        ${crowdOverlay()}
-        <svg class="route-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-          <path d="${routePathD()}" fill="none" stroke="var(--ink)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
-          <path d="${routePathD()}" fill="none" stroke="var(--coral)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
-        </svg>
-        ${stops.map((s, i) => pinHTML(s, i)).join('')}
+      <div class="map-inner">
+        ${mapBase()}
+        <div class="map-wash"></div>
+        <span class="map-label" style="left:20%;top:31%">Shichahai</span>
+        <span class="map-label" style="left:71%;top:27%">Nanluoguxiang</span>
+        <span class="map-label" style="left:68%;top:50%">Forbidden City</span>
+        <span class="map-label" style="left:71%;top:40%">Jingshan</span>
+        ${collaborator('Lina', 'left:74%;top:33%')}
+        ${collaborator('Zhou', 'left:27%;top:58%', true)}
+        <div class="map-body" id="mapBody">
+          ${communityOverlay()}
+          ${crowdOverlay()}
+          <svg class="route-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+            <path d="${routePathD()}" fill="none" stroke="var(--ink)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+            <path d="${routePathD()}" fill="none" stroke="var(--coral)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+          </svg>
+          ${stops.map((s, i) => pinHTML(s, i)).join('')}
+        </div>
       </div>
+      ${mapZoomBtns()}
       ${S.editMode ? `<div class="map-hint">${icon('hand', 9)} ${icon('move', 8)} Drag a numbered dot — the route recalculates</div>` : ''}
     </div>
 
@@ -4500,6 +4613,22 @@ document.addEventListener('click', (e) => {
       break;
     case 'layer':
       S.layer = el.dataset.layer || 'mine';
+      render();
+      break;
+    case 'map-zoom-in':
+    case 'map-zoom-out': {
+      const host = $('.map, .tmap');
+      if (host) setMapZoom(MAPVIEW.zoom * (act === 'map-zoom-in' ? 1.35 : 1 / 1.35), host.clientWidth / 2, host.clientHeight / 2);
+      break;
+    }
+    case 'map-zoom-reset':
+      MAPVIEW.zoom = 1;
+      MAPVIEW.panX = 0;
+      MAPVIEW.panY = 0;
+      applyMapView();
+      break;
+    case 'map-expand':
+      S.mapExpanded = !S.mapExpanded;
       render();
       break;
     case 'toggle-edit':
