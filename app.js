@@ -464,6 +464,28 @@ const ZH = {
   'Chengdu': '成都', 'Shanghai': '上海',
   'Apply': '应用', '1.2 km less': '少走 1.2 公里',
   'Pico: move Shichahai to 13:00': 'Pico：把什刹海挪到 13:00',
+  // places along the route
+  'Tiananmen Square': '天安门广场', 'Forbidden City': '故宫',
+  'Jingshan Park': '景山公园', 'Jingshan, Wanchun Pavilion': '景山 · 万春亭', 'Jingshan': '景山',
+  'Shichahai': '什刹海', 'Nanluoguxiang': '南锣鼓巷', 'Drum & Bell Towers': '鼓楼与钟楼',
+  'Leave the hotel': '离开酒店', 'Hotel pickup': '酒店接送',
+  'Badaling Great Wall': '八达岭长城', 'Olympic Forest Park': '奥林匹克森林公园',
+  'Summer Palace': '颐和园', 'Lunch in Wudaokou': '五道口午餐',
+  'National Museum of China': '中国国家博物馆', 'Qianmen Street': '前门大街',
+  'Temple of Heaven': '天坛', 'Temple of Heaven Park': '天坛公园',
+  'Lunch in Qianmen': '前门午餐', 'Beihai Park': '北海公园',
+  'Shichahai at dusk': '什刹海 · 黄昏', 'Daoxiangcun run': '稻香村采购',
+  'Beijing Capital Airport': '北京首都机场',
+  'Siji Minfu · Forbidden City': '四季民福 · 故宫店',
+  'Manhengji · Niujie': '满恒记 · 牛街',
+  'Pangmei Noodle House · Beixinqiao': '胖妹面庄 · 北新桥',
+  'Metal Hands · Qianmen': '铁手咖啡 · 前门',
+  'Daoxiangcun · Local gift sweets': '稻香村 · 伴手礼',
+  'Palace Shop · Fridge magnets': '故宫文创 · 冰箱贴',
+  'Tongrentang · Sour plum mix': '同仁堂 · 酸梅汤',
+  'Sunset at Jingshan': '景山日落',
+  'PICO BUILT THIS PLAN': 'PICO 为你规划', 'Pico built this plan': 'Pico 为你规划',
+  'Ask Pico': '问 Pico', 'Your travel plan': '你的旅行计划',
   'Start here': '从这里开始', 'on the route': '在路线上',
   'Answer all three for your title': '答完三题解锁称号',
   'Retake': '重测',
@@ -761,6 +783,7 @@ const ZH_RULES = [
   }],
   [/^Dates moved · (.+) · 2 travelers$/, '日期已更新 · $1 · 2 位旅行者'],
   [/^(\d+) days on the trip$/, '行程共 $1 天'],
+  [/^(.+?) · (\d+) days$/, (m, name, count) => `${tr(name)} · ${count} 天`],
   [/^([\d\/]+) · (Beijing|Chengdu|Shanghai) · (\d+) travelers · ([\d.]+) km$/, '$1 · $2 · $3 位旅行者 · $4 公里'],
   [/^(\d+) stops · Day (\d+) of (\d+)$/, '$1 站 · 第 $2 天 / 共 $3 天'],
   [/^(\d+) stops · ([\d.]+) km$/, '$1 站 · $2 公里'],
@@ -4495,7 +4518,7 @@ function boot() {
     try {
       if (!S.sheet && !S.welcome && !S.recap && !sessionStorage.getItem('roamchina-hint')) {
         sessionStorage.setItem('roamchina-hint', '1');
-        toast('Try Adjust stops on the Plan tab, then drag a numbered dot', 'hand');
+        toast(S.lang === 'zh' ? '在计划页点“调整站点”，再拖动编号圆点' : 'Try Adjust stops on the Plan tab, then drag a numbered dot', 'hand');
       }
     } catch (e) { /* storage unavailable */ }
   }, 1100);
