@@ -110,11 +110,15 @@ const EVENTS = [
 ];
 
 const ATTRACTIONS = [
-  { id: 'a1', name: 'Forbidden City', date: '10/15', week: 'Wed', time: '09:00', people: '2 guests', price: '¥120', booked: true, code: 'RC-8821', note: 'In at Meridian Gate · out at Shenwu Gate' },
-  { id: 'a2', name: 'Badaling Great Wall', date: '10/16', week: 'Thu', time: '08:30', people: '2 guests', price: '¥80', booked: false, note: 'ID required · cable car extra' },
-  { id: 'a3', name: 'Summer Palace', date: '10/17', week: 'Fri', time: '09:00', people: '2 guests', price: '¥60', booked: false, note: 'Combined ticket · East Palace Gate is easiest' },
-  { id: 'a4', name: 'National Museum of China', date: '10/17', week: 'Fri', time: '14:00', people: '2 guests', price: 'Free', booked: false, note: 'Real-name booking in advance' }
+  { id: 'a1', name: 'Forbidden City', day: 1, date: '10/15', week: 'Wed', time: '09:00', people: '2 guests', price: '¥120', booked: true, code: 'RC-8821', note: 'In at Meridian Gate · out at Shenwu Gate' },
+  { id: 'a2', name: 'Badaling Great Wall', day: 2, date: '10/16', week: 'Thu', time: '08:30', people: '2 guests', price: '¥80', booked: false, note: 'ID required · cable car extra' },
+  { id: 'a3', name: 'Summer Palace', day: 3, date: '10/17', week: 'Fri', time: '09:00', people: '2 guests', price: '¥60', booked: false, note: 'Combined ticket · East Palace Gate is easiest' },
+  { id: 'a4', name: 'National Museum of China', day: 3, date: '10/17', week: 'Fri', time: '14:00', people: '2 guests', price: 'Free', booked: false, note: 'Real-name booking in advance' }
 ];
+
+/* Trip dates are editable: the itinerary is seeded with 10/15 but the header
+   date line opens a date sheet, and every day/weekday follows from it. */
+const DEFAULT_TRIP_START = '2026-10-15';
 
 const TRIP_PLANS = [
   {
@@ -314,6 +318,8 @@ const S = {
   expandedPlan: 0,
   hero: 0,
   quiz: { days: null, style: null, theme: null, note: '' },
+  tripStart: DEFAULT_TRIP_START,
+  dateDraft: null,
   applied: false,
   forumChannel: null,
   forumFilter: 'all',
@@ -533,6 +539,15 @@ const ZH = {
   'Recap': '查看总结', 'Preview': '预览',
   'Each finished trip is archived automatically, on your device.': '每段完成的旅程都会自动归档，只存在你的设备上。',
   'Tickets are issued by the venues; scan your passport at the gate': '门票由场馆出票；入园时刷护照',
+  'Trip dates': '出行日期', 'TRIP · ADJUST THE START': '行程 · 调整出发日',
+  'Pick the day you arrive — every day, weekday and booking reminder follows.': '选好抵达那天——每天的日期、星期和预约提醒都会跟着走。',
+  'Start date': '出发日期',
+  '−1 day': '提前一天', '+1 day': '推后一天', '+1 week': '推后一周',
+  'Times stay the same · booked tickets keep their entry slots.': '每天的时间不变 · 已订门票保留原来的入园时段。',
+  'The Forbidden City is closed on Mondays — this start makes Day 1 a Monday.': '故宫周一闭馆——这样选，第 1 天正好是周一。',
+  'The Forbidden City is closed on Mondays — Day 1 lands on a Monday. Move the start date to keep the palace.': '故宫周一闭馆——第 1 天正好是周一。换个出发日，才能把故宫留在第一天。',
+  'Save dates': '保存日期', 'Reset': '重置', 'Dates unchanged': '日期没有变化',
+  'Adjust trip dates': '调整出行日期',
   'The Forbidden City closes on Mondays; it is open Wednesday 10/15. Your booking receipts stay here.': '故宫周一闭馆，10/15 周三正常开放。预约凭证都保存在这里。',
   'Offline pack': '离线包', 'Maps · phrases · ready': '地图 · 常用语 · 已就绪',
   'Travel together': '一起出行', 'Lin, Zhou · 2 people': 'Lin、Zhou · 2 人',
@@ -737,6 +752,15 @@ const ZH_RULES = [
   [/^(\d+) stops$/, '$1 站'],
   [/^(\d+) travelers$/, '$1 位旅行者'],
   [/^([\d\\/]+ – [\d\\/]+) · (\d+) travelers$/, '$1 · $2 位旅行者'],
+  [/^Beijing · (\d+) days, (\d+) nights$/, '北京 · $1 天 $2 晚'],
+  [/^([\d\\/]+) – ([\d\\/]+) · (\d+) nights · confirmed$/, '$1 – $2 · $3 晚 · 已确认'],
+  [/^([\d\\/]+) 08:45 → 11:20 · Capital T3 · ticketed$/, '$1 08:45 → 11:20 · 首都机场 T3 · 已出票'],
+  [/^The Forbidden City closes on Mondays; it is open (\w+) ([\d\\/]+)\. Your booking receipts stay here\.$/, (m, week, date) => {
+    const zhWeek = { Mon: '周一', Tue: '周二', Wed: '周三', Thu: '周四', Fri: '周五', Sat: '周六', Sun: '周日' };
+    return `故宫周一闭馆，${zhWeek[week] || week} ${date} 正常开放。预约凭证都保存在这里。`;
+  }],
+  [/^Dates moved · (.+) · 2 travelers$/, '日期已更新 · $1 · 2 位旅行者'],
+  [/^(\d+) days on the trip$/, '行程共 $1 天'],
   [/^([\d\\/]+) · (Beijing|Chengdu|Shanghai) · (\d+) travelers · ([\d.]+) km$/, '$1 · $2 · $3 位旅行者 · $4 公里'],
   [/^(\d+) stops · Day (\d+) of (\d+)$/, '$1 站 · 第 $2 天 / 共 $3 天'],
   [/^(\d+) stops · ([\d.]+) km$/, '$1 站 · $2 公里'],
@@ -995,12 +1019,13 @@ const TAB_CTX = {
 };
 
 function renderDock() {
+  const ctx = S.tab === 'trip' ? `Trip · ${activeDay().date} ${activeDay().title}` : TAB_CTX[S.tab];
   $('#dock').innerHTML = TABS.map((t) => `
     <button class="tab ${S.tab === t.id ? 'active' : ''}" data-act="tab" data-tab="${t.id}" aria-label="${t.label}" aria-current="${S.tab === t.id ? 'page' : 'false'}">
       ${icon(t.icon, 18)}<span>${t.label}</span>
       ${t.badge ? '<i class="badge" aria-hidden="true"></i>' : ''}
     </button>`).join('') + `
-    <button class="orb" data-act="assistant" data-ctx="${TAB_CTX[S.tab]}" aria-label="Ask Pico">${sparkleIcon(21)}</button>`;
+    <button class="orb" data-act="assistant" data-ctx="${esc(ctx)}" aria-label="Ask Pico">${sparkleIcon(21)}</button>`;
 }
 
 const screens = {
@@ -1098,6 +1123,108 @@ function tripDayCount() {
   return S.planBuilt ? planLength() : 4;
 }
 
+function isoToDate(iso) {
+  const [y, m, d] = String(iso || DEFAULT_TRIP_START).split('-').map(Number);
+  return new Date(y, (m || 1) - 1, d || 1, 12);
+}
+
+function dayDate(index, startISO = S.tripStart) {
+  const base = isoToDate(startISO);
+  const date = new Date(base.getFullYear(), base.getMonth(), base.getDate() + index, 12);
+  return {
+    date: `${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')}`,
+    week: date.toLocaleDateString('en-US', { weekday: 'short' }),
+    iso: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+  };
+}
+
+function tripDateRange(count = tripDayCount(), startISO = S.tripStart) {
+  return `${dayDate(0, startISO).date} – ${dayDate(count - 1, startISO).date}`;
+}
+
+function shiftISO(iso, days) {
+  const [y, m, d] = String(iso || DEFAULT_TRIP_START).split('-').map(Number);
+  const date = new Date(y, (m || 1) - 1, (d || 1) + Number(days || 0), 12);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+/* Move the whole trip: day dates, weekdays and booking reminders follow the start. */
+function setTripStart(iso) {
+  if (!iso) return;
+  S.tripStart = iso;
+  S.dateDraft = null;
+  const days = tripDays();
+  days.forEach((day, i) => {
+    const when = dayDate(i, iso);
+    day.date = when.date;
+    day.week = when.week;
+  });
+}
+
+function datePreviewHTML(startISO) {
+  const count = tripDayCount();
+  return Array.from({ length: count }, (_, i) => {
+    const d = dayDate(i, startISO);
+    return `<div class="dp-row${i === 0 ? ' on' : ''}">
+      <span class="dp-day">Day ${i + 1}</span>
+      <b>${esc(d.date)}</b>
+      <span class="dp-week">${esc(tr(d.week))}</span>
+    </div>`;
+  }).join('');
+}
+
+function dateRangeNoteHTML(startISO) {
+  const count = tripDayCount();
+  return `${esc(tripDateRange(count, startISO))} · ${count - 1} ${S.lang === 'zh' ? '晚' : 'nights'}`;
+}
+
+function tripDatesSheet() {
+  const count = tripDayCount();
+  const draft = S.dateDraft || S.tripStart;
+  return `<div class="sheet medium">
+    ${sheetHead('Trip dates', 'TRIP · ADJUST THE START')}
+    <div class="sheet-body">
+      <p class="sub" style="margin:2px 0 10px">Pick the day you arrive — every day, weekday and booking reminder follows.</p>
+      <label class="date-field" for="tripStartInput">
+        <span class="df-label">Start date</span>
+        <input type="date" id="tripStartInput" value="${esc(draft)}" min="2026-01-01" max="2027-12-31">
+        <span class="df-week">${esc(tr(dayDate(0, draft).week))}</span>
+      </label>
+      <div class="date-nudges">
+        <button class="chip" data-act="date-nudge" data-days="-1">−1 day</button>
+        <button class="chip" data-act="date-nudge" data-days="1">+1 day</button>
+        <button class="chip" data-act="date-nudge" data-days="7">+1 week</button>
+      </div>
+      <div class="date-warn" id="dateWarn" ${dayDate(0, draft).week === 'Mon' ? '' : 'hidden'}>
+        ${icon('info', 9)}<span>The Forbidden City is closed on Mondays — this start makes Day 1 a Monday.</span>
+      </div>
+      <div class="date-preview-head">
+        <span>${count} days on the trip</span>
+        <em class="date-range" id="dateRangeNote">${dateRangeNoteHTML(draft)}</em>
+      </div>
+      <div class="date-preview" id="datePreview">${datePreviewHTML(draft)}</div>
+      <div class="empty-note">Times stay the same · booked tickets keep their entry slots.</div>
+    </div>
+    <div class="sheet-cta">
+      <button class="ghost" data-act="date-reset">Reset</button>
+      <button class="primary" data-act="date-save">Save dates</button>
+    </div>
+  </div>`;
+}
+
+function refreshDatePreview() {
+  const draft = S.dateDraft || S.tripStart;
+  const preview = $('#datePreview');
+  if (preview) preview.innerHTML = datePreviewHTML(draft);
+  const range = $('#dateRangeNote');
+  if (range) range.textContent = dateRangeNoteHTML(draft);
+  const week = $('.date-field .df-week');
+  if (week) week.textContent = tr(dayDate(0, draft).week);
+  const warn = $('#dateWarn');
+  if (warn) warn.hidden = dayDate(0, draft).week !== 'Mon';
+  zhify($('#sheetLayer'));
+}
+
 function tripPlans() {
   const count = tripDayCount();
   const all = TRIP_PLANS.concat(EXTRA_TRIP_PLANS);
@@ -1119,7 +1246,8 @@ function buildTripDays() {
   const days = [];
   for (let i = 0; i < count; i++) {
     const p = plans[i] || plans[plans.length - 1];
-    const base = { date: p.date, week: p.week, title: p.title, meta: p.meta, note: p.note, tag: p.tag, tagStyle: p.tagStyle };
+    const when = dayDate(i);
+    const base = { date: when.date, week: when.week, title: p.title, meta: p.meta, note: p.note, tag: p.tag, tagStyle: p.tagStyle };
     if (i === 0) {
       days.push({ ...base, stops: S.stops });
       continue;
@@ -1188,7 +1316,9 @@ function tripView() {
       <div>
         <div class="eyebrow"><span class="eyebrow-line"></span>My trip / BEIJING ${sparkleIcon(8)}</div>
         <div class="h1row"><div class="h1">${esc(tr('Beijing'))}</div>${tag(`${dayCount} days · ${dayCount - 1} nights`, 'coral')}</div>
-        <div class="meta">10/15 – 10/${14 + dayCount} · 2 travelers</div>
+        <button class="meta trip-dates" data-act="dates" aria-label="Adjust trip dates">
+          ${icon('calendar', 9)}<span>${esc(tripDateRange(dayCount))} · 2 travelers</span>${icon('down', 7)}
+        </button>
       </div>
       <div class="top-right">
         <div class="row">
@@ -1471,9 +1601,10 @@ function quizCard() {
 
 function tripPlanCard(p, index) {
   const open = S.expandedPlan === index;
+  const when = dayDate(index);
   return `<article class="trip-plan ${open ? 'open' : ''}">
     <button class="tp-head" data-act="toggle-trip-plan" data-index="${index}" aria-expanded="${open}">
-      <span class="tp-date"><b>${p.date}</b><small>${p.week}</small></span>
+      <span class="tp-date"><b>${when.date}</b><small>${tr(when.week)}</small></span>
       <span class="tp-main">
         <span class="rowline"><span class="day">DAY ${String(p.day).padStart(2, '0')}</span>${tag(p.tag, p.tagStyle)}</span>
         <span class="tp-title">${esc(p.title)}</span>
@@ -2281,6 +2412,9 @@ function meView() {
   const bookedCount = S.attractions.filter((a) => a.booked).length;
   const attractionTotal = S.attractions.length;
   const bookedPct = Math.round((bookedCount / attractionTotal) * 100);
+  const dayCount = tripDayCount();
+  const firstDay = dayDate(0);
+  const lastDay = dayDate(dayCount - 1);
   return `<div class="me-head">
       <div class="me-avatar">W</div>
       <div class="grow">
@@ -2300,9 +2434,9 @@ function meView() {
     <div class="trip-dark">
       <div class="top" style="display:flex;align-items:center;justify-content:space-between">
         <span class="tag lime">3 days to go</span>
-        <span class="meta">10/15 – 10/18</span>
+        <span class="meta">${esc(tripDateRange(dayCount))}</span>
       </div>
-      <h3>Beijing · 4 days, 3 nights</h3>
+      <h3>Beijing · ${dayCount} days, ${dayCount - 1} nights</h3>
       <div class="meta">Wangfujing · 2 adults · Central Axis on foot</div>
       <div class="who">
         <div class="avatar-stack"><div class="avatar sm">L</div><div class="avatar sm pink">Z</div></div>
@@ -2335,22 +2469,27 @@ function meView() {
     <div class="resv-card">
       <div class="resv-head">
         <div class="grow">
-          <div class="spread"><b>Beijing · 4 days, 3 nights</b><span class="resv-count">${bookedPct}%</span></div>
+          <div class="spread"><b>Beijing · ${dayCount} days, ${dayCount - 1} nights</b><span class="resv-count">${bookedPct}%</span></div>
           <small>Tickets are issued by the venues; scan your passport at the gate</small>
           <div class="resv-progress"><i style="width:${bookedPct}%"></i></div>
         </div>
         <button class="resv-all" data-act="book-all" ${bookedCount === attractionTotal ? 'disabled' : ''}>${bookedCount === attractionTotal ? 'All booked' : 'Book all'}</button>
       </div>
       <div class="resv-list">
-        ${S.attractions.map((a) => `<div class="resv-row" data-act="resv-info" data-id="${a.id}" role="button" tabindex="0">
-          <span class="resv-date"><b>${esc(a.date)}</b><small>${esc(a.week)}</small></span>
+        ${S.attractions.map((a) => {
+          const when = dayDate((a.day || 1) - 1);
+          return `<div class="resv-row" data-act="resv-info" data-id="${a.id}" role="button" tabindex="0">
+          <span class="resv-date"><b>${esc(when.date)}</b><small>${esc(tr(when.week))}</small></span>
           <span class="grow resv-info"><b>${esc(a.name)}</b><small>${esc(a.time)} · ${esc(a.people)} · ${esc(a.price)}</small></span>
           ${a.booked
             ? `<span class="resv-status ok">${icon('check', 8)}Booked</span>`
             : `<button class="resv-book" data-act="book-attraction" data-id="${a.id}">Book</button>`}
-        </div>`).join('')}
+        </div>`;
+        }).join('')}
       </div>
-      <div class="resv-tip">${icon('info', 10)}<span>The Forbidden City closes on Mondays; it is open Wednesday 10/15. Your booking receipts stay here.</span></div>
+      <div class="resv-tip">${icon('info', 10)}<span>${firstDay.week === 'Mon'
+        ? 'The Forbidden City is closed on Mondays — Day 1 lands on a Monday. Move the start date to keep the palace.'
+        : `The Forbidden City closes on Mondays; it is open ${esc(firstDay.week)} ${esc(firstDay.date)}. Your booking receipts stay here.`}</span></div>
     </div>
 
     <div class="section-title"><div class="st-left"><span class="idx">03</span><h2>Travel services</h2></div></div>
@@ -2382,8 +2521,8 @@ function meView() {
         <span class="chev ${S.showBookings ? 'open' : ''}">${icon('down', 9)}</span>
       </button>
       ${S.showBookings ? `<div class="ext-body">
-        <div class="ext-row">${icon('plane', 11)}<span class="grow"><b>Air China CA182</b><small>10/15 08:45 → 11:20 · Capital T3 · ticketed</small></span></div>
-        <div class="ext-row">${icon('bed', 11)}<span class="grow"><b>Mandarin Oriental Wangfujing</b><small>10/15 – 10/18 · 3 nights · confirmed</small></span></div>
+        <div class="ext-row">${icon('plane', 11)}<span class="grow"><b>Air China CA182</b><small>${esc(firstDay.date)} 08:45 → 11:20 · Capital T3 · ticketed</small></span></div>
+        <div class="ext-row">${icon('bed', 11)}<span class="grow"><b>Mandarin Oriental Wangfujing</b><small>${esc(firstDay.date)} – ${esc(lastDay.date)} · ${dayCount - 1} nights · confirmed</small></span></div>
         <div class="ext-foot">Shown for reference only. It does not affect bookings, routes or your checklist.</div>
       </div>` : ''}
     </div>
@@ -2437,6 +2576,7 @@ const sheetBuilders = {
   addStop: addStopSheet,
   notes: notesSheet,
   checklist: checklistSheet,
+  dates: tripDatesSheet,
   place: placeSheet,
   compose: composeSheet,
   phrase: phraseSheet,
@@ -3885,6 +4025,27 @@ document.addEventListener('click', (e) => {
       render();
       toast(S.tripEdit ? 'Drag a numbered dot or grab a row to reorder' : 'Stops saved', S.tripEdit ? 'hand' : 'check');
       break;
+    case 'dates':
+      S.dateDraft = S.tripStart;
+      openSheet('dates');
+      break;
+    case 'date-nudge':
+      S.dateDraft = shiftISO(S.dateDraft || S.tripStart, Number(el.dataset.days) || 0);
+      refreshDatePreview();
+      break;
+    case 'date-reset':
+      S.dateDraft = DEFAULT_TRIP_START;
+      renderSheet();
+      break;
+    case 'date-save': {
+      const next = S.dateDraft || S.tripStart;
+      const changed = next !== S.tripStart;
+      setTripStart(next);
+      closeSheet();
+      render();
+      toast(changed ? `Dates moved · ${tripDateRange()} · 2 travelers` : 'Dates unchanged', changed ? 'calendar' : 'info');
+      break;
+    }
     case 'trip-add':
       openSheet('addStop');
       break;
@@ -4261,6 +4422,12 @@ document.addEventListener('input', (e) => {
   if (t.matches('[data-field]')) {
     S.draft[t.dataset.field] = t.value;
     updateComposePreview();
+  }
+  if (t.id === 'tripStartInput') {
+    if (t.value) {
+      S.dateDraft = t.value;
+      refreshDatePreview();
+    }
   }
   if (t.matches('[data-quiz-note]')) {
     S.quiz.note = t.value.slice(0, 140);

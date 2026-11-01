@@ -1244,6 +1244,53 @@ img{max-width:100%;display:block}
 .sheet-cta .primary{background:var(--lime)}
 .sheet-cta .primary:disabled{background:var(--line-soft);color:var(--ink3);border-color:var(--line);box-shadow:none}
 
+/* editable trip dates */
+.trip-dates{
+  display:inline-flex;align-items:center;gap:5px;margin-top:6px;padding:3px 8px 3px 7px;
+  border:1px solid var(--ink);border-radius:999px;background:var(--paper);color:var(--ink2);
+  font:500 9.5px/1.3 var(--mono);text-align:left;transition:background .12s ease,transform .12s ease;
+}
+.trip-dates:hover{background:var(--lime);color:var(--ink)}
+.trip-dates:active{transform:translateY(1px)}
+.trip-dates svg{width:9px;height:9px;flex:none}
+.trip-dates svg:last-child{width:7px;height:7px;opacity:.55}
+.date-field{
+  display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.3px solid var(--ink);border-radius:16px;
+  background:var(--paper);box-shadow:0 3px 0 rgba(25,23,16,.12);
+}
+.df-label{flex:none;font:700 8px var(--mono);letter-spacing:.09em;text-transform:uppercase;color:var(--ink3)}
+.date-field input{
+  flex:1;min-width:0;padding:0;border:0;background:transparent;outline:none;
+  font:900 17px var(--mono);letter-spacing:-.02em;color:var(--ink);
+}
+.date-field input::-webkit-calendar-picker-indicator{opacity:.5;cursor:pointer}
+.df-week{
+  flex:none;padding:4px 8px;border:1px solid var(--ink);border-radius:999px;
+  background:var(--lime);font:800 9px var(--mono);color:var(--ink);
+}
+.date-nudges{display:flex;gap:6px;margin:9px 0 3px}
+.date-nudges .chip{flex:1;justify-content:center;background:var(--paper)}
+.date-warn{
+  display:flex;align-items:flex-start;gap:5px;margin:7px 0 0;padding:7px 9px;
+  border:1px solid var(--coral);border-radius:10px;background:var(--coral-soft);
+  font-size:9px;line-height:1.55;color:var(--ink);
+}
+.date-warn[hidden]{display:none}
+.date-warn svg{width:9px;height:9px;margin-top:2px;flex:none}
+.date-preview-head{
+  display:flex;align-items:baseline;justify-content:space-between;margin:13px 0 5px;
+  font:700 8px var(--mono);letter-spacing:.09em;text-transform:uppercase;color:var(--ink3);
+}
+.date-preview-head .date-range{font:700 9px var(--mono);letter-spacing:0;text-transform:none;color:var(--ink);font-style:normal}
+.date-preview{border:1px solid var(--line-soft);border-radius:14px;background:var(--paper);padding:3px 10px}
+.dp-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-top:1px solid var(--line-soft)}
+.dp-row:first-child{border-top:0}
+.dp-row .dp-day{flex:1;font:700 8px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink3)}
+.dp-row b{min-width:50px;text-align:right;font:900 13px var(--mono);letter-spacing:-.02em}
+.dp-row .dp-week{min-width:40px;text-align:right;font:800 9px var(--mono);color:var(--ink2)}
+.dp-row.on .dp-day{color:var(--ink)}
+.dp-row.on b{background:var(--lime);border-radius:5px;padding:1px 4px;margin-right:-4px}
+
 /* reorder */
 .reorder-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--line-soft)}
 .reorder-row:first-child{border-top:0}
