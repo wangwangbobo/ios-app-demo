@@ -528,6 +528,76 @@ const ZH = {
   'Cities': '城市', 'Post': '发布', 'Publish': '发布', 'Follow': '关注', 'Following': '已关注',
   'All posts': '全部帖子', 'Nearby posts': '附近帖子', 'Ask Pico to plan it': '让 Pico 规划',
   'Save this walk': '收藏这条路线', 'Open in map': '在地图中打开',
+  // community feed content
+  'Where to eat': '去哪儿吃', 'Trending · 4 spots': '热门 · 4 家',
+  'What to see': '看什么', 'This week · 3 places': '本周 · 3 处',
+  'Gifts to take home': '带回家的伴手礼', 'Locals pick · 3 finds': '本地人推荐 · 3 件',
+  'Citywalks': '城市漫步', 'Ready to borrow · 3': '可直接借用 · 3 条',
+  'Local events': '本地活动', 'This week · 3 on': '本周 · 3 场',
+  'What locals order · queues and signature dishes': '本地人点什么 · 排队和招牌菜',
+  'Viewpoints, sunsets and the quiet hours': '观景点、日落和安静的时段',
+  'Things worth carrying home': '值得带回家的东西',
+  'Citywalks you can borrow whole': '可以整套借用的城市漫步',
+  'Markets, night rides, swap meets': '市集、夜骑、跳蚤市场',
+  'Start an event': '发起活动', 'This week': '本周', 'Going': '已参加', 'Join': '参加',
+  'Post my event': '发布我的活动',
+  'Joining adds a reminder under Me → Pre-trip checklist, pushed 2 hours before.': '参加后会在「我的 → 行前清单」里加一条提醒，提前 2 小时推送。',
+  'No notes here yet': '这里还没有笔记',
+  'Try another category, or start a citywalk under Events.': '换个分类看看，或者在「活动」里发起一次城市漫步。',
+  'Try “duck”, “hutong”, “sunset” or “gifts”.': '试试“烤鸭”“胡同”“日落”或“伴手礼”。',
+  'No comments yet': '还没有评论', 'From the author': '来自作者',
+  'Place details': '地点详情', 'Use this route': '用这条路线', 'See event': '看活动',
+  'Ask Pico if it is worth it': '问 Pico 值不值得',
+  'Posted in the RoamChina Community · content from members': '发布在 RoamChina 社区 · 内容来自社区成员',
+  'Note': '笔记',
+  // community posts
+  'Sunset from Wanchun Pavilion beats any photo': '万春亭的日落，比任何照片都好看',
+  'Climb up before 17:00 for the last light — the roofs burn gold from here. Take the east railing, the whole axis lines up.': '17:00 前爬上去，刚好赶上最后一点光——从这里看，屋顶烧成一片金。站东侧栏杆，整条中轴正好对齐。',
+  'Jingshan': '景山', 'Viewpoint': '观景点',
+  '@Zhe: Went on Wednesday — at 17:10 the sun landed right on the ridge.': '@Zhe：周三去的——17:10 太阳正好落在山脊上。',
+  'The Central Axis in a day: Yongdingmen to the Drum Tower': '一天走完中轴线：永定门到鼓楼',
+  'Six stops, 4.2 km. Start at three and you reach Jingshan for sunset. There is a metro exit near every leg.': '六个站点，4.2 公里。三点出发，到景山正好看日落。每一段附近都有地铁口。',
+  'Central Axis': '中轴线', 'Walking': '步行', 'Route': '路线',
+  '@Lina: Walked the whole thing — feet held up, topped up with coffee twice.': '@Lina：全程走下来了——脚还撑得住，中途补了两杯咖啡。',
+  'Siji Minfu before 11 really is queue-free': '11 点前的四季民福，真的不用排队',
+  'Eat the skin with sugar first, and half a duck is plenty for two. After three, tables free up on their own.': '先蘸白糖吃鸭皮，两个人半只就够。三点以后，桌子自己就空出来了。',
+  'Peking duck': '北京烤鸭', 'Queues': '排队',
+  '@Zhou: Confirmed — arrived at 10:40 and walked straight in.': '@Zhou：确认——10:40 到的，直接进去了。',
+  'A Qianmen hutong café, best light at three': '前门胡同咖啡馆，三点光线最好',
+  'Metal Hands hides in a back alley; the two window tables are the quietest. The pour-over runs bright — order a croissant with it.': '铁手咖啡藏在后巷里，靠窗那两张桌子最安静。手冲偏明亮——配个可颂正好。',
+  'Hutongs': '胡同', 'Afternoon': '下午',
+  '@Xiaobei: Sat there two hours on Sunday. Nobody hurried us out.': '@Xiaobei：周日在那儿坐了两小时，没人赶我们。',
+  'Early morning at the Temple of Heaven, almost empty': '清晨的天坛，几乎没人',
+  'Come in by the south gate; the Echo Wall is quietest before nine. Cypress shadows on the red wall — every frame works.': '从南门进，九点前的回音壁最安静。柏树的影子落在红墙上——随手一拍都好看。',
+  'Morning': '清晨', 'Architecture': '建筑',
+  '@Hutong Archive: That is when locals do their morning practice. Keep voices low.': '@Hutong Archive：那是本地人晨练的时候，说话轻点。',
+  'Saturday night market at the Drum Tower: stall list updated': '鼓楼周六夜市：摊位名单更新了',
+  'Handmade goods, vinyl and mulled wine. Busiest after 19:00. Metro Line 8, Shichahai station, exit A.': '手作、黑胶和热红酒。19:00 后最热闹。地铁 8 号线什刹海站 A 口。',
+  'Night market': '夜市', 'Drum Tower': '鼓楼', 'Weekend': '周末',
+  '@Ken: Signed up — see you there.': '@Ken：报名了——到时候见。',
+  'Daoxiangcun: loose pastries or gift boxes?': '稻香村：散装点心还是礼盒？',
+  'Loose sweets are sold by weight, fresher, and you can mix flavors. Boxes are for giving — no need for your own snack stash.': '散装按斤称，更新鲜，还能混着挑口味。礼盒是送人的——自己吃不用囤。',
+  'Daoxiangcun': '稻香村', 'Save money': '省钱',
+  '@Lin Xiaoman: Date paste and ox-tongue pastries, every time.': '@Lin Xiaoman：枣泥和牛舌饼，每次必买。',
+  'Shichahai after dark: 5 stops, 3 bars on the way': '天黑后的什刹海：5 站，路上 3 家小酒馆',
+  'Begin at Yinding Bridge and follow the north shore to the Drum Tower. After nine it thins out; bring a jacket for the wind.': '从银锭桥出发，沿北岸走到鼓楼。九点以后人就少了；风大，带件外套。',
+  'Shichahai': '什刹海', 'Bars': '酒吧',
+  '@Lina: The craft beer spot by Yinding Bridge is solid.': '@Lina：银锭桥边那家精酿不错。',
+  'Corner-tower magnets are back — buy on your way in': '角楼冰箱贴补货了——进门时顺手买',
+  'The Shenwu Gate shop restocks in the morning and the corner-tower series goes fast. Two per person, so do not wait for closing.': '神武门商店上午补货，角楼系列走得特别快。每人限购两个，别等闭园。',
+  'Palace shop': '故宫商店', 'Magnets': '冰箱贴', 'Limited': '限量',
+  '@Zhou: They still had the sunset color yesterday. Go.': '@Zhou：昨天还有日落那款。快去。',
+  'Forty minutes in line at Manhengji — worth it?': '满恒记排了四十分钟——值吗？',
+  'Hand-cut lamb, sesame dip, and a copper pot that settles the question the moment it boils. Take a number before 17:00 and halve the wait.': '手切羊肉、麻酱，铜锅一开就什么都不用问了。17:00 前拿号，等的时间能减半。',
+  'Hotpot': '火锅', 'Niujie': '牛街',
+  '@Lao Zhao: Worth it. Order the sweet garlic.': '@Lao Zhao：值。记得点糖蒜。',
+  'Boating at Beihai, the White Dagoba from the water': '北海划船，从水上看白塔',
+  'After four the sun softens; an hour in a pedal boat is just right. Rentals stop when the wind picks up.': '四点以后光线柔和，脚踏船踩一小时正合适。风一大就停止租船了。',
+  'Beihai': '北海',
+  '@Xiaobei: With kids, choose an electric boat.': '@Xiaobei：带孩子就选电动船。',
+  '2 hr ago': '2 小时前', '4 hr ago': '4 小时前', '5 hr ago': '5 小时前',
+  'Yesterday': '昨天', '2 days ago': '2 天前', '3 days ago': '3 天前',
+  '4 days ago': '4 天前', '5 days ago': '5 天前',
   // translate
   'Live translate': '实时翻译', 'Menu': '菜单', 'Sign': '路牌', 'Phrases': '常用语',
   'Translate / PHRASES': '翻译 / 常用语', 'Translate / Phrases': '翻译 / 常用语', 'SAY IT': '开口说',
@@ -543,6 +613,33 @@ const ZH = {
   'Voice is processed on device · recordings are never saved': '语音只在设备上处理 · 录音不会保存',
   'Take a photo': '拍照翻译', 'Camera': '相机', 'Speak': '说话', 'Listen': '朗读',
   'Translate': '翻译', 'Hold to talk': '按住说话', 'Scanning…': '识别中…',
+  // translate chrome & photo
+  'Listening… tap again to finish': '正在听… 再点一下结束',
+  'Recognizing offline · translates when you stop': '离线识别 · 停下后翻译',
+  'Tap to talk': '点一下说话',
+  'Offline phrasebook': '离线常用语', 'Downloaded': '已下载', 'Play': '朗读',
+  'Emergency · call first': '紧急情况 · 先打电话',
+  'Ambulance 120 · Police 110 · Fire 119. If you need help in Chinese, show the sentence below.': '急救 120 · 报警 110 · 火警 119。需要中文帮忙，就把下面这句话给对方看。',
+  'Call 120': '拨打 120',
+  'CAMERA · OCR': '相机 · 识别', 'Reading…': '识别中…', 'Found · 9 words': '找到 9 个词',
+  '1x · autofocus': '1x · 自动对焦', 'TAP TO SCAN': '点一下扫描',
+  'Menu sign': '菜单', 'Street sign': '路牌', 'Scan and translate': '扫描并翻译',
+  'Point at a sign or a menu': '对准一块牌子或一份菜单',
+  'Press the shutter and Pico will frame the text and translate it into English. You can play it aloud or copy it.': '按下快门，Pico 会框出文字并翻译成英文。可以朗读，也可以复制。',
+  'MENU · SIGNATURE': '菜单 · 招牌',
+  'Recognized · Old Beijing snacks': '识别结果 · 老北京小吃',
+  'Recognized · Street signs': '识别结果 · 街边路牌',
+  'Play aloud': '朗读', 'Copy all': '复制全部', 'Try another': '换一张',
+  'What to order': '点什么', 'Finding your way': '怎么走',
+  'Zhajiang noodles are the safest order; first-timers should share one glass of douzhi.': '炸酱面最稳；第一次来的话，豆汁儿两人分一碗就够了。',
+  'Follow the signs straight ahead — Shichahai is toward Beihai North station on Metro Line 6.': '照路牌一直走——什刹海往地铁 6 号线北海北站方向。',
+  'Playing aloud': '正在朗读', 'Copied to clipboard': '已复制到剪贴板',
+  'Recognized and translated into English': '已识别并翻译成英文',
+  'Found 4 pieces of text · translated': '找到 4 段文字 · 已翻译',
+  'Switched to the offline phrasebook': '已切到离线常用语',
+  'Saved to offline phrases': '已存进离线常用语',
+  'Note saved · find it under Me': '笔记已保存 · 在「我的」里查看',
+  'Removed from saved': '已取消保存',
   // me
   'Journey reports': '旅程报告', 'Attraction bookings': '景点预约', 'Travel services': '旅行服务',
   'External info': '外部信息', 'Settings': '设置', 'Profile': '个人资料',
@@ -854,6 +951,20 @@ const ZH_RULES = [
   [/^6 min walk from the last stop · (.+)$/, '距上一站步行 6 分钟 · $1'],
   [/^of (.+) explorers$/, '$1探索者'],
   [/^rarest ([\d.]+)%$/, '稀有 $1%'],
+  [/^([A-Z]+) · Community note$/, (m, lab) => `${tr(lab)} · 社区笔记`],
+  [/^([A-Z]+) · (.+)$/, (m, lab, title) => `${tr(lab)} · ${tr(title)}`],
+  [/^(.+)'s note$/, '$1 的笔记'],
+  [/^Photo · (.+) · Wikimedia Commons$/, '图片 · $1 · Wikimedia Commons'],
+  [/^(.+) · in Beijing$/, (m, time) => `${tr(time)} · 在北京`],
+  [/^(\d+) notes$/, '$1 条笔记'],
+  [/^(\S+) likes$/, '$1 人喜欢'],
+  [/^(\S+) saves$/, '$1 人收藏'],
+  [/^(\d+) comments$/, '$1 条评论'],
+  [/^Comments · (\d+)$/, '评论 · $1'],
+  [/^(\d+) events · open$/, '$1 场 · 开放'],
+  [/^Nothing for “(.+)”$/, '没有找到“$1”'],
+  [/^Search “(.+)”$/, '搜索“$1”'],
+  [/^(\d+) lines$/, '$1 条'],
   [/^More than 82% of RoamChina travelers walk on a (\d+)-day trip\.$/, '超过 82% 的 RoamChina 旅行者在 $1 天的行程里走到这个数。']
 ];
 function translateText(text) {
@@ -1986,7 +2097,9 @@ function filteredPosts(kind = 'all') {
   return allPosts().filter((p) => {
     if (kind !== 'all' && p.kind !== kind) return false;
     if (!q) return true;
-    return [p.title, p.body, p.author, ...p.tags].join(' ').toLowerCase().includes(q);
+    const raw = [p.title, p.body, p.author, ...p.tags];
+    const localized = [tr(p.title), tr(p.body), p.author, ...p.tags.map((t) => tr(t))];
+    return [...raw, ...localized].join(' ').toLowerCase().includes(q);
   });
 }
 
@@ -4530,7 +4643,7 @@ document.addEventListener('input', (e) => {
   if (t.matches('[data-role="search"]')) {
     S.search = t.value;
     const body = $('#forumBody');
-    if (body) body.innerHTML = forumBodyHTML();
+    if (body) { body.innerHTML = forumBodyHTML(); zhify(body); }
     const clear = $('.forum-search .clear');
     if (!clear && S.search) {
       const wrap = $('.forum-search');
