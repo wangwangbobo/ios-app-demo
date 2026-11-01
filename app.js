@@ -751,17 +751,17 @@ const ZH_RULES = [
   [/^Still need “(.+)”\.$/, '还差“$1”。'],
   [/^(\d+) stops$/, '$1 站'],
   [/^(\d+) travelers$/, '$1 位旅行者'],
-  [/^([\d\\/]+ – [\d\\/]+) · (\d+) travelers$/, '$1 · $2 位旅行者'],
+  [/^([\d\/]+ – [\d\/]+) · (\d+) travelers$/, '$1 · $2 位旅行者'],
   [/^Beijing · (\d+) days, (\d+) nights$/, '北京 · $1 天 $2 晚'],
-  [/^([\d\\/]+) – ([\d\\/]+) · (\d+) nights · confirmed$/, '$1 – $2 · $3 晚 · 已确认'],
-  [/^([\d\\/]+) 08:45 → 11:20 · Capital T3 · ticketed$/, '$1 08:45 → 11:20 · 首都机场 T3 · 已出票'],
-  [/^The Forbidden City closes on Mondays; it is open (\w+) ([\d\\/]+)\. Your booking receipts stay here\.$/, (m, week, date) => {
+  [/^([\d\/]+) – ([\d\/]+) · (\d+) nights · confirmed$/, '$1 – $2 · $3 晚 · 已确认'],
+  [/^([\d\/]+) 08:45 → 11:20 · Capital T3 · ticketed$/, '$1 08:45 → 11:20 · 首都机场 T3 · 已出票'],
+  [/^The Forbidden City closes on Mondays; it is open (\w+) ([\d\/]+)\. Your booking receipts stay here\.$/, (m, week, date) => {
     const zhWeek = { Mon: '周一', Tue: '周二', Wed: '周三', Thu: '周四', Fri: '周五', Sat: '周六', Sun: '周日' };
     return `故宫周一闭馆，${zhWeek[week] || week} ${date} 正常开放。预约凭证都保存在这里。`;
   }],
   [/^Dates moved · (.+) · 2 travelers$/, '日期已更新 · $1 · 2 位旅行者'],
   [/^(\d+) days on the trip$/, '行程共 $1 天'],
-  [/^([\d\\/]+) · (Beijing|Chengdu|Shanghai) · (\d+) travelers · ([\d.]+) km$/, '$1 · $2 · $3 位旅行者 · $4 公里'],
+  [/^([\d\/]+) · (Beijing|Chengdu|Shanghai) · (\d+) travelers · ([\d.]+) km$/, '$1 · $2 · $3 位旅行者 · $4 公里'],
   [/^(\d+) stops · Day (\d+) of (\d+)$/, '$1 站 · 第 $2 天 / 共 $3 天'],
   [/^(\d+) stops · ([\d.]+) km$/, '$1 站 · $2 公里'],
   [/^(\d+) of (\d+) stops · ([\d.]+) km$/, '已完成 $1 / $2 站 · $3 公里'],
@@ -787,8 +787,7 @@ const ZH_RULES = [
   [/^(\d+) nights$/, '$1 晚'],
   [/^(\d+) items$/, '$1 项'],
   [/^(\d+) people$/, '$1 人'],
-  [/^10\/15 08:45 → 11:20 · Capital T3 · ticketed$/, '10/15 08:45 → 11:20 · 首都机场 T3 · 已出票'],
-  [/^10\/15 – 10\/18 · 3 nights · confirmed$/, '10/15 – 10/18 · 3 晚 · 已确认'],
+  [/^Wrap-up unlocks ([\d\/]+) — tap to preview the recap$/, '总结 $1 解锁——点开可先预览'],
   [/^(\d+) km$/, '$1 公里'],
   [/^([\d.]+) km$/, '$1 公里'],
   [/^([\d.]+) KM$/, '$1 公里'],
@@ -2454,7 +2453,7 @@ function meView() {
     <div class="jr-card">
       <button class="jr-now" data-act="report" data-id="beijing">
         <span class="jr-pulse"></span>
-        <span class="grow"><b>${S.tripWrapped ? 'Beijing · recap ready' : 'Beijing · in progress'}</b><small>${S.tripWrapped ? `<span>${esc(tr('The Central Axis Cartographer'))}</span> · <span>13 new places</span>` : 'Wrap-up unlocks 10/19 — tap to preview the recap'}</small></span>
+        <span class="grow"><b>${S.tripWrapped ? 'Beijing · recap ready' : 'Beijing · in progress'}</b><small>${S.tripWrapped ? `<span>${esc(tr('The Central Axis Cartographer'))}</span> · <span>13 new places</span>` : `Wrap-up unlocks ${dayDate(tripDayCount()).date} — tap to preview the recap`}</small></span>
         <span class="tag soft">${S.tripWrapped ? 'Recap' : 'Preview'}</span>
       </button>
       ${JOURNEYS.map((j) => `<button class="jr-row" data-act="report" data-id="${j.id}">
