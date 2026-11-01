@@ -188,9 +188,9 @@ const TRIP_HERO = [
 
 /* travel-style check on the trip page */
 const QUIZ = [
-  { key: 'days', label: 'How many days do you like?', options: ['2–3 days', '4–5 days', '6+ days'] },
-  { key: 'style', label: 'Your kind of holiday', options: ['Slow culture', 'Food first', 'Outdoors', 'Night owl'] },
-  { key: 'theme', label: 'A theme, or none?', options: ['Imperial history', 'Hutongs & coffee', 'Art & design', 'No theme'] }
+  { key: 'days', label: 'How many days do you like?', options: ['2–3 days', '4–5 days', '6+ days', 'Surprise me'] },
+  { key: 'style', label: 'Your kind of holiday', options: ['Slow culture', 'Food first', 'Outdoors', 'Night owl', 'Family friendly', 'Budget smart'] },
+  { key: 'theme', label: 'A theme, or none?', options: ['Imperial history', 'Hutongs & coffee', 'Art & design', 'Nature & parks', 'Night markets', 'No theme'] }
 ];
 
 function quizPersona() {
@@ -200,11 +200,20 @@ function quizPersona() {
     'Slow culture': { title: 'The Slow Culture Wanderer', icon: 'compass' },
     'Food first': { title: 'The Table-First Wanderer', icon: 'fork' },
     'Outdoors': { title: 'The Open-Air Rambler', icon: 'walk' },
-    'Night owl': { title: 'The After-Dark Flâneur', icon: 'star' }
+    'Night owl': { title: 'The After-Dark Flâneur', icon: 'star' },
+    'Family friendly': { title: 'The Easy-Going Family Wanderer', icon: 'users' },
+    'Budget smart': { title: 'The Shrewd City Wanderer', icon: 'ticket' }
   };
   const base = titles[q.style] || titles['Slow culture'];
-  const fit = q.theme === 'Imperial history' || q.theme === 'Hutongs & coffee' ? 'Central Axis' : 'Imperial Gardens';
-  return { ...base, meta: `${q.days} · ${q.style} · ${q.theme}`, metaParts: [q.days, q.style, q.theme], fit };
+  const axisThemes = ['Imperial history', 'Hutongs & coffee', 'Night markets'];
+  const fit = axisThemes.includes(q.theme) ? 'Central Axis' : 'Imperial Gardens';
+  return {
+    ...base,
+    meta: `${q.days} · ${q.style} · ${q.theme}`,
+    metaParts: [q.days, q.style, q.theme],
+    note: (q.note || '').trim(),
+    fit
+  };
 }
 
 /* translate a single known UI/content label; leaves proper nouns alone */
@@ -304,7 +313,7 @@ const S = {
   aiVisible: true,
   expandedPlan: 0,
   hero: 0,
-  quiz: { days: null, style: null, theme: null },
+  quiz: { days: null, style: null, theme: null, note: '' },
   applied: false,
   forumChannel: null,
   forumFilter: 'all',
@@ -355,6 +364,44 @@ const S = {
   chatTimer: null
 };
 
+/* ---------- live Pico endpoint ---------- */
+/* The API key never reaches the browser: this points at the hosted function
+   (or the local proxy while developing). A static page without a backend gets
+   an explicit "not connected" reply instead of fake travel facts. */
+const PICO_ENDPOINT = (() => {
+  if (typeof window.PICO_CHAT_ENDPOINT === 'string' && window.PICO_CHAT_ENDPOINT) return window.PICO_CHAT_ENDPOINT;
+  const host = location.hostname;
+  if (host === 'localhost' || host === '127.0.0.1') {
+    return location.port === '8787' ? '/api/chat' : 'http://127.0.0.1:8787/api/chat';
+  }
+  if (host === 'roamchina-pico-6n9ilgtpldd.qoder.website') return '/functions/v1/app/chat';
+  if (host.endsWith('.qoder.site') || host.endsWith('.qoder.website')) return '/functions/v1/app/chat';
+  if (host.endsWith('.trycloudflare.com') || host.endsWith('.ngrok-free.app')) return '/api/chat';
+  return '';
+})();
+
+function picoContext() {
+  const day = S.tab === 'trip' && S.planBuilt ? activeDay() : null;
+  return {
+    tab: TAB_CTX[S.tab] || S.tab,
+    day: day ? `${day.title} · ${day.date}` : '',
+    planBuilt: S.planBuilt,
+    days: S.planBuilt ? tripDayCount() : undefined,
+    style: S.quiz.style || '',
+    theme: S.quiz.theme || '',
+    note: (S.quiz.note || '').trim().slice(0, 140),
+    stage: S.tripLive ? 'Journey in progress' : S.planBuilt ? 'Plan saved' : 'Planning the first trip',
+    language: S.lang
+  };
+}
+
+function chatHistory() {
+  return S.messages.slice(-12).map((m) => {
+    const raw = typeof m.raw === 'string' ? m.raw : (m.text && !/[<>]/.test(m.text) ? m.text : '');
+    return { role: m.role, content: raw };
+  }).filter((m) => m.content);
+}
+
 /* ---------- helpers ---------- */
 /* UI chrome switches between English and Chinese. Place names, post bodies and
    demo content stay in their original language. */
@@ -364,6 +411,12 @@ const ZH = {
   'Ask Pico': '问 Pico', 'Close': '关闭', 'Done': '完成', 'Save': '保存', 'Cancel': '取消',
   'New trip · Planning with Pico': '新旅程 · 和 Pico 一起规划',
   'Ask Pico about routes, tickets, translation…': '问 Pico 路线、门票、翻译…',
+  'Live AI': '实时 AI',
+  'Not connected': '未连接',
+  "Pico's live model isn't connected on this static page. Open the hosted RoamChina demo to chat for real.": '这个静态页面上没有连接 Pico 的实时模型。打开线上版 RoamChina 就能和真的 Pico 聊天。',
+  "Pico is getting a lot of questions right now. Try again in a minute.": 'Pico 现在收到的问题有点多，稍等一分钟再试。',
+  "Pico couldn't reach the live model just now. Try once more in a moment.": 'Pico 刚才没连上实时模型，稍等一下再试一次。',
+  'That took too long. Check the connection and ask me again.': '等得太久了，检查一下网络再问我一次。',
   'Ask Pico a question': '向 Pico 提问',
   'Rework my route': '重排我的路线', 'Any palace tickets left?': '故宫还有票吗？',
   'Where should I eat?': '去哪儿吃？', 'Translate: I have an allergy': '翻译：我过敏',
@@ -511,10 +564,16 @@ const ZH = {
   'How many days do you like?': '想玩几天？',
   'Your kind of holiday': '你喜欢哪种旅行？',
   'A theme, or none?': '想定个主题吗？',
-  '2–3 days': '2–3 天', '4–5 days': '4–5 天', '6+ days': '6 天以上',
+  '2–3 days': '2–3 天', '4–5 days': '4–5 天', '6+ days': '6 天以上', 'Surprise me': '随便安排',
   'Slow culture': '慢游文化', 'Food first': '美食优先', 'Outdoors': '户外', 'Night owl': '夜猫子',
-  'Imperial history': '皇城历史', 'Hutongs & coffee': '胡同与咖啡', 'Art & design': '艺术设计', 'No theme': '不限主题',
+  'Family friendly': '亲子出行', 'Budget smart': '省着点玩',
+  'Imperial history': '皇城历史', 'Hutongs & coffee': '胡同与咖啡', 'Art & design': '艺术设计',
+  'Nature & parks': '自然公园', 'Night markets': '夜市烟火', 'No theme': '不限主题',
+  'The Easy-Going Family Wanderer': '佛系亲子漫游者', 'The Shrewd City Wanderer': '精打细算城市漫游者',
+  'Anything else?': '还有什么想说的？', 'Optional': '可选',
+  'Must-sees, pace, kids, food allergies…': '必去地点、节奏、带孩子、忌口…',
   'Generate plan': '生成计划', 'Pick one per question — you can change it later.': '每题选一个——之后还能改。',
+  'Pick one per question — it only changes your suggestion, never the plan.': '每题选一个——只影响推荐，不改行程。',
   'All set — tap Generate plan.': '都选好了——点“生成计划”。',
   'Plan ready · days on your trip': '计划就绪 · 已放进你的行程',
   'View my trip': '查看我的行程', 'days': '天', 'stops': '站', 'km walking': '公里步行',
@@ -1396,16 +1455,17 @@ function quizCard() {
     ${persona
       ? `<div class="quiz-result">
           <span class="qr-ico">${icon(persona.icon, 14)}</span>
-          <span class="grow"><small>YOUR TRAVEL TITLE</small><b>${esc(tr(persona.title))}</b><em>${persona.metaParts.map((p) => esc(tr(p))).join(' · ')}</em></span>
+          <span class="grow"><small>YOUR TRAVEL TITLE</small><b>${esc(tr(persona.title))}</b><em>${persona.metaParts.map((p) => esc(tr(p))).join(' · ')}</em>${persona.note ? `<em class="qr-note">${esc(persona.note)}</em>` : ''}</span>
           <button class="qr-go" data-act="trip-day" data-day="0" data-scroll="1">${icon('map', 9)}${esc(tr(persona.fit))}</button>
         </div>`
       : `${QUIZ.map((q) => `<div class="quiz-q">
-          <div class="quiz-label">${esc(q.label)}</div>
+          <div class="quiz-label">${esc(tr(q.label))}</div>
           <div class="quiz-opts">
-            ${q.options.map((o) => `<button class="qchip ${S.quiz[q.key] === o ? 'on' : ''}" data-act="quiz" data-key="${q.key}" data-val="${esc(o)}" aria-pressed="${S.quiz[q.key] === o}">${esc(o)}</button>`).join('')}
+            ${q.options.map((o) => `<button class="qchip ${S.quiz[q.key] === o ? 'on' : ''}" data-act="quiz" data-key="${q.key}" data-val="${esc(o)}" aria-pressed="${S.quiz[q.key] === o}">${esc(tr(o))}</button>`).join('')}
           </div>
         </div>`).join('')}
-        <div class="quiz-empty">${icon('info', 9)} Pick one per question — it only changes your suggestion, never the plan.</div>`}
+        ${quizNoteHTML('quiz')}
+        <div class="quiz-empty">${icon('info', 9)} ${esc(tr('Pick one per question — it only changes your suggestion, never the plan.'))}</div>`}
   </article>`;
 }
 
@@ -2852,7 +2912,31 @@ const PLAN_DAYS = [
 function planLength() {
   if (S.quiz.days === '2–3 days') return 3;
   if (S.quiz.days === '6+ days') return 6;
-  return 4;
+  return 4; // 4–5 days, Surprise me, or nothing picked yet
+}
+
+/* The optional "anything else" line, mirrored in the planner and the trip-page
+   retake. Both stay in sync through S.quiz.note. */
+function quizNoteHTML(variant = 'planner') {
+  const note = S.quiz.note || '';
+  const count = `${note.length}/140`;
+  if (variant === 'quiz') {
+    return `<div class="quiz-note">
+      <div class="qn-head"><span>${esc(tr('Anything else?'))}</span><em>${esc(tr('Optional'))}</em></div>
+      <textarea data-quiz-note maxlength="140" rows="2" placeholder="${esc(tr('Must-sees, pace, kids, food allergies…'))}" aria-label="${esc(tr('Anything else?'))}">${esc(note)}</textarea>
+    </div>`;
+  }
+  return `<div class="planner-q planner-custom${note ? ' filled' : ''}">
+    <div class="pq-head">
+      <span class="pq-num pq-plus">+</span>
+      <span class="planner-label">${esc(tr('Anything else?'))}</span>
+      <span class="pq-optional">${esc(tr('Optional'))}</span>
+    </div>
+    <div class="pq-inputwrap">
+      <textarea data-quiz-note maxlength="140" rows="2" placeholder="${esc(tr('Must-sees, pace, kids, food allergies…'))}" aria-label="${esc(tr('Anything else?'))}">${esc(note)}</textarea>
+      <span class="pq-count" data-quiz-count>${count}</span>
+    </div>
+  </div>`;
 }
 
 function planBuilderHTML() {
@@ -2866,24 +2950,25 @@ function planBuilderHTML() {
       </span>
     </div>
     <div>
-      <div class="planner-title">Build your first Beijing trip</div>
-      <p class="planner-sub">Three answers and I'll set the order, the timing and the walking.</p>
+      <div class="planner-title">${esc(tr('Build your first Beijing trip'))}</div>
+      <p class="planner-sub">${esc(tr("Three answers and I'll set the order, the timing and the walking."))}</p>
     </div>
     ${QUIZ.map((q, i) => `<div class="planner-q${S.quiz[q.key] ? ' done' : ''}">
       <div class="pq-head">
         <span class="pq-num">${i + 1}</span>
-        <span class="planner-label">${esc(q.label)}</span>
+        <span class="planner-label">${esc(tr(q.label))}</span>
         <span class="pq-check">${icon('check', 8)}</span>
       </div>
-      <div class="planner-opts" style="--cols:${q.options.length}">
-        ${q.options.map((o) => `<button class="qchip ${S.quiz[q.key] === o ? 'on' : ''}" data-act="quiz" data-key="${q.key}" data-val="${esc(o)}" aria-pressed="${S.quiz[q.key] === o}">${esc(o)}</button>`).join('')}
+      <div class="planner-opts" style="--cols:${q.options.length <= 4 ? 2 : 3}">
+        ${q.options.map((o) => `<button class="qchip ${S.quiz[q.key] === o ? 'on' : ''}" data-act="quiz" data-key="${q.key}" data-val="${esc(o)}" aria-pressed="${S.quiz[q.key] === o}">${esc(tr(o))}</button>`).join('')}
       </div>
     </div>`).join('')}
+    ${quizNoteHTML()}
     <button class="plan-generate" data-act="generate-plan">
       ${icon('sparkle', 12)}<span>Generate plan</span>${icon('arrowr', 11)}
     </button>
     <div class="planner-note" id="plannerNote">
-      ${icon('info', 9)}<span>${answered === 3 ? 'All set — tap Generate plan.' : 'Pick one per question — you can change it later.'}</span>
+      ${icon('info', 9)}<span>${answered === 3 ? esc(tr('All set — tap Generate plan.')) : esc(tr('Pick one per question — you can change it later.'))}</span>
     </div>
   </div>`;
 }
@@ -2899,6 +2984,7 @@ function planSummaryHTML() {
     </div>
     <div class="pr-title">${esc(tr(persona ? persona.title : 'Your Beijing plan'))}</div>
     <div class="pr-meta">${[S.quiz.days, S.quiz.style, S.quiz.theme].map((v) => esc(tr(v))).join(' · ')}</div>
+    ${persona && persona.note ? `<div class="pr-note">${icon('chat', 8)}<span>${esc(persona.note)}</span></div>` : ''}
     <div class="pr-stats">
       <div><b>${days}</b><span>days</span></div>
       <div><b>${days * 4}</b><span>stops</span></div>
@@ -2915,6 +3001,7 @@ function planSummaryHTML() {
 function planNarrative(persona) {
   const style = S.quiz.style;
   const who = persona ? tr(persona.title) : tr('you');
+  const note = (persona && persona.note) || '';
   if (S.lang === 'zh') {
     const zhDetail = style === 'Food first'
       ? '午饭是 11:30 排队前的烤鸭，景点之间还留了咖啡空档。'
@@ -2922,8 +3009,13 @@ function planNarrative(persona) {
         ? '上午都在户外——日出时的景山、长城山脊、北海划船。'
         : style === 'Night owl'
           ? '17:00 前看完景点，之后鼓楼和后海接着带你过夜。'
-          : '两段长长的博物馆时间和一个茶馆下午，每天走路不超过 4 公里。';
-    return `搞定。我给${who}排了 ${planLength()} 天的路线，第一天留给故宫。${zhDetail}想改什么直接说。`;
+          : style === 'Family friendly'
+            ? '每天只排两个重点，中间留足休息和找洗手间的时间，地铁优先、少走回头路。'
+            : style === 'Budget smart'
+              ? '门票按免费或低价优先，午饭挑本地小馆，交通全用地铁和步行。'
+              : '两段长长的博物馆时间和一个茶馆下午，每天走路不超过 4 公里。';
+    const zhNote = note ? `你写的「${note}」我也记下了，排路线时会先顾这个。` : '';
+    return `搞定。我给${who}排了 ${planLength()} 天的路线，第一天留给故宫。${zhDetail}${zhNote}想改什么直接说。`;
   }
   const detail = style === 'Food first'
     ? 'Lunch is a duck stop before the 11:30 queue, and there are coffee gaps between sights.'
@@ -2931,8 +3023,13 @@ function planNarrative(persona) {
       ? 'Mornings stay outside — Jingshan at sunrise, the Great Wall ridge walk, boats at Beihai.'
       : style === 'Night owl'
         ? 'Sights finish by 17:00, then the Drum Tower and Houhai carry you into the evening.'
-        : 'Two long museum stops and a teahouse afternoon, never more than 4 km of walking a day.';
-  return `Done. I built a ${planLength()}-day route for ${who}, keeping the palace on day one. ${detail} Adjust anything by just asking.`;
+        : style === 'Family friendly'
+          ? 'Two highlights a day, with rest and bathroom breaks between them, and metro over long walks.'
+          : style === 'Budget smart'
+            ? 'Free and low-cost sights first, lunch at local noodle shops, metro and walking only.'
+            : 'Two long museum stops and a teahouse afternoon, never more than 4 km of walking a day.';
+  const noteLine = note ? ` And I kept your note in mind: “${note}”.` : '';
+  return `Done. I built a ${planLength()}-day route for ${who}, keeping the palace on day one. ${detail}${noteLine} Adjust anything by just asking.`;
 }
 
 function generatePlan() {
@@ -2962,7 +3059,8 @@ function generatePlan() {
   S.liveStop = 0;
   S.assistantContext = `Plan · ${persona ? tr(persona.fit) : tr('Beijing')} · ${days} days`;
   S.routeName = `${persona ? tr(persona.fit) : tr('Central Axis')} · ${tr('New plan')}`;
-  S.messages.push({ role: 'user', text: `${S.quiz.days} · ${S.quiz.style} · ${S.quiz.theme}` });
+  const note = (S.quiz.note || '').trim();
+  S.messages.push({ role: 'user', text: `${S.quiz.days} · ${S.quiz.style} · ${S.quiz.theme}${note ? ` · ${note}` : ''}` });
   S.thinking = true;
   renderSheet();
   if (S.welcome) renderWelcome();
@@ -3026,7 +3124,7 @@ function assistantSheet() {
     <div class="assistant-head">
       <span class="orb-mini">${sparkleIcon(16)}</span>
       <div class="grow">
-        <h3>Pico</h3>
+        <div class="pico-title"><h3>Pico</h3><span class="live-chip ${PICO_ENDPOINT ? '' : 'off'}"><i></i>${PICO_ENDPOINT ? 'Live AI' : 'Not connected'}</span></div>
         <div class="ctx">${esc(S.planBuilt ? S.assistantContext : 'New trip · Planning with Pico')}</div>
       </div>
       <button class="sheet-close" data-act="close-sheet" aria-label="Close">${icon('x', 10)}</button>
@@ -3089,72 +3187,60 @@ function chatHTML() {
   + (S.thinking ? `<div class="msg"><span class="ava">${sparkleIcon(10)}</span><div class="bubble"><div class="thinking"><i></i><i></i><i></i></div></div></div>` : '');
 }
 
-function replyFor(text) {
-  const t = text.toLowerCase();
-  if (/route|plan|shichahai|schedule|which day|order/.test(t)) {
-    return { role: 'assistant', text: 'I looked at your Central Axis plan: entering the Forbidden City at 09:40 flows best, and moving Shichahai to 13:00 saves 1.2 km. Sunset is 17:42 today — up Jingshan by 17:00 is just right.', actions: [
-      { label: 'Apply to route', act: 'apply-ai', icon: 'sparkle' },
-      { label: 'Open map', act: 'tab', tab: 'plan', plain: true }
-    ] };
-  }
-  if (/ticket|palace|book|booking|wall|summer palace|museum/.test(t)) {
-    return { role: 'assistant', text: 'The Forbidden City still has 812 tickets for 10/15 at 09:00 — ¥60 adult, real name required, so bring your passport. The Great Wall cable car and the Summer Palace are still unbooked; today is a good day to do both.', actions: [
-      { label: 'Open checklist', act: 'checklist', icon: 'check' },
-      { label: 'Book now', act: 'assistant-ticket', plain: true }
-    ] };
-  }
-  if (/eat|food|duck|coffee|dinner|lunch|restaurant/.test(t)) {
-    return { role: 'assistant', text: 'For duck, Siji Minfu at the Forbidden City — arrive before 11 and you walk straight in. For a quiet coffee, Metal Hands in Qianmen has the best light at three.', actions: [
-      { label: 'Browse community', act: 'forum', channel: 'restaurant', icon: 'compass' },
-      { label: 'Add to route', act: 'add-place', dataId: 'p1', plain: true }
-    ] };
-  }
-  if (/hotel|stay|wangfujing|room/.test(t)) {
-    return { role: 'assistant', text: 'The Mandarin Oriental Wangfujing is confirmed: three nights, king room. It is a 12-minute walk to the Forbidden City east gate, so no taxi in the morning. Shall I add luggage storage to your checklist?', actions: [
-      { label: 'See booking', act: 'tab', tab: 'me', icon: 'bed' },
-      { label: 'Add to checklist', act: 'checklist', plain: true }
-    ] };
-  }
-  if (/translat|allerg|english|phrase|medical|say/.test(t)) {
-    return { role: 'assistant', text: 'I have added the sentence about a peanut allergy to your offline phrases, so you can play it without a signal. More urgent lines sit under Translate → Medical.', actions: [
-      { label: 'Open Translate', act: 'tab', tab: 'translate', icon: 'chat' },
-      { label: 'Offline phrases', act: 'tab', tab: 'translate', plain: true }
-    ] };
-  }
-  if (/weather|rain|temperature|cold|hot|forecast/.test(t)) {
-    return { role: 'assistant', text: '10/15–17 sits around 22°C by day and 11°C at night — pack a light jacket. The 18th may bring drizzle; a folding umbrella in your bag is enough.', actions: [
-      { label: 'Add to checklist', act: 'checklist', icon: 'check' },
-      { label: 'Open trip', act: 'tab', tab: 'trip', plain: true }
-    ] };
-  }
-  if (/checklist|passport|visa|prepare|pack|bring|list/.test(t)) {
-    return { role: 'assistant', text: 'Four items are still open: Forbidden City tickets, the Great Wall cable car, the Summer Palace and the National Museum. The Forbidden City is tightest — book today, since it closes on Mondays.', actions: [
-      { label: 'Open checklist', act: 'checklist', icon: 'check' }
-    ] };
-  }
-  if (/event|market|night|join|meet/.test(t)) {
-    return { role: 'assistant', text: 'There is a hutong night market at the Drum & Bell Towers on the 18th — free entry, 128 going, and you are on the list. I can add a reminder to your trip if you like.', actions: [
-      { label: 'See events', act: 'forum', channel: 'event', icon: 'calendar' }
-    ] };
-  }
-  return { role: 'assistant', text: 'Noted. If you want the route changed, tickets booked or a sentence translated, just say so and I will take care of it here.', actions: [
-    { label: 'Open route', act: 'tab', tab: 'plan', icon: 'map' },
-    { label: 'Pre-trip checklist', act: 'checklist', plain: true }
-  ] };
+function formatReply(text) {
+  return esc(text)
+    .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\n{2,}/g, '<br><br>')
+    .replace(/\n/g, '<br>');
 }
 
 function sendChat(text) {
   const t = String(text || '').trim();
   if (!t || S.thinking) return;
-  S.messages.push({ role: 'user', text: t });
+  S.messages.push({ role: 'user', text: t, raw: t });
   S.thinking = true;
   refreshChat();
   clearTimeout(S.chatTimer);
-  S.chatTimer = setTimeout(() => {
-    S.messages.push(replyFor(t));
+
+  if (!PICO_ENDPOINT) {
+    S.chatTimer = setTimeout(() => {
+      S.thinking = false;
+      S.messages.push({ role: 'assistant', text: esc(tr("Pico's live model isn't connected on this static page. Open the hosted RoamChina demo to chat for real.")) });
+      refreshChat();
+    }, 500);
+    return;
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 48000);
+  fetch(PICO_ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ messages: chatHistory(), context: picoContext() }),
+    signal: controller.signal
+  }).then(async (response) => {
+    const data = await response.json().catch(() => null);
+    if (!response.ok || !data || data.ok !== true || typeof data.reply !== 'string' || !data.reply.trim()) {
+      const message = data && data.error === 'rate_limited'
+        ? "Pico is getting a lot of questions right now. Try again in a minute."
+        : "Pico couldn't reach the live model just now. Try once more in a moment.";
+      throw new Error(message);
+    }
+    const reply = data.reply.trim();
     S.thinking = false;
+    S.messages.push({ role: 'assistant', text: formatReply(reply), raw: reply, live: true });
     refreshChat();
-  }, 700);
+  }).catch((error) => {
+    S.thinking = false;
+    const message = error && error.name === 'AbortError'
+      ? "That took too long. Check the connection and ask me again."
+      : (error && error.message) || "Pico couldn't reach the live model just now.";
+    S.messages.push({ role: 'assistant', text: esc(tr(message)) });
+    refreshChat();
+  }).finally(() => {
+    clearTimeout(timeout);
+  });
 }
 
 /* ---------- similar ---------- */
@@ -3896,7 +3982,7 @@ document.addEventListener('click', (e) => {
       break;
     }
     case 'quiz-reset':
-      S.quiz = { days: null, style: null, theme: null };
+      S.quiz = { days: null, style: null, theme: null, note: '' };
       render();
       requestAnimationFrame(() => {
         document.querySelector('.quiz-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -4175,6 +4261,13 @@ document.addEventListener('input', (e) => {
   if (t.matches('[data-field]')) {
     S.draft[t.dataset.field] = t.value;
     updateComposePreview();
+  }
+  if (t.matches('[data-quiz-note]')) {
+    S.quiz.note = t.value.slice(0, 140);
+    const count = document.querySelector('[data-quiz-count]');
+    if (count) count.textContent = `${S.quiz.note.length}/140`;
+    const card = t.closest('.planner-custom');
+    if (card) card.classList.toggle('filled', !!S.quiz.note.trim());
   }
 });
 
