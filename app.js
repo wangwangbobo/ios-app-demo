@@ -1304,8 +1304,8 @@ function render(resetScroll = false) {
   if (S.tab === 'plan') initMapDrag();
   if (S.tab === 'plan' && S.tripEdit && !S.tripLive) {
     initMapDrag('#tripMapBody', activeDay().stops);
-    initTripStopDrag();
   }
+  if (S.tab === 'plan' && !S.tripLive) initTripStopDrag();
   if (S.tab === 'plan') bindMapZooms();
   renderWelcome();
   renderRecap();
@@ -1659,9 +1659,7 @@ function tripStopRow(stop, index) {
       <b>${esc(stop.name)} ${stop.tag ? tag(stop.tag, stop.tagStyle || 'soft') : ''}</b>
       <small><span>${esc(stop.duration || '45 min')}</span> · <span>${index === 0 ? 'Start here' : 'on the route'}</span></small>
     </button>
-    ${S.tripEdit
-      ? `<span class="tdrag"><span class="drag-grip" data-grip="${stop.id}" role="button" tabindex="0" aria-label="Drag ${esc(stop.name)} to reorder">${icon('grip', 13)}</span></span>`
-      : `<span class="grip">${icon('sliders', 10)}</span>`}
+    <span class="tdrag"><span class="drag-grip" data-grip="${stop.id}" role="button" tabindex="0" aria-label="Drag ${esc(stop.name)} to reorder">${icon('grip', 13)}</span></span>
   </div>`;
 }
 
