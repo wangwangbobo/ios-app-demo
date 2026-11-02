@@ -309,8 +309,8 @@ const SIGN = [
 
 /* ---------- state ---------- */
 const S = {
-  tab: 'trip',
-  lastTab: 'trip',
+  tab: 'plan',
+  lastTab: 'plan',
   stops: STOPS.map((s) => ({ ...s })),
   selected: null,
   editMode: false,
@@ -391,7 +391,7 @@ const PICO_ENDPOINT = (() => {
 })();
 
 function picoContext() {
-  const day = S.tab === 'trip' && S.planBuilt ? activeDay() : null;
+  const day = S.tab === 'plan' && S.planBuilt ? activeDay() : null;
   return {
     tab: TAB_CTX[S.tab] || S.tab,
     day: day ? `${day.title} · ${day.date}` : '',
@@ -1260,22 +1260,20 @@ function mapBase() {
 
 /* ---------- shell render ---------- */
 const TABS = [
-  { id: 'trip', label: 'Trip', icon: 'home', badge: 0 },
-  { id: 'plan', label: 'Plan', icon: 'map', badge: 1 },
+  { id: 'plan', label: 'Trip', icon: 'map', badge: 0 },
   { id: 'forum', label: 'Community', icon: 'compass', badge: 0 },
   { id: 'translate', label: 'Translate', icon: 'chat', badge: 0 },
   { id: 'me', label: 'Me', icon: 'user', badge: 0 }
 ];
 const TAB_CTX = {
-  trip: 'Trip · 10/15 Forbidden City',
-  plan: 'Plan · Central Axis',
+  plan: 'Trip · Central Axis',
   forum: 'Community · Food & routes',
   translate: 'Translate · Emergency phrases',
   me: 'Me · Bookings & offline packs'
 };
 
 function renderDock() {
-  const ctx = S.tab === 'trip' ? `Trip · ${activeDay().date} ${activeDay().title}` : TAB_CTX[S.tab];
+  const ctx = (S.tab === 'plan' && S.planBuilt) ? `Trip · ${activeDay().date} ${activeDay().title}` : TAB_CTX[S.tab];
   $('#dock').innerHTML = TABS.map((t) => `
     <button class="tab ${S.tab === t.id ? 'active' : ''}" data-act="tab" data-tab="${t.id}" aria-label="${t.label}" aria-current="${S.tab === t.id ? 'page' : 'false'}">
       ${icon(t.icon, 18)}<span>${t.label}</span>
@@ -1285,75 +1283,30 @@ function renderDock() {
 }
 
 const screens = {
-  trip: tripView,
-  plan: planView,
+  plan: tripView,
   forum: forumView,
   translate: translateView,
   me: meView
 };
 
-let heroTimer = 0;
-let heroResumeAt = 0;
-const HERO_DELAY = 4500;
-
-function initHeroCarousel() {
-  const track = $('#heroTrack');
-  if (!track) return;
-  const dots = $$('.hero-dot', track.parentElement);
-  const label = $('[data-hero-index]', track.parentElement);
-  const apply = (i) => {
-    S.hero = clamp(i, 0, TRIP_HERO.length - 1);
-    dots.forEach((d, j) => {
-      d.classList.toggle('on', j === S.hero);
-      d.setAttribute('aria-current', j === S.hero ? 'true' : 'false');
-    });
-    if (label) label.textContent = String(S.hero + 1);
-  };
-  if (S.hero && track.clientWidth) track.scrollLeft = track.clientWidth * S.hero;
-  apply(S.hero);
-  let raf = 0;
-  track.addEventListener('scroll', () => {
-    cancelAnimationFrame(raf);
-    raf = requestAnimationFrame(() => apply(Math.round(track.scrollLeft / Math.max(1, track.clientWidth))));
-  }, { passive: true });
-
-  const hold = () => { heroResumeAt = Date.now() + 9000; };
-  ['pointerdown', 'touchstart', 'wheel'].forEach((evt) => track.addEventListener(evt, hold, { passive: true }));
-
-  const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (reduceMotion) return;
-  clearInterval(heroTimer);
-  heroTimer = setInterval(() => {
-    if (document.hidden || S.sheet || S.tab !== 'trip') return;
-    if (Date.now() < heroResumeAt) return;
-    const t = $('#heroTrack');
-    if (!t || !t.clientWidth) return;
-    const next = (S.hero + 1) % TRIP_HERO.length;
-    t.scrollTo({ left: t.clientWidth * next, behavior: 'smooth' });
-  }, HERO_DELAY);
-}
-
 function render(resetScroll = false) {
   const v = $('#view');
   const old = v.scrollTop;
   v.innerHTML = `<div class="screen ${S.tab === 'plan' ? 'fill' : ''}">${screens[S.tab]()}</div>`;
-  v.classList.toggle('has-cta', S.tab === 'trip' && S.planBuilt);
+  v.classList.toggle('has-cta', S.tab === 'plan' && S.planBuilt);
   const cta = $('#ctaLayer');
-  if (cta) cta.innerHTML = (S.tab === 'trip' && S.planBuilt) ? (S.tripLive ? liveCTAHTML() : tripCTAHTML()) : '';
+  if (cta) cta.innerHTML = (S.tab === 'plan' && S.planBuilt) ? (S.tripLive ? liveCTAHTML() : tripCTAHTML()) : '';
   if (S.tab !== S.lastTab || resetScroll) v.scrollTop = 0;
   else v.scrollTop = old;
   S.lastTab = S.tab;
   renderDock();
   if (S.sheet) renderSheet();
   if (S.tab === 'plan') initMapDrag();
-  if (S.tab === 'plan') initPlanStopDrag();
-  if (S.tab === 'trip' && S.tripEdit && !S.tripLive) {
+  if (S.tab === 'plan' && S.tripEdit && !S.tripLive) {
     initMapDrag('#tripMapBody', activeDay().stops);
     initTripStopDrag();
   }
-  clearInterval(heroTimer);
-  if (S.tab === 'trip') initHeroCarousel();
-  if (S.tab === 'plan' || S.tab === 'trip') bindMapZooms();
+  if (S.tab === 'plan') bindMapZooms();
   renderWelcome();
   renderRecap();
   zhify(v);
@@ -1539,7 +1492,7 @@ function activeDay() {
 }
 
 function activeStops() {
-  return (S.tab === 'trip' && S.planBuilt) ? activeDay().stops : S.stops;
+  return (S.tab === 'plan' && S.planBuilt) ? activeDay().stops : S.stops;
 }
 
 function dayStats(day) {
@@ -1595,7 +1548,11 @@ function tripView() {
 
     <div class="section-title" style="margin-top:16px">
       <div class="st-left"><span class="idx idx-logo">${icon('map', 11)}</span><h2>Your route</h2></div>
-      <button class="link" data-act="assistant" data-ctx="Trip · ${esc(day.title)}">Ask Pico ${icon('arrowur', 8)}</button>
+      <span class="row" style="gap:10px">
+        <button class="link" data-act="notes">${icon('doc', 9)}${tr('Note')}</button>
+        <button class="link" data-act="share-route">${icon('share', 9)}${tr('Share')}</button>
+        <button class="link" data-act="assistant" data-ctx="Trip · ${esc(day.title)}">Ask Pico ${icon('arrowur', 8)}</button>
+      </span>
     </div>
 
     <article class="plan-card">
@@ -1609,7 +1566,11 @@ function tripView() {
         <div class="map-inner">
           ${mapBase()}
           <div class="map-wash"></div>
+          ${collaborator('Lina', 'left:74%;top:33%')}
+          ${collaborator('Zhou', 'left:27%;top:58%', true)}
           <div class="map-body" id="tripMapBody">
+            ${communityOverlay()}
+            ${crowdOverlay()}
             <svg class="route-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
               <path d="${routePathD(stops)}" fill="none" stroke="var(--ink)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
               <path d="${routePathD(stops)}" fill="none" stroke="var(--coral)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
@@ -1623,6 +1584,12 @@ function tripView() {
           <button class="small-chip ${S.mapExpanded ? 'on' : ''}" data-act="map-expand" aria-label="${S.mapExpanded ? 'Collapse map' : 'Expand map'}">${icon(S.mapExpanded ? 'contract' : 'expand', 9)}${S.mapExpanded ? 'Collapse' : 'Expand'}</button>
         </div>
         ${mapZoomBtns()}
+      </div>
+
+      <div class="chips" style="padding:0 2px">
+        <button class="chip ${S.layer === 'mine' ? 'on' : ''}" data-act="layer" data-layer="mine">${tr('My route')}</button>
+        <button class="chip ${S.layer === 'community' ? 'on' : ''}" data-act="layer" data-layer="community">${tr('Community 3')}</button>
+        <button class="chip ${S.layer === 'crowd' ? 'on' : ''}" data-act="layer" data-layer="crowd">${tr('Crowds')}</button>
       </div>
 
       <div class="rc-head">
@@ -1912,89 +1879,6 @@ function sunsetArt() {
 }
 
 /* ================= PLAN ================= */
-function planView() {
-  const stops = S.stops;
-  return `<div class="plan">
-    <div class="map">
-      <div class="map-inner">
-        ${mapBase()}
-        <div class="map-wash"></div>
-        <span class="map-label" style="left:20%;top:31%">Shichahai</span>
-        <span class="map-label" style="left:71%;top:27%">Nanluoguxiang</span>
-        <span class="map-label" style="left:68%;top:50%">Forbidden City</span>
-        <span class="map-label" style="left:71%;top:40%">Jingshan</span>
-        ${collaborator('Lina', 'left:74%;top:33%')}
-        ${collaborator('Zhou', 'left:27%;top:58%', true)}
-        <div class="map-body" id="mapBody">
-          ${communityOverlay()}
-          ${crowdOverlay()}
-          <svg class="route-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-            <path d="${routePathD()}" fill="none" stroke="var(--ink)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
-            <path d="${routePathD()}" fill="none" stroke="var(--coral)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
-          </svg>
-          ${stops.map((s, i) => pinHTML(s, i)).join('')}
-        </div>
-      </div>
-      ${mapZoomBtns()}
-      ${S.editMode ? `<div class="map-hint">${icon('hand', 9)} ${icon('move', 8)} Drag a numbered dot — the route recalculates</div>` : ''}
-    </div>
-
-    <header class="plan-head">
-      <div class="spread" style="align-items:flex-start">
-        <div>
-          <div class="eyebrow"><span class="eyebrow-line"></span>My plan / CITYWALK <span class="tag lime" style="transform:rotate(3deg)">DAY 02</span></div>
-          <div class="name">${esc(tr(S.routeName))}</div>
-          <div class="meta">${stops.length} stops · 4.2 km · ~5 hr</div>
-        </div>
-        <div class="plan-head-right">
-          <button class="plan-note" data-act="notes">${icon('doc', 10)}Make a note</button>
-          <div class="row" style="justify-content:flex-end;gap:6px">
-            <div class="avatar-stack"><div class="avatar sm">L</div><div class="avatar sm pink">Z</div></div>
-            <button class="icon-btn" data-act="share-route" aria-label="Share route" style="width:31px;height:31px">${icon('share', 13)}</button>
-          </div>
-        </div>
-      </div>
-      <div class="chips">
-        <button class="chip ${S.layer === 'mine' ? 'on' : ''}" data-act="layer" data-layer="mine">My route</button>
-        <button class="chip ${S.layer === 'community' ? 'on' : ''}" data-act="layer" data-layer="community">Community 3</button>
-        <button class="chip ${S.layer === 'crowd' ? 'on' : ''}" data-act="layer" data-layer="crowd">Crowds</button>
-        ${S.editMode ? `<span class="chip lime" style="margin-left:auto">${icon('hand', 9)} Drag stops</span>` : ''}
-      </div>
-    </header>
-
-    <div class="plan-panel">
-      <div class="grab"></div>
-      <div class="panel-top">
-        <div>
-          <h3>${stops.length} stops · 4.2 km</h3>
-          <div class="meta">${S.editMode ? 'Drag the numbered dots · route updates live' : '~5 hr · walk + metro'}</div>
-        </div>
-        <div class="actions">
-          <button class="small-chip ${S.editMode ? 'on' : ''}" data-act="toggle-edit">${icon(S.editMode ? 'check' : 'hand', 9)}${S.editMode ? 'Done' : 'Adjust stops'}</button>
-          <button class="small-chip" data-act="reorder">${icon('updown', 9)}Reorder</button>
-        </div>
-      </div>
-
-      ${S.aiVisible && !S.editMode ? `
-      <div class="ai-bar">
-        <span class="spark">${sparkleIcon(10)}</span>
-        <span>Pico: move Shichahai to 13:00</span>
-        <span class="note">1.2 km less</span>
-        <button data-act="apply-ai">Apply</button>
-      </div>` : ''}
-
-      <div class="stops${S.editMode ? ' edit' : ''}" id="stopList">
-        ${stops.map((s, i) => stopRowHTML(s, i)).join('')}
-      </div>
-
-      <div class="panel-actions">
-        <button class="pa dashed" data-act="assistant" data-ctx="Plan · Add a place">${icon('plus', 10)}Add place</button>
-        <button class="pa lime" data-act="similar">${icon('layers', 10)}Similar routes</button>
-      </div>
-    </div>
-  </div>`;
-}
-
 function collaborator(name, pos, lime = false) {
   return `<div class="collab ${lime ? 'lime' : ''}" style="${pos};opacity:${S.layer === 'community' ? 1 : .55}">
     <svg viewBox="0 0 24 24" fill="var(--ink)"><path d="M5 3l14 9-6 1.5L10 20z"/></svg>
@@ -2010,19 +1894,6 @@ function pinHTML(stop, index) {
     ${editing ? `<span class="move">${icon('move', 7)}</span>` : ''}
   </button>
   ${selected ? `<div class="pin-label" style="left:${stop.x * 100}%;top:${stop.y * 100}%"><b>${esc(stop.name)}</b><span>${esc(stop.time)}</span></div>` : ''}`;
-}
-function stopRowHTML(stop, index) {
-  const colors = ['var(--mustard)', 'var(--pink)', 'var(--mint)', 'var(--peri)', 'var(--lime)', 'var(--sky)'];
-  const selected = S.selected === stop.id;
-  const grip = S.editMode
-    ? `<span class="grip" data-plan-grip="${stop.id}" title="${S.lang === 'zh' ? '拖动排序' : 'Drag to reorder'}">${icon('grip', 11)}</span>`
-    : `<span class="grip">${icon(selected ? 'arrowur' : 'sliders', 10)}</span>`;
-  return `<button class="stop-row ${selected ? 'on' : ''}" data-act="select-stop" data-id="${stop.id}" data-index="${index}">
-    <span class="time">${esc(stop.time)}</span>
-    <span class="num" style="background:${colors[index % colors.length]}">${index + 1}</span>
-    <span class="info"><b>${esc(stop.name)} ${stop.tag ? tag(stop.tag, stop.tagStyle || 'soft') : ''}</b><small>${esc(stop.duration)} · 6 min walk</small></span>
-    ${grip}
-  </button>`;
 }
 function communityOverlay() {
   if (S.layer !== 'community') return '';
@@ -2715,7 +2586,7 @@ function meView() {
       <div class="who">
         <div class="avatar-stack"><div class="avatar sm">L</div><div class="avatar sm pink">Z</div></div>
         <span>With Lin and Zhou</span>
-        <button class="view-trip" data-act="tab" data-tab="trip">View trip</button>
+        <button class="view-trip" data-act="tab" data-tab="plan">View trip</button>
       </div>
       <div class="quick">
         <button data-act="checklist">${icon('check', 8)}List ${doneCount()}/${S.checklist.length}</button>
@@ -3486,14 +3357,14 @@ function generatePlan() {
     if (S.welcome) {
       S.welcome = false;
       renderWelcome();
-      S.tab = 'trip';
+      S.tab = 'plan';
       S.tripDay = 0;
       render(true);
       toast(`Plan ready · ${days} days on your trip`, 'sparkle');
     } else if (S.sheet === 'assistant') {
       refreshChat();
       closeSheet();
-      S.tab = 'trip';
+      S.tab = 'plan';
       render(true);
       toast(`Plan ready · ${days} days on your trip`, 'sparkle');
     } else {
@@ -3770,13 +3641,6 @@ function onTripGripEnd(event) {
 /* ---------- drag plan stop rows ---------- */
 let planStopDrag = null;
 
-function initPlanStopDrag() {
-  if (!S.editMode) return;
-  $$('#stopList [data-plan-grip]').forEach((grip) => {
-    grip.addEventListener('pointerdown', onPlanGripDown);
-  });
-}
-
 function onPlanGripDown(event) {
   if (event.button !== undefined && event.button !== 0) return;
   const grip = event.currentTarget;
@@ -3856,7 +3720,7 @@ function onPlanGripEnd(event) {
 function reorderSheet() {
   const stops = activeStops();
   return `<div class="sheet medium">
-    ${sheetHead('Reorder stops', S.tab === 'trip' ? `ROUTE · DAY ${String(clamp(S.tripDay, 0, tripDays().length - 1) + 1).padStart(2, '0')}` : 'ROUTE · TUNE THE ORDER')}
+    ${sheetHead('Reorder stops', `ROUTE · DAY ${String(clamp(S.tripDay, 0, tripDays().length - 1) + 1).padStart(2, '0')}`)}
     <div class="sheet-body">
       <p class="sub" style="margin:2px 0 8px">Use the arrows to change the order; the route and times recalculate.</p>
       ${stops.map((s, i) => `<div class="reorder-row">
@@ -4138,9 +4002,8 @@ function applySimilar(index) {
   S.routeName = r.title;
   S.aiVisible = false;
   markPlanEdited();
-  const wasTrip = S.tab === 'trip';
   closeSheet();
-  S.tab = wasTrip ? 'trip' : 'plan';
+  S.tab = 'plan';
   render(true);
   toast(`Applied “${r.title}”`, 'check');
 }
@@ -4158,9 +4021,8 @@ function applyForumRoute(index) {
   S.routeName = r.title;
   S.aiVisible = false;
   markPlanEdited();
-  const wasTrip = S.tab === 'trip';
   closeSheet();
-  S.tab = wasTrip ? 'trip' : 'plan';
+  S.tab = 'plan';
   render(true);
   toast(`Applied “${r.title}”`, 'check');
 }
@@ -4428,7 +4290,7 @@ document.addEventListener('click', (e) => {
   switch (act) {
     case 'tab':
       closeSheet();
-      go(el.dataset.tab || 'trip', el.dataset.channel || null);
+      go(el.dataset.tab || 'plan', el.dataset.channel || null);
       break;
     case 'forum':
       closeSheet();
@@ -4464,7 +4326,7 @@ document.addEventListener('click', (e) => {
     case 'open-trip':
       closeSheet();
       S.tripDay = 0;
-      go('trip');
+      go('plan');
       toast(`Your plan · ${planLength()} days`, 'map');
       break;
     case 'trip-day': {
@@ -4866,7 +4728,7 @@ document.addEventListener('click', (e) => {
     }
     case 'assistant-ticket':
       closeSheet();
-      S.tab = 'trip';
+      S.tab = 'plan';
       render(true);
       toast('Opened Forbidden City booking', 'ticket');
       break;
@@ -4939,7 +4801,7 @@ window.addEventListener('hashchange', () => {
       return;
     }
   }
-  const tab = ['trip', 'plan', 'forum', 'translate', 'me'].includes(raw) ? raw : 'trip';
+  const tab = ['plan', 'forum', 'translate', 'me'].includes(raw) ? raw : 'plan';
   if (tab !== S.tab || S.forumChannel) {
     S.tab = tab;
     S.forumChannel = null;
@@ -4956,7 +4818,7 @@ function boot() {
       S.tab = 'forum';
       S.forumChannel = ch;
     }
-  } else if (['trip', 'plan', 'forum', 'translate', 'me'].includes(raw)) {
+  } else if (['plan', 'forum', 'translate', 'me'].includes(raw)) {
     S.tab = raw;
   }
   if (!S.planBuilt) {
