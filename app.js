@@ -533,7 +533,7 @@ const ZH = {
   'All posts': '全部帖子', 'Nearby posts': '附近帖子', 'Ask Pico to plan it': '让 Pico 规划',
   'Save this walk': '收藏这条路线', 'Open in map': '在地图中打开',
   'Zoom in': '放大地图', 'Zoom out': '缩小地图', 'Reset zoom': '重置缩放',
-  'Expand map': '展开地图框', 'Collapse map': '收起地图框',
+  'Expand map': '展开地图框', 'Collapse map': '收起地图框', 'Expand': '展开', 'Collapse': '收起',
   // community feed content
   'Where to eat': '去哪儿吃', 'Trending · 4 spots': '热门 · 4 家',
   'What to see': '看什么', 'This week · 3 places': '本周 · 3 处',
