@@ -1523,7 +1523,7 @@ const GEO_QUERY = {
   'Shichahai': '什刹海',
   'Shichahai at dusk': '什刹海',
   'Nanluoguxiang': '南锣鼓巷',
-  'Drum & Bell Towers': '鼓楼',
+  'Drum & Bell Towers': '北京鼓楼',
   'Badaling Great Wall': '八达岭长城',
   'Olympic Forest Park': '奥林匹克森林公园',
   'Summer Palace': '颐和园',
@@ -1558,7 +1558,7 @@ function geoQuery(name) {
 
 function loadGeoCache() {
   try {
-    const raw = localStorage.getItem('rc_geo_v1');
+    const raw = localStorage.getItem('rc_geo_v2');
     const parsed = raw ? JSON.parse(raw) : null;
     return parsed && typeof parsed === 'object' ? parsed : {};
   } catch (e) {
@@ -1567,7 +1567,7 @@ function loadGeoCache() {
 }
 
 function saveGeoCache() {
-  try { localStorage.setItem('rc_geo_v1', JSON.stringify(S.geo)); } catch (e) {}
+  try { localStorage.setItem('rc_geo_v2', JSON.stringify(S.geo)); } catch (e) {}
 }
 
 function geoFor(stop) {
