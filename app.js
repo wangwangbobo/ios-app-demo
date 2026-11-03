@@ -2060,6 +2060,11 @@ function liveTripView() {
   const nextLeg = layout && layout.legs && layout.legs[S.liveStop];
   const nextMin = nextLeg ? Math.max(1, Math.round(nextLeg.durationS / 60)) : 6;
   const nextMode = nextLeg && nextLeg.mode === 'drive' ? 'DRIVE' : 'WALK';
+  const navMode = leg && leg.mode === 'drive' ? 'car' : 'walk';
+  const navName = encodeURIComponent(geoQuery(stop.name) || stop.name);
+  const navUrl = geo
+    ? `https://uri.amap.com/navigation?to=${geo.lng},${geo.lat},${navName}&mode=${navMode}&callnative=1`
+    : `https://uri.amap.com/search?keyword=${navName}&city=${encodeURIComponent('北京')}`;
   const distanceWord = droveAny(layout, visited) ? 'travelled' : 'walked';
   const shortTitle = day.title.split('·')[0].trim();
 
@@ -2126,7 +2131,7 @@ function liveTripView() {
       <div class="now-loc">${icon('pin', 9)}<span>${idx === 0 ? 'Start point · 120 m away' : `${fromLast} from the last stop`} · ${lat}° N ${lng}° E</span></div>
       <div class="now-actions">
         <button data-act="assistant" data-ctx="Live · ${esc(stop.name)}">${sparkleIcon(9)}Ask Pico</button>
-        <button data-act="toast" data-text="Navigation opened · ${esc(stop.name)}" data-icon="pin">${icon('map', 9)}Navigate</button>
+        <button data-act="navigate" data-url="${navUrl}">${icon('map', 9)}Navigate</button>
       </div>
     </article>
 
@@ -5097,6 +5102,9 @@ document.addEventListener('click', (e) => {
       break;
     case 'toast':
       toast(el.dataset.text || 'Done', el.dataset.icon || 'check');
+      break;
+    case 'navigate':
+      window.open(el.dataset.url, '_blank', 'noopener');
       break;
     default:
       break;
