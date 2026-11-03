@@ -1003,14 +1003,21 @@ const ZH_RULES = [
   [/^You covered (\d+) stops and ([\d.]+) km\. Your plan and the other (\d+) days are still saved\.$/, '你走完了 $1 站、$2 公里。计划和其他 $3 天都还保存着。'],
   [/^Stop (\d+) \/ (\d+)$/, '第 $1 站 / 共 $2 站'],
   [/^UP NEXT · (\d+) MIN$/, '下一站 · 步行 $1 分钟'],
+  [/^UP NEXT · (\d+) MIN WALK$/, '下一站 · 步行 $1 分钟'],
+  [/^UP NEXT · (\d+) MIN DRIVE$/, '下一站 · 车程 $1 分钟'],
   [/^NOW · ([\d:]+)$/, '当前 · $1'],
   [/^([\d:]+) · ([\d.]+) hr$/, '$1 · $2 小时'],
   [/^([\d:]+) · (\d+) min$/, '$1 · $2 分钟'],
   [/^([\d.]+) km walked · ends about ([\d:]+)$/, '走了 $1 公里 · 预计 $2 结束'],
   [/^([\d.]+) km walked · all stops covered$/, '走了 $1 公里 · 全部站点完成'],
+  [/^([\d.]+) km travelled · ends about ([\d:]+)$/, '行程 $1 公里 · 预计 $2 结束'],
+  [/^([\d.]+) km travelled · all stops covered$/, '行程 $1 公里 · 全部站点完成'],
+  [/^km travelled$/, '公里'],
   [/^Start point · 120 m away · (.+)$/, '起点 · 120 米外 · $1'],
   [/^(\d+) min walk from the last stop · (.+)$/, '距上一站步行 $1 分钟 · $2'],
+  [/^(\d+) min drive from the last stop · (.+)$/, '距上一站车程 $1 分钟 · $2'],
   [/^(\d+) min walk$/, '$1 分钟步行'],
+  [/^(\d+) min drive$/, '$1 分钟车程'],
   [/^6 min walk from the last stop · (.+)$/, '距上一站步行 6 分钟 · $1'],
   [/^of (.+) explorers$/, '$1探索者'],
   [/^rarest ([\d.]+)%$/, '稀有 $1%'],
@@ -1516,6 +1523,7 @@ const AMAP_ROUTE_ENDPOINT = AMAP_BASE_ENDPOINT ? `${AMAP_BASE_ENDPOINT}/route` :
 /* Amap geocodes Chinese addresses; these are the query names behind the
    English labels used across the trip. */
 const GEO_QUERY = {
+  'Leave the hotel': '王府井',
   'Tiananmen Square': '天安门广场',
   'Forbidden City': '故宫博物院',
   'Jingshan Park': '景山公园',
@@ -1550,7 +1558,6 @@ function geoQuery(name) {
   const raw = String(name || '').trim();
   if (!raw) return '';
   if (GEO_QUERY[raw]) return GEO_QUERY[raw];
-  if (/^leave the hotel$/i.test(raw)) return '';
   const lunch = /^lunch in (.+)$/i.exec(raw);
   if (lunch) return GEO_QUERY[lunch[1]] || lunch[1];
   return raw;
@@ -1635,6 +1642,18 @@ function routeKm(layout, visited) {
   return legs.reduce((sum, leg) => sum + leg.distanceM, 0) / 1000;
 }
 
+/* Amap legs carry their mode: short hops stay walking, car transfers drive. */
+function legPhrase(leg) {
+  if (!leg) return '';
+  const minutes = Math.max(1, Math.round(leg.durationS / 60));
+  return `${minutes} min ${leg.mode === 'drive' ? 'drive' : 'walk'}`;
+}
+
+function droveAny(layout, count) {
+  if (!layout || !layout.legs) return false;
+  return layout.legs.slice(0, Math.max(0, count)).some((leg) => leg.mode === 'drive');
+}
+
 function amapLegPoints(layout, count) {
   if (!layout || !layout.legs) return [];
   const out = [];
@@ -1708,16 +1727,6 @@ async function amapBuildRoute(key, stops, entries) {
   const project = projectGeo(coords);
   const points = coords.map((c) => project(c.lng, c.lat));
 
-  const lats = coords.map((c) => c.lat);
-  const lngs = coords.map((c) => c.lng);
-  const spread = Math.max(Math.max(...lats) - Math.min(...lats), Math.max(...lngs) - Math.min(...lngs));
-  // Far-flung days (car transfer, airport) read badly on a neighbourhood map:
-  // keep real coordinates for labels, but keep the seeded drawing.
-  if (spread > 0.16) {
-    S.amap[key] = { complete: true, points: null };
-    return;
-  }
-
   S.amap[key] = { complete: true, points, legs: [] };
   render();
 
@@ -1740,6 +1749,7 @@ async function amapBuildRoute(key, stops, entries) {
   const legs = (data.legs || []).map((leg) => ({
     distanceM: Number(leg.distanceM) || 0,
     durationS: Number(leg.durationS) || 0,
+    mode: leg.mode === 'drive' ? 'drive' : 'walk',
     points: (leg.polyline || []).map((pair) => project(pair[0], pair[1]))
   }));
   S.amap[key] = {
@@ -1986,7 +1996,7 @@ function tripStopRow(stop, index, layout = null) {
   const leg = layout && layout.legs && layout.legs[index - 1];
   const walk = index === 0
     ? 'Start here'
-    : leg ? `${Math.max(1, Math.round(leg.durationS / 60))} min walk` : 'on the route';
+    : leg ? legPhrase(leg) : 'on the route';
   return `<div class="trow ${selected ? 'on' : ''}" data-stop="${stop.id}" data-index="${index}">
     <span class="time">${esc(stop.time)}</span>
     <span class="num" style="background:${colors[index % colors.length]}">${index + 1}</span>
@@ -2045,9 +2055,11 @@ function liveTripView() {
   const here = (s, i) => (layout && layout.points && layout.points[i]) ? layout.points[i] : { x: s.x, y: s.y };
   const hereNow = here(stop, idx);
   const leg = layout && layout.legs && layout.legs[idx - 1];
-  const legMin = leg ? Math.max(1, Math.round(leg.durationS / 60)) : 6;
+  const fromLast = leg ? legPhrase(leg) : '6 min walk';
   const nextLeg = layout && layout.legs && layout.legs[S.liveStop];
   const nextMin = nextLeg ? Math.max(1, Math.round(nextLeg.durationS / 60)) : 6;
+  const nextMode = nextLeg && nextLeg.mode === 'drive' ? 'DRIVE' : 'WALK';
+  const distanceWord = droveAny(layout, visited) ? 'travelled' : 'walked';
   const shortTitle = day.title.split('·')[0].trim();
 
   return `
@@ -2068,7 +2080,7 @@ function liveTripView() {
         ${ring(pct / 100, 42, 3.6, 'var(--coral)', 'rgba(25,23,16,.14)', `${pct}%`)}
         <div class="grow">
           <b>${done ? 'Trip complete' : visited === 0 ? 'Just started · first stop ahead' : `${visited} of ${n} stops done`}</b>
-          <small>${walked} km walked · ${done ? 'all stops covered' : `ends about ${eta}`}</small>
+          <small>${walked} km ${distanceWord} · ${done ? 'all stops covered' : `ends about ${eta}`}</small>
         </div>
         ${done ? '' : `<span class="live-where">${icon('pin', 9)}${esc(stop.name.split('·')[0].trim())}</span>`}
       </div>
@@ -2099,7 +2111,7 @@ function liveTripView() {
       <p>You covered ${n} stops and ${walked} km. Your plan and the other ${days.length - 1} days are still saved.</p>
       <div class="done-stats">
         <div><b>${n}</b><span>stops</span></div>
-        <div><b>${walked}</b><span>km walked</span></div>
+        <div><b>${walked}</b><span>km ${distanceWord}</span></div>
         <div><b>${eta}</b><span>finished</span></div>
       </div>
     </article>` : `
@@ -2110,7 +2122,7 @@ function liveTripView() {
       </div>
       <div class="now-title">${esc(stop.name)}</div>
       <div class="now-meta"><span>${esc(stop.duration || '45 min')}</span> · <span>${esc(stop.tag || 'On the route')}</span></div>
-      <div class="now-loc">${icon('pin', 9)}<span>${idx === 0 ? 'Start point · 120 m away' : `${legMin} min walk from the last stop`} · ${lat}° N ${lng}° E</span></div>
+      <div class="now-loc">${icon('pin', 9)}<span>${idx === 0 ? 'Start point · 120 m away' : `${fromLast} from the last stop`} · ${lat}° N ${lng}° E</span></div>
       <div class="now-actions">
         <button data-act="assistant" data-ctx="Live · ${esc(stop.name)}">${sparkleIcon(9)}Ask Pico</button>
         <button data-act="toast" data-text="Navigation opened · ${esc(stop.name)}" data-icon="pin">${icon('map', 9)}Navigate</button>
@@ -2118,7 +2130,7 @@ function liveTripView() {
     </article>
 
     ${next ? `<button class="next-card" data-act="trip-live-next">
-      <span class="nc-label">UP NEXT · ${nextMin} MIN</span>
+      <span class="nc-label">UP NEXT · ${nextMin} MIN ${nextMode}</span>
       <span class="nc-main"><b>${esc(next.name)}</b><small>${esc(next.time)} · ${esc(next.duration || '45 min')}</small></span>
       <span class="nc-go">${icon('right', 9)}</span>
     </button>` : `<div class="next-card last"><span class="nc-label">LAST STOP</span><span class="nc-main"><b>Finish here</b><small>Tap Next stop to wrap up the day</small></span></div>`}
