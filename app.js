@@ -1524,6 +1524,7 @@ const AMAP_ROUTE_ENDPOINT = AMAP_BASE_ENDPOINT ? `${AMAP_BASE_ENDPOINT}/route` :
    English labels used across the trip. */
 const GEO_QUERY = {
   'Leave the hotel': '王府井',
+  'Hotel pickup': '王府井',
   'Tiananmen Square': '天安门广场',
   'Forbidden City': '故宫博物院',
   'Jingshan Park': '景山公园',
