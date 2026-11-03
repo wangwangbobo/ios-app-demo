@@ -2074,3 +2074,13 @@ img{max-width:100%;display:block}
 @media (max-height:720px){
   .cover-ghost{font-size:150px;top:74px}
 }
+
+/* real map data credit (Amap) */
+.map-credit{
+  position:absolute;left:8px;bottom:6px;z-index:6;
+  display:inline-flex;align-items:center;gap:3px;
+  background:rgba(255,252,242,.86);border:1px solid rgba(25,23,16,.22);
+  border-radius:999px;padding:2px 6px;font:700 7px var(--mono);color:var(--ink3);
+  pointer-events:none;
+}
+.map-credit svg{width:7px;height:7px}

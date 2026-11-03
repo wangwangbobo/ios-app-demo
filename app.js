@@ -364,6 +364,11 @@ const S = {
   tripDirty: false,
   tripLive: false,
   liveStop: 0,
+  geo: loadGeoCache(),
+  amap: {},
+  amapOff: false,
+  amapBusy: false,
+  amapTimer: null,
   messages: [{ role: 'assistant', text: "Hi, I'm Pico. Tell me what kind of trip you like and I'll build your first Beijing plan — route order, timing and all." }],
   thinking: false,
   draft: { title: '', date: '11/08 Sat', time: '14:00 – 18:00', place: '', fee: 'Free', note: '' },
@@ -537,6 +542,7 @@ const ZH = {
   'Save this walk': '收藏这条路线', 'Open in map': '在地图中打开',
   'Zoom in': '放大地图', 'Zoom out': '缩小地图', 'Reset zoom': '重置缩放',
   'Expand map': '展开地图框', 'Collapse map': '收起地图框', 'Expand': '展开', 'Collapse': '收起',
+  'Map data © Amap': '地图数据 © 高德',
   // community feed content
   'Where to eat': '去哪儿吃', 'Trending · 4 spots': '热门 · 4 家',
   'What to see': '看什么', 'This week · 3 places': '本周 · 3 处',
@@ -1003,6 +1009,8 @@ const ZH_RULES = [
   [/^([\d.]+) km walked · ends about ([\d:]+)$/, '走了 $1 公里 · 预计 $2 结束'],
   [/^([\d.]+) km walked · all stops covered$/, '走了 $1 公里 · 全部站点完成'],
   [/^Start point · 120 m away · (.+)$/, '起点 · 120 米外 · $1'],
+  [/^(\d+) min walk from the last stop · (.+)$/, '距上一站步行 $1 分钟 · $2'],
+  [/^(\d+) min walk$/, '$1 分钟步行'],
   [/^6 min walk from the last stop · (.+)$/, '距上一站步行 6 分钟 · $1'],
   [/^of (.+) explorers$/, '$1探索者'],
   [/^rarest ([\d.]+)%$/, '稀有 $1%'],
@@ -1104,17 +1112,33 @@ function tag(text, style = 'soft') {
   return `<span class="tag ${style}">${esc(text)}</span>`;
 }
 function placeById(id) { return PLACES.find((p) => p.id === id); }
-function routePathD(stops = S.stops) {
-  const pts = stops.map((s) => [s.x * 100, s.y * 100]);
+function pointsPathD(pts) {
   if (pts.length < 2) return '';
-  let d = `M ${pts[0][0].toFixed(2)} ${pts[0][1].toFixed(2)}`;
+  let d = `M ${(pts[0].x * 100).toFixed(2)} ${(pts[0].y * 100).toFixed(2)}`;
+  for (let i = 1; i < pts.length; i++) {
+    d += ` L ${(pts[i].x * 100).toFixed(2)} ${(pts[i].y * 100).toFixed(2)}`;
+  }
+  return d;
+}
+
+function routePathD(stops = S.stops, layout = null, legs = null) {
+  if (layout && layout.polyline) {
+    const routed = legs == null ? layout.polyline : amapLegPoints(layout, legs);
+    if (routed.length > 1) return pointsPathD(routed);
+  }
+  const pts = stops.map((s, i) => (
+    layout && layout.points && layout.points[i] ? layout.points[i] : { x: s.x, y: s.y }
+  ));
+  if (pts.length < 2) return '';
+  let d = `M ${(pts[0].x * 100).toFixed(2)} ${(pts[0].y * 100).toFixed(2)}`;
   for (let i = 1; i < pts.length; i++) {
     const a = pts[i - 1]; const b = pts[i];
-    const mx = ((a[0] + b[0]) / 2).toFixed(2);
-    const my = ((a[1] + b[1]) / 2).toFixed(2);
-    d += ` Q ${a[0].toFixed(2)} ${a[1].toFixed(2)} ${mx} ${my}`;
+    const mx = (((a.x + b.x) / 2) * 100).toFixed(2);
+    const my = (((a.y + b.y) / 2) * 100).toFixed(2);
+    d += ` Q ${(a.x * 100).toFixed(2)} ${(a.y * 100).toFixed(2)} ${mx} ${my}`;
   }
-  d += ` L ${pts[pts.length - 1][0].toFixed(2)} ${pts[pts.length - 1][1].toFixed(2)}`;
+  const last = pts[pts.length - 1];
+  d += ` L ${(last.x * 100).toFixed(2)} ${(last.y * 100).toFixed(2)}`;
   return d;
 }
 function miniMap(stops = S.stops, tint = 'var(--coral)') {
@@ -1343,6 +1367,7 @@ function render(resetScroll = false) {
   }
   if (S.tab === 'plan' && !S.tripLive) initTripStopDrag();
   if (S.tab === 'plan') bindMapZooms();
+  if (S.tab === 'plan') queueAmap();
   renderWelcome();
   renderRecap();
   zhify(v);
@@ -1479,6 +1504,255 @@ function tripPlans() {
   return all.slice(0, count);
 }
 
+/* ---------- Amap (高德) real map data ----------
+   The hosted function proxies Amap with a server-side key. Coordinates and
+   walking routes are cached, then drawn in the same hand-drawn paper style.
+   Any failure (no key, rate limit, off-network) silently keeps the seeded
+   layout, so the page always renders. */
+const AMAP_BASE_ENDPOINT = PICO_ENDPOINT ? PICO_ENDPOINT.replace(/\/chat$/, '') : '';
+const AMAP_GEO_ENDPOINT = AMAP_BASE_ENDPOINT ? `${AMAP_BASE_ENDPOINT}/geo` : '';
+const AMAP_ROUTE_ENDPOINT = AMAP_BASE_ENDPOINT ? `${AMAP_BASE_ENDPOINT}/route` : '';
+
+/* Amap geocodes Chinese addresses; these are the query names behind the
+   English labels used across the trip. */
+const GEO_QUERY = {
+  'Tiananmen Square': '天安门广场',
+  'Forbidden City': '故宫博物院',
+  'Jingshan Park': '景山公园',
+  'Jingshan, Wanchun Pavilion': '景山公园万春亭',
+  'Shichahai': '什刹海',
+  'Shichahai at dusk': '什刹海',
+  'Nanluoguxiang': '南锣鼓巷',
+  'Drum & Bell Towers': '鼓楼',
+  'Badaling Great Wall': '八达岭长城',
+  'Olympic Forest Park': '奥林匹克森林公园',
+  'Summer Palace': '颐和园',
+  'Wudaokou': '五道口',
+  'National Museum of China': '中国国家博物馆',
+  'Qianmen Street': '前门大街',
+  'Qianmen': '前门',
+  'Beijing Capital Airport': '北京首都国际机场',
+  'Daoxiangcun run': '稻香村',
+  'Temple of Heaven': '天坛公园',
+  'Temple of Heaven Park': '天坛公园',
+  'Beihai Park': '北海公园',
+  'Sunset at Jingshan': '景山公园',
+  'Siji Minfu · Forbidden City': '四季民福烤鸭店王府井店',
+  'Manhengji · Niujie': '满恒记牛街',
+  'Pangmei Noodle House · Beixinqiao': '胖妹面庄',
+  'Metal Hands · Qianmen': 'Metal Hands咖啡',
+  'Daoxiangcun · Local gift sweets': '稻香村',
+  'Palace Shop · Fridge magnets': '故宫文创',
+  'Tongrentang · Sour plum mix': '同仁堂'
+};
+
+function geoQuery(name) {
+  const raw = String(name || '').trim();
+  if (!raw) return '';
+  if (GEO_QUERY[raw]) return GEO_QUERY[raw];
+  if (/^leave the hotel$/i.test(raw)) return '';
+  const lunch = /^lunch in (.+)$/i.exec(raw);
+  if (lunch) return GEO_QUERY[lunch[1]] || lunch[1];
+  return raw;
+}
+
+function loadGeoCache() {
+  try {
+    const raw = localStorage.getItem('rc_geo_v1');
+    const parsed = raw ? JSON.parse(raw) : null;
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function saveGeoCache() {
+  try { localStorage.setItem('rc_geo_v1', JSON.stringify(S.geo)); } catch (e) {}
+}
+
+function geoFor(stop) {
+  const query = geoQuery(stop && stop.name);
+  const hit = query ? S.geo[query] : null;
+  return hit && Number.isFinite(hit.lng) && Number.isFinite(hit.lat) ? hit : null;
+}
+
+function amapKeyFor(stops) {
+  return stops.map((s) => s.name).join('>');
+}
+
+function amapLayout(stops) {
+  return S.amap[amapKeyFor(stops)] || null;
+}
+
+/* Fit real coordinates into the 0–1 map box. Each axis is fitted, but the
+   stretch is capped so a mostly north–south walk still looks like a map
+   rather than a fat band. */
+const KM_PER_LNG = 85.2;
+const KM_PER_LAT = 111;
+const MAP_ASPECT = 1.9;
+
+function projectGeo(coords) {
+  const pad = 0.15;
+  let minLng = Infinity, maxLng = -Infinity, minLat = Infinity, maxLat = -Infinity;
+  for (const c of coords) {
+    if (!c) continue;
+    if (c.lng < minLng) minLng = c.lng;
+    if (c.lng > maxLng) maxLng = c.lng;
+    if (c.lat < minLat) minLat = c.lat;
+    if (c.lat > maxLat) maxLat = c.lat;
+  }
+  const kmX = Math.max(0, (maxLng - minLng) * KM_PER_LNG);
+  const kmY = Math.max(0, (maxLat - minLat) * KM_PER_LAT);
+  let pxX = kmX > 0.001 ? (1 - pad * 2) / kmX : 0;
+  let pxY = kmY > 0.001 ? (1 - pad * 2) / kmY : 0;
+  if (pxX && pxY) {
+    const onScreen = (pxX * MAP_ASPECT) / pxY;
+    if (onScreen > 2.2) pxX *= 2.2 / onScreen;
+    else if (onScreen < 1 / 2.2) pxY *= (1 / 2.2) / onScreen;
+  }
+  const cx = (minLng + maxLng) / 2;
+  const cy = (minLat + maxLat) / 2;
+  return function project(lng, lat) {
+    return {
+      x: Number((0.5 + (lng - cx) * KM_PER_LNG * pxX).toFixed(5)),
+      y: Number((0.5 - (lat - cy) * KM_PER_LAT * pxY).toFixed(5))
+    };
+  };
+}
+
+function stopMinutes(text) {
+  const h = /([\d.]+)\s*hr/i.exec(text || '');
+  if (h) return Number(h[1]) * 60;
+  const m = /(\d+)\s*min/i.exec(text || '');
+  if (m) return Number(m[1]);
+  return 0;
+}
+
+function routeKm(layout, visited) {
+  if (!layout || !layout.legs) return null;
+  const legs = layout.legs.slice(0, Math.max(0, Math.min(visited, layout.legs.length)));
+  if (!legs.length) return 0;
+  return legs.reduce((sum, leg) => sum + leg.distanceM, 0) / 1000;
+}
+
+function amapLegPoints(layout, count) {
+  if (!layout || !layout.legs) return [];
+  const out = [];
+  for (const leg of layout.legs.slice(0, Math.max(0, count))) {
+    for (const point of leg.points || []) {
+      const last = out[out.length - 1];
+      if (!last || last.x !== point.x || last.y !== point.y) out.push(point);
+    }
+  }
+  return out;
+}
+
+function queueAmap() {
+  if (!AMAP_GEO_ENDPOINT || S.amapOff) return;
+  clearTimeout(S.amapTimer);
+  S.amapTimer = setTimeout(() => {
+    let stops;
+    try { stops = activeDay().stops; } catch (e) { return; }
+    amapSync(stops);
+  }, 140);
+}
+
+async function amapSync(stops) {
+  if (!AMAP_GEO_ENDPOINT || S.amapOff || !stops || stops.length < 2) return;
+  if (stops.some((s) => s.manual)) return;
+  const key = amapKeyFor(stops);
+  if (S.amap[key]) return;
+
+  const entries = stops.map((s) => ({ stop: s, query: geoQuery(s.name) }));
+  if (entries.filter((e) => e.query).length < 2) return;
+  const missing = [...new Set(entries.filter((e) => e.query && !S.geo[e.query]).map((e) => e.query))];
+
+  try {
+    if (missing.length) {
+      if (S.amapBusy) return;
+      S.amapBusy = true;
+      const response = await fetch(AMAP_GEO_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ places: missing })
+      });
+      if (response.status === 503) { S.amapOff = true; return; }
+      if (!response.ok) return;
+      const data = await response.json();
+      let added = 0;
+      (data.results || []).forEach((row) => {
+        if (row && row.ok && Number.isFinite(row.lng) && Number.isFinite(row.lat)) {
+          S.geo[row.name] = { lng: row.lng, lat: row.lat };
+          added += 1;
+        }
+      });
+      if (added) saveGeoCache();
+      if (!added) { S.amap[key] = { complete: true, points: null }; return; }
+    }
+    await amapBuildRoute(key, stops, entries);
+  } catch (e) {
+    // Silent: the hand-drawn layout stays in place.
+  } finally {
+    S.amapBusy = false;
+  }
+}
+
+async function amapBuildRoute(key, stops, entries) {
+  const coords = entries.map((e) => (e.query ? S.geo[e.query] || null : null));
+  const known = coords.filter(Boolean);
+  if (known.length < 2 || coords.some((c) => !c)) {
+    S.amap[key] = { complete: true, points: null };
+    return;
+  }
+
+  const project = projectGeo(coords);
+  const points = coords.map((c) => project(c.lng, c.lat));
+
+  const lats = coords.map((c) => c.lat);
+  const lngs = coords.map((c) => c.lng);
+  const spread = Math.max(Math.max(...lats) - Math.min(...lats), Math.max(...lngs) - Math.min(...lngs));
+  // Far-flung days (car transfer, airport) read badly on a neighbourhood map:
+  // keep real coordinates for labels, but keep the seeded drawing.
+  if (spread > 0.16) {
+    S.amap[key] = { complete: true, points: null };
+    return;
+  }
+
+  S.amap[key] = { complete: true, points, legs: [] };
+  render();
+
+  if (!AMAP_ROUTE_ENDPOINT) return;
+  let data;
+  try {
+    const response = await fetch(AMAP_ROUTE_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ points: coords.map((c) => ({ lng: c.lng, lat: c.lat })) })
+    });
+    if (!response.ok) return;
+    data = await response.json();
+  } catch (e) {
+    return;
+  }
+  if (!data || !data.ok || !Array.isArray(data.polyline) || data.polyline.length < 2) return;
+
+  const polyline = data.polyline.map((pair) => project(pair[0], pair[1]));
+  const legs = (data.legs || []).map((leg) => ({
+    distanceM: Number(leg.distanceM) || 0,
+    durationS: Number(leg.durationS) || 0,
+    points: (leg.polyline || []).map((pair) => project(pair[0], pair[1]))
+  }));
+  S.amap[key] = {
+    complete: true,
+    points,
+    polyline,
+    legs,
+    distanceM: Number(data.distanceM) || 0,
+    durationS: Number(data.durationS) || 0
+  };
+  if (S.tab === 'plan') render();
+}
+
 /* ---------- merged trip editor ---------- */
 const DAY_COORDS = [
   [[.30, .82], [.42, .64], [.54, .48], [.44, .32], [.60, .24], [.70, .40]],
@@ -1531,12 +1805,30 @@ function activeStops() {
   return (S.tab === 'plan' && S.planBuilt) ? activeDay().stops : S.stops;
 }
 
-function dayStats(day) {
+function clockMinutes(hhmm) {
+  const [h, m] = String(hhmm || '09:00').split(':').map(Number);
+  return (h || 0) * 60 + (m || 0);
+}
+
+function scheduleMinutes(stops) {
+  if (!stops || !stops.length) return 0;
+  const start = clockMinutes(stops[0].time);
+  const last = stops[stops.length - 1];
+  const end = clockMinutes(last.time) + (stopMinutes(last.duration) || 45);
+  return end > start ? end - start : 0;
+}
+
+function dayStats(day, layout = null) {
   const n = day.stops.length;
   const meta = day.meta || '';
   const full = /full day/.test(meta);
-  const km = (/([\d.]+) km/.exec(meta) || [])[1] || (n * 0.72).toFixed(1);
-  const hr = full ? null : (/([\d.]+) hr/.exec(meta) || [])[1] || String(Math.max(1, Math.round(n * 0.85)));
+  let km = (/([\d.]+) km/.exec(meta) || [])[1] || (n * 0.72).toFixed(1);
+  let hr = full ? null : (/([\d.]+) hr/.exec(meta) || [])[1] || String(Math.max(1, Math.round(n * 0.85)));
+  if (layout && layout.distanceM) {
+    km = (layout.distanceM / 1000).toFixed(1);
+    const elapsed = scheduleMinutes(day.stops);
+    if (elapsed) hr = String(Math.max(1, Math.round(elapsed / 60)));
+  }
   return { n, km, hr, full };
 }
 
@@ -1558,7 +1850,9 @@ function tripView() {
   const dayNo = clamp(S.tripDay, 0, days.length - 1);
   const day = days[dayNo];
   const stops = day.stops;
-  const stats = dayStats(day);
+  const layout = amapLayout(stops);
+  const stats = dayStats(day, layout);
+  const pos = (s, i) => (layout && layout.points && layout.points[i]) ? layout.points[i] : { x: s.x, y: s.y };
   return `
     <header class="top">
       <div>
@@ -1608,12 +1902,13 @@ function tripView() {
             ${communityOverlay()}
             ${crowdOverlay()}
             <svg class="route-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-              <path d="${routePathD(stops)}" fill="none" stroke="var(--ink)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
-              <path d="${routePathD(stops)}" fill="none" stroke="var(--coral)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+              <path d="${routePathD(stops, layout)}" fill="none" stroke="var(--ink)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+              <path d="${routePathD(stops, layout)}" fill="none" stroke="var(--coral)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
             </svg>
-            ${stops.map((s, i) => pinHTML(s, i)).join('')}
+            ${stops.map((s, i) => pinHTML(s, i, pos(s, i))).join('')}
           </div>
         </div>
+        ${layout && layout.polyline ? `<span class="map-credit">${icon('map', 7)} ${esc(tr('Map data © Amap'))}</span>` : ''}
         <div class="tmap-tools">
           <button class="small-chip ${S.tripEdit ? 'on' : ''}" data-act="trip-edit">${icon(S.tripEdit ? 'check' : 'hand', 9)}${S.tripEdit ? 'Done' : 'Edit pins'}</button>
           <button class="small-chip" data-act="reorder">${icon('updown', 9)}Reorder</button>
@@ -1650,7 +1945,7 @@ function tripView() {
       </div>` : ''}
 
       <div class="rc-stops">
-        ${stops.map((s, i) => tripStopRow(s, i)).join('')}
+        ${stops.map((s, i) => tripStopRow(s, i, layout)).join('')}
       </div>
 
       ${day.note ? `<div class="rc-note">${icon('info', 9)}<span>${esc(tr(day.note))}</span></div>` : ''}
@@ -1685,15 +1980,19 @@ function tripView() {
     ${quizCard()}`;
 }
 
-function tripStopRow(stop, index) {
+function tripStopRow(stop, index, layout = null) {
   const colors = ['var(--mustard)', 'var(--pink)', 'var(--mint)', 'var(--peri)', 'var(--lime)', 'var(--sky)'];
   const selected = S.selected === stop.id;
+  const leg = layout && layout.legs && layout.legs[index - 1];
+  const walk = index === 0
+    ? 'Start here'
+    : leg ? `${Math.max(1, Math.round(leg.durationS / 60))} min walk` : 'on the route';
   return `<div class="trow ${selected ? 'on' : ''}" data-stop="${stop.id}" data-index="${index}">
     <span class="time">${esc(stop.time)}</span>
     <span class="num" style="background:${colors[index % colors.length]}">${index + 1}</span>
     <button class="info" data-act="select-stop" data-id="${stop.id}">
       <b>${esc(stop.name)} ${stop.tag ? tag(stop.tag, stop.tagStyle || 'soft') : ''}</b>
-      <small><span>${esc(stop.duration || '45 min')}</span> · <span>${index === 0 ? 'Start here' : 'on the route'}</span></small>
+      <small><span>${esc(stop.duration || '45 min')}</span> · <span>${esc(walk)}</span></small>
     </button>
     <span class="tdrag"><span class="drag-grip" data-grip="${stop.id}" role="button" tabindex="0" aria-label="Drag ${esc(stop.name)} to reorder">${icon('grip', 13)}</span></span>
   </div>`;
@@ -1717,9 +2016,10 @@ function tripCTAHTML() {
 }
 
 /* ---------- live trip ---------- */
-function livePin(stop, index) {
+function livePin(stop, index, pos = null) {
   const state = index < S.liveStop ? 'done' : index === S.liveStop ? 'now' : 'next';
-  return `<span class="lpin ${state}" style="left:${stop.x * 100}%;top:${stop.y * 100}%">${state === 'done' ? icon('check', 9) : index + 1}</span>`;
+  const point = pos || { x: stop.x, y: stop.y };
+  return `<span class="lpin ${state}" style="left:${point.x * 100}%;top:${point.y * 100}%">${state === 'done' ? icon('check', 9) : index + 1}</span>`;
 }
 
 function liveTripView() {
@@ -1734,11 +2034,20 @@ function liveTripView() {
   const next = stops[S.liveStop + 1];
   const visited = Math.min(S.liveStop, n);
   const pct = Math.round((visited / n) * 100);
-  const walked = (visited * 0.72).toFixed(1);
+  const layout = amapLayout(stops);
+  const walkedKm = routeKm(layout, visited);
+  const walked = walkedKm == null ? (visited * 0.72).toFixed(1) : walkedKm.toFixed(1);
   const clock = plusMinutes(done ? (stops[n - 1] ? stops[n - 1].time : '17:30') : stop.time, 12);
   const eta = plusMinutes(stops[n - 1] ? stops[n - 1].time : '17:30', 60);
-  const lat = (39.93 - (stop.y - 0.5) * 0.09).toFixed(4);
-  const lng = (116.39 + (stop.x - 0.5) * 0.11).toFixed(4);
+  const geo = geoFor(stop);
+  const lat = (geo ? geo.lat : 39.93 - (stop.y - 0.5) * 0.09).toFixed(4);
+  const lng = (geo ? geo.lng : 116.39 + (stop.x - 0.5) * 0.11).toFixed(4);
+  const here = (s, i) => (layout && layout.points && layout.points[i]) ? layout.points[i] : { x: s.x, y: s.y };
+  const hereNow = here(stop, idx);
+  const leg = layout && layout.legs && layout.legs[idx - 1];
+  const legMin = leg ? Math.max(1, Math.round(leg.durationS / 60)) : 6;
+  const nextLeg = layout && layout.legs && layout.legs[S.liveStop];
+  const nextMin = nextLeg ? Math.max(1, Math.round(nextLeg.durationS / 60)) : 6;
   const shortTitle = day.title.split('·')[0].trim();
 
   return `
@@ -1772,11 +2081,11 @@ function liveTripView() {
         <div class="map-wash"></div>
         <div class="map-body">
           <svg class="route-svg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-            <path d="${routePathD(stops)}" fill="none" stroke="rgba(25,23,16,.32)" stroke-width="3" stroke-dasharray="6 5" vector-effect="non-scaling-stroke"/>
-            ${S.liveStop > 0 ? `<path d="${routePathD(stops.slice(0, Math.min(S.liveStop + 1, n)))}" fill="none" stroke="var(--coral)" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>` : ''}
+            <path d="${routePathD(stops, layout)}" fill="none" stroke="rgba(25,23,16,.32)" stroke-width="3" stroke-dasharray="6 5" vector-effect="non-scaling-stroke"/>
+            ${S.liveStop > 0 ? `<path d="${routePathD(stops, layout, Math.min(S.liveStop, layout && layout.legs ? layout.legs.length : 0))}" fill="none" stroke="var(--coral)" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>` : ''}
           </svg>
-          ${stops.map((s, i) => livePin(s, i)).join('')}
-          ${done ? '' : `<span class="you-tag" style="left:${stop.x * 100}%;top:${stop.y * 100}%">You are here</span>`}
+          ${stops.map((s, i) => livePin(s, i, here(s, i))).join('')}
+          ${done ? '' : `<span class="you-tag" style="left:${hereNow.x * 100}%;top:${hereNow.y * 100}%">You are here</span>`}
         </div>
       </div>
       <div class="live-map-tag">${icon('pin', 8)} ${lat}° N, ${lng}° E</div>
@@ -1787,10 +2096,10 @@ function liveTripView() {
     <article class="done-card">
       <span class="done-ico">${icon('check', 16)}</span>
       <b>Day ${dayNo + 1} complete</b>
-      <p>You covered ${n} stops and ${(n * 0.72).toFixed(1)} km. Your plan and the other ${days.length - 1} days are still saved.</p>
+      <p>You covered ${n} stops and ${walked} km. Your plan and the other ${days.length - 1} days are still saved.</p>
       <div class="done-stats">
         <div><b>${n}</b><span>stops</span></div>
-        <div><b>${(n * 0.72).toFixed(1)}</b><span>km walked</span></div>
+        <div><b>${walked}</b><span>km walked</span></div>
         <div><b>${eta}</b><span>finished</span></div>
       </div>
     </article>` : `
@@ -1801,7 +2110,7 @@ function liveTripView() {
       </div>
       <div class="now-title">${esc(stop.name)}</div>
       <div class="now-meta"><span>${esc(stop.duration || '45 min')}</span> · <span>${esc(stop.tag || 'On the route')}</span></div>
-      <div class="now-loc">${icon('pin', 9)}<span>${idx === 0 ? 'Start point · 120 m away' : '6 min walk from the last stop'} · ${lat}° N ${lng}° E</span></div>
+      <div class="now-loc">${icon('pin', 9)}<span>${idx === 0 ? 'Start point · 120 m away' : `${legMin} min walk from the last stop`} · ${lat}° N ${lng}° E</span></div>
       <div class="now-actions">
         <button data-act="assistant" data-ctx="Live · ${esc(stop.name)}">${sparkleIcon(9)}Ask Pico</button>
         <button data-act="toast" data-text="Navigation opened · ${esc(stop.name)}" data-icon="pin">${icon('map', 9)}Navigate</button>
@@ -1809,7 +2118,7 @@ function liveTripView() {
     </article>
 
     ${next ? `<button class="next-card" data-act="trip-live-next">
-      <span class="nc-label">UP NEXT · 6 MIN</span>
+      <span class="nc-label">UP NEXT · ${nextMin} MIN</span>
       <span class="nc-main"><b>${esc(next.name)}</b><small>${esc(next.time)} · ${esc(next.duration || '45 min')}</small></span>
       <span class="nc-go">${icon('right', 9)}</span>
     </button>` : `<div class="next-card last"><span class="nc-label">LAST STOP</span><span class="nc-main"><b>Finish here</b><small>Tap Next stop to wrap up the day</small></span></div>`}
@@ -1818,15 +2127,18 @@ function liveTripView() {
 }
 
 function liveCTAHTML() {
-  const n = activeDay().stops.length;
+  const day = activeDay();
+  const n = day.stops.length;
   const done = S.liveStop >= n;
   const visited = Math.min(S.liveStop, n);
-  const walked = (visited * 0.72).toFixed(1);
+  const layout = amapLayout(day.stops);
+  const km = routeKm(layout, visited);
+  const walked = km == null ? (visited * 0.72).toFixed(1) : km.toFixed(1);
   return `<div class="trip-cta live-cta">
     <button class="tc-stop" data-act="trip-live-end" aria-label="End live trip">${icon('x', 13)}</button>
     <div class="tc-status">
       <b>${done ? 'Day complete' : 'On the move'}</b>
-      <small>${done ? `${n} stops · ${(n * 0.72).toFixed(1)} km` : `${S.liveStop} of ${n} stops · ${walked} km`}</small>
+      <small>${done ? `${n} stops · ${walked} km` : `${S.liveStop} of ${n} stops · ${walked} km`}</small>
     </div>
     <button class="tc-btn lime" data-act="${done ? 'trip-live-back' : 'trip-live-next'}">
       ${done ? 'Back to plan' : S.liveStop === n - 1 ? 'Finish day' : 'Next stop'} ${icon('arrowr', 12)}
@@ -1919,15 +2231,16 @@ function collaborator(name, pos, lime = false) {
     <span>${name}</span>
   </div>`;
 }
-function pinHTML(stop, index) {
+function pinHTML(stop, index, pos = null) {
   const selected = S.selected === stop.id;
   const editing = S.editMode || S.tripEdit;
-  return `<button class="pin ${selected ? 'selected' : ''} ${editing ? 'edit' : ''}" style="left:${stop.x * 100}%;top:${stop.y * 100}%"
+  const point = pos || { x: stop.x, y: stop.y };
+  return `<button class="pin ${selected ? 'selected' : ''} ${editing ? 'edit' : ''}" style="left:${point.x * 100}%;top:${point.y * 100}%"
     data-pin="${stop.id}" data-act="${editing ? 'noop' : 'select-stop'}" data-id="${stop.id}" aria-label="${esc(stop.name)}">
     ${index + 1}
     ${editing ? `<span class="move">${icon('move', 7)}</span>` : ''}
   </button>
-  ${selected ? `<div class="pin-label" style="left:${stop.x * 100}%;top:${stop.y * 100}%"><b>${esc(stop.name)}</b><span>${esc(stop.time)}</span></div>` : ''}`;
+  ${selected ? `<div class="pin-label" style="left:${point.x * 100}%;top:${point.y * 100}%"><b>${esc(stop.name)}</b><span>${esc(stop.time)}</span></div>` : ''}`;
 }
 function communityOverlay() {
   if (S.layer !== 'community') return '';
@@ -1968,7 +2281,7 @@ function initMapDrag(bodySel = '#mapBody', stops = S.stops) {
       const move = (e) => {
         const nx = clamp(originX + (e.clientX - startX) / rect.width, .07, .93);
         const ny = clamp(originY + (e.clientY - startY) / rect.height, .08, .94);
-        stop.x = nx; stop.y = ny;
+        stop.x = nx; stop.y = ny; stop.manual = true;
         pin.style.left = `${nx * 100}%`;
         pin.style.top = `${ny * 100}%`;
         const paths = $$('.route-svg path', body);
@@ -1982,7 +2295,10 @@ function initMapDrag(bodySel = '#mapBody', stops = S.stops) {
         window.removeEventListener('pointercancel', up);
         markPlanEdited();
         toast('Stop moved · route recalculated', 'refresh');
-        if (bodySel === '#tripMapBody') render();
+        if (bodySel === '#tripMapBody') {
+          S.amap[amapKeyFor(stops)] = { complete: true, points: null };
+          render();
+        }
       };
       window.addEventListener('pointermove', move);
       window.addEventListener('pointerup', up);
